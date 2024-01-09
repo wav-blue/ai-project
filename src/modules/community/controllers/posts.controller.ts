@@ -3,10 +3,10 @@ import { PostsService } from '../services/posts.service';
 
 @Controller('posts')
 export class PostsController {
-  constructor(private communityService: PostsService) {}
+  constructor(private postsService: PostsService) {}
 
   @Get()
   getList() {
-    return this.communityService.getPostsList;
+    return this.postsService.getPostsList;
   }
 }
