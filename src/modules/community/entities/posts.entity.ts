@@ -1,7 +1,7 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export class Posts extends BaseEntity {
+export class Post extends BaseEntity {
   @PrimaryGeneratedColumn()
   post_id: number;
 
@@ -14,10 +14,14 @@ export class Posts extends BaseEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', default: 0 })
   views: number;
 
-  @Column({ type: 'enum', enum: ['nomal', 'deleted', 'reported'] })
+  @Column({
+    type: 'enum',
+    enum: ['nomal', 'deleted', 'reported'],
+    default: 'normal',
+  })
   status: string;
 
   @Column({ type: 'datetime' })

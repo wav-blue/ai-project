@@ -1,20 +1,11 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as config from 'config';
 
 dotenv.config();
 const dbConfig = config.get('db');
 
-console.log(
-  'db 정보',
-  process.env.RDS_HOSTNAME,
-  process.env.RDS_PORT || dbConfig.port,
-  process.env.RDS_USERNAME,
-  process.env.RDS_PASSWORD,
-  process.env.RDS_DB_NAME,
-);
-
-export const typeORMConfig: TypeOrmModuleOptions = {
+const connectDB = new DataSource({
   type: dbConfig.type,
   host: process.env.RDS_HOSTNAME,
   port: process.env.RDS_PORT || dbConfig.port,
@@ -23,4 +14,15 @@ export const typeORMConfig: TypeOrmModuleOptions = {
   database: process.env.RDS_DB_NAME,
   entities: [__dirname + '/../**/*.entity.{js, ts}'],
   synchronize: dbConfig.synchronize,
-};
+});
+
+connectDB
+  .initialize()
+  .then(() => {
+    console.log('Data Source has been initialized!');
+  })
+  .catch((err) => {
+    console.error('Error during Data Source initialization', err);
+  });
+
+export default connectDB;
