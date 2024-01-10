@@ -8,13 +8,14 @@ export class ItemRepository extends Repository<Item> {
   constructor(dataSource: DataSource) {
     super(Item, dataSource.createEntityManager());
   }
-  async createItem(createItemDto: CreateItemDto): Promise<Item> {
+  async createItem(createItemDto: CreateItemDto, user: string): Promise<Item> {
     const { title, description } = createItemDto;
 
     const item = this.create({
       title,
       description,
       status: 'PUBLIC',
+      user,
     });
 
     await this.save(item);
