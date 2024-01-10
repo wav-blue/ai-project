@@ -5,15 +5,16 @@ import { CreateItemDto } from '../dtos/create-item.dto';
 
 @Injectable()
 export class ItemService {
-  constructor(private itemRepository: ItemRepository) {}
+  //constructor(private itemRepository: ItemRepository) {}
+  constructor(private readonly itemRepository: ItemRepository) {}
 
   async getAllItems(): Promise<Item[]> {
     new Logger('itemController').log('getAllItems 실행!');
-    return this.itemRepository.find();
+    return this.itemRepository.getItemAll();
   }
 
   async getItemById(id: number): Promise<Item> {
-    const found = await this.itemRepository.findOne({ where: { id } });
+    const found = await this.itemRepository.getItemById(id);
 
     if (!found) {
       throw new NotFoundException(`Can't find Item with id ${id}`);
@@ -26,23 +27,30 @@ export class ItemService {
     return this.itemRepository.createItem(createItemDto, user);
   }
 
-  async updateItemStatus(
-    id: number,
-    user: string,
-    status: string,
-  ): Promise<Item> {
-    const item = await this.getItemById(id);
-    item.status = status;
-    await this.itemRepository.save(item);
+  //   async updateItemStatus(
+  //     id: number,
+  //     user: string,
+  //     status: string,
+  //   ): Promise<Item> {
+  //     const item = await this.getItemById(id);
+  //     item.status = status;
+  //     await this.itemRepository.updateItem(item, user, status);
 
-    return item;
-  }
+  //     return item;
+  //   }
 
-  async deleteItem(id: number, user: string): Promise<void> {
-    const result = await this.itemRepository.delete({ id: id, user: user });
+  //   async updateItemContents(updateItemDto: UpdateItemDto, user): Promise<Item> {
+  //     const item = await this.getItemById(id);
+  //     await this.itemRepository.save(item);
 
-    if (result.affected === 0) {
-      throw new NotFoundException(`Can't find Item with id ${id}`);
-    }
-  }
+  //     return item;
+  //   }
+
+  //   async deleteItem(id: number, user: string): Promise<void> {
+  //     const result = await this.itemRepository.delete({ id: id, user: user });
+
+  //     if (result.affected === 0) {
+  //       throw new NotFoundException(`Can't find Item with id ${id}`);
+  //     }
+  //   }
 }

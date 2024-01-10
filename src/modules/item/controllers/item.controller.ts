@@ -30,6 +30,12 @@ export class ItemController {
     return this.itemService.getAllItems();
   }
 
+  @Get('/:id')
+  getItemById(@Param('id', ParseIntPipe) id: number): Promise<Item> {
+    this.logger.log(' item get 요청 실행 !');
+    return this.itemService.getItemById(id);
+  }
+
   @Post('/')
   @UsePipes(ValidationPipe)
   createItem(
@@ -42,15 +48,15 @@ export class ItemController {
 
   // 일부 리소스 업데이트
   // localhost:5001/item/:id?status=PRIVATE
-  @Patch('/:id')
-  updateItemStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @GetUserTemp() user: string,
-    @Query('status') status: string,
-  ): Promise<Item> {
-    this.logger.log(' item patch 요청 실행 !');
-    return this.itemService.updateItemStatus(id, user, status);
-  }
+  //   @Patch('/:id')
+  //   updateItemStatus(
+  //     @Param('id', ParseIntPipe) id: number,
+  //     @GetUserTemp() user: string,
+  //     @Query('status') status: string,
+  //   ): Promise<Item> {
+  //     this.logger.log(' item patch 요청 실행 !');
+  //     return this.itemService.updateItemStatus(id, user, status);
+  //   }
 
   // 모든 리소스 업데이트
   //   @Put('/:id')
@@ -63,12 +69,12 @@ export class ItemController {
   //     return this.itemService.updateItemContents(updateItemDto, user);
   //   }
 
-  @Delete('/:id')
-  deleteItem(
-    @Param('id', ParseIntPipe) id: number,
-    @GetUserTemp() user: string,
-  ): Promise<void> {
-    this.logger.log(' item delete 요청 실행 !');
-    return this.itemService.deleteItem(id, user);
-  }
+  //   @Delete('/:id')
+  //   deleteItem(
+  //     @Param('id', ParseIntPipe) id: number,
+  //     @GetUserTemp() user: string,
+  //   ): Promise<void> {
+  //     this.logger.log(' item delete 요청 실행 !');
+  //     return this.itemService.deleteItem(id, user);
+  //   }
 }
