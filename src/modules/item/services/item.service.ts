@@ -12,8 +12,30 @@ export class ItemService {
     return this.itemRepository.find();
   }
 
+  async getItemById(id: number): Promise<Item> {
+    const found = await this.itemRepository.findOne({ where: { id } });
+
+    if (!found) {
+      throw new NotFoundException(`Can't find Item with id ${id}`);
+    }
+
+    return found;
+  }
+
   async createItem(createItemDto: CreateItemDto, user: string) {
     return this.itemRepository.createItem(createItemDto, user);
+  }
+
+  async updateItemStatus(
+    id: number,
+    user: string,
+    status: string,
+  ): Promise<Item> {
+    const item = await this.getItemById(id);
+    item.status = status;
+    await this.itemRepository.save(item);
+
+    return item;
   }
 
   async deleteItem(id: number, user: string): Promise<void> {
