@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Item } from '../entities/item.entity';
 import { ItemRepository } from '../repositories/item.repository';
 import { CreateItemDto } from '../dtos/create-item.dto';
+import { UpdateItemDto } from '../dtos/update-item.dto';
 
 @Injectable()
 export class ItemService {
@@ -27,30 +28,38 @@ export class ItemService {
     return this.itemRepository.createItem(createItemDto, user);
   }
 
-  //   async updateItemStatus(
-  //     id: number,
-  //     user: string,
-  //     status: string,
-  //   ): Promise<Item> {
-  //     const item = await this.getItemById(id);
-  //     item.status = status;
-  //     await this.itemRepository.updateItem(item, user, status);
+  async updateItemStatus(
+    id: number,
+    user: string,
+    status: string,
+  ): Promise<Item> {
+    const updateItem = await this.itemRepository.updateItemStatus(
+      id,
+      user,
+      status,
+    );
 
-  //     return item;
-  //   }
+    return updateItem;
+  }
 
-  //   async updateItemContents(updateItemDto: UpdateItemDto, user): Promise<Item> {
-  //     const item = await this.getItemById(id);
-  //     await this.itemRepository.save(item);
+  async updateItemContents(
+    updateItemDto: UpdateItemDto,
+    id: number,
+    user: string,
+  ): Promise<Item> {
+    const updateItem = await this.itemRepository.updateItem(
+      updateItemDto,
+      id,
+      user,
+    );
+    return updateItem;
+  }
 
-  //     return item;
-  //   }
+  async deleteItem(id: number, user: string): Promise<void> {
+    const result = await this.itemRepository.deleteItem({ id, user });
 
-  //   async deleteItem(id: number, user: string): Promise<void> {
-  //     const result = await this.itemRepository.delete({ id: id, user: user });
-
-  //     if (result.affected === 0) {
-  //       throw new NotFoundException(`Can't find Item with id ${id}`);
-  //     }
-  //   }
+    if (result.affected === 0) {
+      throw new NotFoundException(`Can't find Item with id ${id}`);
+    }
+  }
 }

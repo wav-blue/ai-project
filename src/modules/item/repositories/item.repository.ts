@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Item } from '../entities/item.entity';
 import { CreateItemDto } from '../dtos/create-item.dto';
+import { UpdateItemDto } from '../dtos/update-item.dto';
 // import { UpdateItemDto } from '../dtos/update-item.dto';
 
 @Injectable()
@@ -78,15 +79,53 @@ export class ItemRepository {
     const newItem = this.getItemById(newItemResults.identifiers[0].id);
     return newItem;
   }
+  async updateItemStatus(
+    id: number,
+    user: string,
+    status: string,
+  ): Promise<Item> {
+    const updateItemResults = await this.itemRepository
+      .createQueryBuilder()
+      .update(Item)
+      .set({
+        status,
+      })
+      .where('id = :id', { id })
+      .execute();
+    console.log(updateItemResults);
+    const updatedItem = this.getItemById(id);
+    return updatedItem;
+  }
+  // 전체적인 수정
+  async updateItem(
+    updateItemDto: UpdateItemDto,
+    id: number,
+    user: string,
+  ): Promise<Item> {
+    const { title, description } = updateItemDto;
 
-  //   async updateItem(updateItemDto: UpdateItemDto): Promise<Item> {
-  //     const { title, description } = createItemDto;
+    const updateItemResults = await this.itemRepository
+      .createQueryBuilder()
+      .update(Item)
+      .set({
+        title,
+        description,
+      })
+      .where('id = :id', { id })
+      .execute();
+    console.log(updateItemResults);
+    const updatedItem = this.getItemById(id);
+    return updatedItem;
+  }
 
-  //     const item = this.put({
-  //       title,
-  //       description,
-  //       status: 'PUBLIC',
-  //       user,
-  //     });
-  //   }
+  async deleteItem({ id, user }) {
+    const result = await this.itemRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Item)
+      .where('id = :id', { id })
+      .execute();
+
+    return result;
+  }
 }
