@@ -4,10 +4,12 @@ import {
   Delete,
   Get,
   Param,
-  Post,
+  Post as HttpPost,
   Put,
   UsePipes,
   ValidationPipe,
+  Req,
+  Headers,
 } from '@nestjs/common';
 import { PostsService } from '../services/posts.service';
 import { Post } from '../entities/posts.entity';
@@ -18,30 +20,36 @@ export class PostsController {
   constructor(private postsService: PostsService) {}
 
   @Get()
-  getPostsList() {
+  getPostsList(): Promise<Post[]> {
     return this.postsService.getPostsList();
   }
 
-  @Post()
+  @HttpPost()
   @UsePipes(ValidationPipe)
-  createPost(@Body() postsDto: PostsDto): Post {
-    //user_id는 헤더의 쿠키에서 가져오는데...어케 작성하는겨 Dto 에는 어케 넣는겨
+  createPost(
+    @Headers(),
+    @Body() postsDto: PostsDto,
+  ): Promise<Post> {
+    const user_id: string = request.cookie['userId'];
     return this.postsService.createPost(postsDto);
   }
 
   @Get('/id')
-  getPostById(@Param('id') id: string): Post {
+  getPostById(@Param('id') id: string): Promise<Post> {
     return this.postsService.getPostById(id);
   }
 
   @Delete('/id')
-  deletePost(@Param('id') id: string): void {
+  deletePost(@Param('id') id: string): Promise<void> {
     this.postsService.deletePost(id);
   }
 
   @Put('/id')
   @UsePipes(ValidationPipe)
-  updatePost(@Param('id') id: string, @Body() postsDto: PostsDto): Post {
+  updatePost(
+    @Param('id') id: string,
+    @Body() postsDto: PostsDto,
+  ): Promise<Post> {
     return this.postsService.updatePost(id, postsDto);
   }
 }
