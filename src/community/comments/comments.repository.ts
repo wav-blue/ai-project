@@ -96,10 +96,10 @@ export class CommentRepository {
         .update(Comment)
         .set({
           status: 'deleted',
+          deleted_at: new Date(),
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
-      console.log(result);
       return result;
     } catch (error) {
       throw new ConflictException('댓글 삭제에 실패했습니다');
