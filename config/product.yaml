@@ -1,2 +1,5 @@
 db:
   synchronize: false
+
+jwt:
+  secret: 'mySecretKey'

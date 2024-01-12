@@ -4,13 +4,16 @@ import {
   Column,
   Entity,
   PrimaryGeneratedColumn,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-@Entity()
+import { MemberShip } from './membership.entity';
+@Entity({ name: 'User' })
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  @Column({ type: 'varchar', length: 50 })
-  userid: string;
+  @Column({ type: 'varchar', length: 50, name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', length: 100 })
   email: string;
@@ -32,8 +35,19 @@ export class User extends BaseEntity {
 
   @BeforeInsert()
   generateUserId() {
-    if (!this.userid) {
-      this.userid = uuidv4();
+    if (!this.userId) {
+      this.userId = uuidv4();
     }
+  }
+
+  @OneToOne(() => MemberShip)
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
+  membership: MemberShip;
+
+  readonlyData() {
+    return {
+      userId: this.userId,
+      membership: this.membership,
+    };
   }
 }

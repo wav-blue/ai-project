@@ -2,6 +2,7 @@ import { DataSource, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Injectable()
 export class UserRepository {
@@ -11,12 +12,12 @@ export class UserRepository {
     this.userRepository = this.dataSource.getRepository(User);
   }
 
-  async getUserbyID(userid: string): Promise<User> {
+  async getUserbyId(userId: string): Promise<User> {
     const found = await this.userRepository
       .createQueryBuilder()
       .select('user')
       .from(User, 'user')
-      .where('user.userid = :userid', { userid })
+      .where('user.userId = :userId', { userId })
       .getOne();
 
     return found;
@@ -45,7 +46,28 @@ export class UserRepository {
       })
       .execute();
 
-    const newItem = this.getUserbyID(newUserResults.identifiers[0].userid);
+    const newItem = this.getUserbyId(newUserResults.identifiers[0].user_id);
     return newItem;
   }
+  
+  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
+    const { userId, password } = updateUserDto;
+
+    const updatedUserResults = await this.userRepository
+      .createQueryBuilder()
+      .insert()
+      .into(User)
+      .values({
+        userId: userId,
+        password: password,
+      })
+      .execute();
+
+    const newUser = (
+      await this.getUserbyId(updatedUserResults.identifiers[0].userId)
+    ).readonlyData();
+
+    return newUser;
+  }
+  
 }
