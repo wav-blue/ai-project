@@ -21,4 +21,16 @@ export class CommentRepository {
 
     return found;
   }
+
+  async getBoardComments(boardId: number): Promise<Comment[]> {
+    this.logger.log(`${boardId}번 게시글 댓글 조회`);
+    const found = this.commentRepository
+      .createQueryBuilder()
+      .select('comments')
+      .from(Comment, 'comments')
+      .where('comments.board_id = :boardId', { boardId })
+      .getMany();
+
+    return found;
+  }
 }

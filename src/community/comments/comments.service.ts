@@ -10,4 +10,9 @@ export class CommentsService {
     const found = this.commentRepository.getAllComments();
     return found;
   }
+
+  async getBoardComments(boardId: number): Promise<Comment[]> {
+    const found = this.commentRepository.getBoardComments(boardId);
+    return found;
+  }
 }
