@@ -23,6 +23,11 @@ export class CommentRepository {
     return found;
   }
 
+  async checkBoard(createCommentDto: CreateCommentDto) {
+    // 테스트용으로 null 반환
+    return null;
+  }
+
   async getCommentById(commentId: number): Promise<Comment> {
     const found = this.commentRepository
       .createQueryBuilder()

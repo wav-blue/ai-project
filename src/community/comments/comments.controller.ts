@@ -1,6 +1,5 @@
 import {
   Body,
-  ConflictException,
   Controller,
   Delete,
   Get,
@@ -44,14 +43,9 @@ export class CommentsController {
     @GetUserTemp() user: string,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    try {
-      console.log('controller 데이터 : ', user, createCommentDto);
-      const result = this.commentsService.createComment(user, createCommentDto);
-      // result : 작성 완료
-      return result;
-    } catch (error) {
-      throw new ConflictException('댓글 작성에 실패했습니다');
-    }
+    const result = this.commentsService.createComment(user, createCommentDto);
+    // result : 작성 완료
+    return result;
   }
 
   // 댓글 삭제 : 삭제하지 않고 상태만 변경 status: not_deleted -> deleted
