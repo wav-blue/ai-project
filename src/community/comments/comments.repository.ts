@@ -23,8 +23,8 @@ export class CommentRepository {
     return found;
   }
 
-  async checkBoard(createCommentDto: CreateCommentDto) {
-    // 테스트용으로 null 반환
+  async checkBoardNull() {
+    // 에러 상황 테스트를 위해 null을 반환하는 Mock
     return null;
   }
 
