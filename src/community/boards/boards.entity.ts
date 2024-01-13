@@ -1,12 +1,20 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
-@Entity()
+@Entity({ name: 'boards' })
 export class Board extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  board_id: number;
+  //user, report 보드와 관계 맺어야 함
 
-  @Column({ type: 'varchar', length: 50 })
-  user_id: string;
+  @PrimaryGeneratedColumn({ name: 'board_id' })
+  boardId: number;
+
+  @Column({ type: 'varchar', length: 50, name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', length: 100 })
   title: string;
@@ -24,12 +32,12 @@ export class Board extends BaseEntity {
   })
   status: string;
 
-  @Column({ type: 'datetime' })
-  created_at: Date;
+  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  createdAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
-  updated_at: Date;
+  @Column({ type: 'datetime', nullable: true, name: 'updated_at' })
+  updatedAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
-  deleted_at: Date;
+  @Column({ type: 'datetime', nullable: true, name: 'deleted_at' })
+  deletedAt: Date;
 }
