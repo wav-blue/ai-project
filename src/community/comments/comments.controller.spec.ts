@@ -12,6 +12,7 @@ describe('commentsController', () => {
     commentsController = new CommentsController(commentsService);
   });
 
+  // 모든 댓글 조회 테스트
   describe('findAllComments', () => {
     it('should return an array of comments(for testing)', async () => {
       const result = [];
@@ -23,6 +24,7 @@ describe('commentsController', () => {
     });
   });
 
+  // 포스트의 댓글 조회 테스트
   describe('findBoardComments', () => {
     it('should return an array of comments of board', async () => {
       const result = [];

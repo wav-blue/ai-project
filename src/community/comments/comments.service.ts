@@ -19,8 +19,9 @@ export class CommentsService {
   }
 
   async createComment(user: string, createCommentDto: CreateCommentDto) {
-    // test용으로 null 반환하고 있음
-    const found = await this.commentRepository.checkBoard(createCommentDto);
+    // 테스트용으로 null 반환
+    // 해당하는 게시글이 없는 상황 가정
+    const found = await this.commentRepository.checkBoardNull();
 
     if (!found) {
       throw EntityNotFoundException('해당하는 게시물이 존재하지 않습니다');

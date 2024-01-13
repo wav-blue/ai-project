@@ -23,8 +23,9 @@ export class CommentRepository {
     return found;
   }
 
-  async checkBoard(createCommentDto: CreateCommentDto) {
-    // 테스트용으로 null 반환
+  async checkBoardNull() {
+    // 테스트용으로 Null 반환
+    // 해당하는 게시글이 없는 상황을 가정
     return null;
   }
 
