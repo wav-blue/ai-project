@@ -28,13 +28,18 @@ export class UserRepository {
       .createQueryBuilder()
       .select('user')
       .from(User, 'user')
-      .where('user.email = :email', { email })
+      .where([
+        'user.email = :email',
+        { email },
+        'user.logintype = :logintype',
+        { logintype: 'EMAIL' },
+      ])
       .getOne();
 
     return found;
   }
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const { email, logintype } = createUserDto;
+    const { email, logintype, password } = createUserDto;
 
     const newUserResults = await this.userRepository
       .createQueryBuilder()
@@ -43,31 +48,28 @@ export class UserRepository {
       .values({
         email: email,
         logintype: logintype,
-      })
-      .execute();
-
-    const newItem = this.getUserbyId(newUserResults.identifiers[0].user_id);
-    return newItem;
-  }
-  
-  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
-    const { userId, password } = updateUserDto;
-
-    const updatedUserResults = await this.userRepository
-      .createQueryBuilder()
-      .insert()
-      .into(User)
-      .values({
-        userId: userId,
         password: password,
       })
       .execute();
 
-    const newUser = (
-      await this.getUserbyId(updatedUserResults.identifiers[0].userId)
-    ).readonlyData();
+    const newUser = this.getUserbyId(newUserResults.identifiers[0].user_id);
+    return newUser;
+  }
+
+  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
+    const { userId, password } = updateUserDto;
+
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        password: password,
+      })
+      .where('user.userId = :userId', { userId })
+      .execute();
+
+    const newUser = await this.getUserbyId(userId);
 
     return newUser;
   }
-  
 }
