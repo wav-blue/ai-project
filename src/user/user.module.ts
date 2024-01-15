@@ -13,7 +13,6 @@ import { RefreshTokenRepository } from './refreshtoken.repository';
     TypeOrmModule.forFeature([User, MemberShip]),
     JwtModule.register({
       secret: 'SECRET_KEY', // JWT Signature의 Secret 값 입력
-      signOptions: { expiresIn: '300s' }, // JWT 토큰의 만료시간 입력
     }),
   ],
   controllers: [UserController],

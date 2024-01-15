@@ -28,12 +28,7 @@ export class UserRepository {
       .createQueryBuilder()
       .select('user')
       .from(User, 'user')
-      .where([
-        'user.email = :email',
-        { email },
-        'user.logintype = :logintype',
-        { logintype: 'EMAIL' },
-      ])
+      .where('user.email = :email', { email })
       .getOne();
 
     return found;
@@ -52,7 +47,7 @@ export class UserRepository {
       })
       .execute();
 
-    const newUser = this.getUserbyId(newUserResults.identifiers[0].user_id);
+    const newUser = this.getUserbyId(newUserResults.identifiers[0].userId);
     return newUser;
   }
 

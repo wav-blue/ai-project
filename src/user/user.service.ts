@@ -30,9 +30,11 @@ export class UserService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const found = await this.userRepository.getUserbyEmail(createUserDto.email);
-    if (found) throw new ConflictException('이미 존재하는 계정입니다.');
+    const { email, logintype, password } = createUserDto;
+    //console.log(createUserDto, email);
 
+    const found = await this.userRepository.getUserbyEmail(email);
+    if (found) throw new ConflictException('이미 존재하는 계정입니다.');
     createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
 
     const createdUser = await this.userRepository.createUser(createUserDto);

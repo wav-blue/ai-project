@@ -30,7 +30,7 @@ export class UserController {
   constructor(private userService: UserService) {}
   private logger = new Logger('userController');
 
-  @Post('/regist')
+  @Post('/register')
   @UsePipes(ValidationPipe)
   async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
     this.logger.log(' user create 요청 실행 !');
