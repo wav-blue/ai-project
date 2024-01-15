@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
-import { EntityNotFoundException } from 'src/common/exception/service.exception';
 
 @Injectable()
 export class CommentsService {
@@ -24,7 +23,7 @@ export class CommentsService {
     const found = await this.commentRepository.checkBoardNull();
 
     if (!found) {
-      throw EntityNotFoundException('해당하는 게시물이 존재하지 않습니다');
+      throw new NotFoundException('해당하는 게시물이 존재하지 않습니다');
     }
 
     const result = this.commentRepository.createComment(user, createCommentDto);
