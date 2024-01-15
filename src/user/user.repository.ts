@@ -49,8 +49,8 @@ export class UserRepository {
     const newItem = this.getUserbyId(newUserResults.identifiers[0].user_id);
     return newItem;
   }
-  
-  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
+
+  async updateUser(updateUserDto: UpdateUserDto): Promise<any> {
     const { userId, password } = updateUserDto;
 
     const updatedUserResults = await this.userRepository
@@ -67,7 +67,6 @@ export class UserRepository {
       await this.getUserbyId(updatedUserResults.identifiers[0].userId)
     ).readonlyData();
 
-    return newUser;
+    //return newUser;
   }
-  
 }

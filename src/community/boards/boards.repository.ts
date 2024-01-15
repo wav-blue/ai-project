@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, QueryBuilder } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Board } from './boards.entity';
 import { CreateBoardDto, UpdateBoardDto } from './boards.dto';
 
 @Injectable()
 export class BoardsRepository {
-  private queryBuilder: QueryBuilder<Board>;
-  constructor(private readonly datasource: DataSource) {
-    this.queryBuilder = this.datasource.createQueryBuilder();
+  private repository: Repository<Board>;
+
+  constructor(private readonly dataSource: DataSource) {
+    this.repository = this.dataSource.getRepository(Board);
   }
 
   //게시판 페이지 목록 넘버링 필요한가??
@@ -15,7 +16,8 @@ export class BoardsRepository {
   //게시판 목록
   async selectAllBoards(previous: number, show: number): Promise<Board[]> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .select(['boardId', 'title', 'views', 'createdAt', 'updatedAt'])
         .from(Board, 'board')
         .where('board.status= :status', { status: 'nomal' })
@@ -38,7 +40,8 @@ export class BoardsRepository {
     show: number,
   ): Promise<Board[]> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .select(['boardId', 'title', 'views', 'createdAt', 'updatedAt'])
         .from(Board, 'board')
         .where('board.status= :status', { status: 'nomal' })
@@ -59,7 +62,8 @@ export class BoardsRepository {
   //게시글 읽기
   async selectBoard(boardId: number): Promise<Board> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .select('*')
         .from(Board, 'board')
         .where('board.boardId = :boardId', { boardId })
@@ -76,7 +80,8 @@ export class BoardsRepository {
   //자기가 작성한 게시글 조회수 올리나?
   async updateView(boardId: number): Promise<Board> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .update(Board)
         .set({ views: () => 'views + 1' })
         .where('board.boardId = :boardId', { boardId })
@@ -93,7 +98,8 @@ export class BoardsRepository {
   //createdAt 자동으로 들어가는지 확인
   async insertBoard(createBoardDto: CreateBoardDto): Promise<Board> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .insert()
         .into(Board)
         .values(createBoardDto)
@@ -111,7 +117,8 @@ export class BoardsRepository {
   //아님 그냥 update 쿼리 내에서 where('board.userId = :userId', { userId }) 로 처리해버리는게 맞는지?
   async selectWriter(boardId: number): Promise<Board> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .select('userId')
         .from(Board, 'board')
         .where('board.boardId = :boardId', { boardId })
@@ -127,7 +134,8 @@ export class BoardsRepository {
   async updateBoard(updateBoardDto: UpdateBoardDto): Promise<Board> {
     try {
       const { boardId, title, content } = updateBoardDto;
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .update(Board)
         .set({ title, content, updatedAt: new Date() })
         .where('board.boardId = :boardId', { boardId })
@@ -145,7 +153,8 @@ export class BoardsRepository {
   //삭제 성공하면 리디렉트 시키고, 삭제 페이지는 삭제로 보여야 함.
   async softDeleteBoard(boardId: number): Promise<Board> {
     try {
-      const result = await this.queryBuilder
+      const result = await this.repository
+        .createQueryBuilder()
         .update(Board)
         .set({ status: 'deleted', deletedAt: new Date() })
         .where('board.boardId = :boardId', { boardId })

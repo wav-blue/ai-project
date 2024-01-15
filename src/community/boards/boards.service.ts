@@ -20,7 +20,7 @@ export class BoardsService {
       this.queryRunner = this.dataSource.createQueryRunner();
       await this.queryRunner.connect();
       await this.queryRunner.startTransaction();
-      await operation(); // Execute the provided operation within the transaction
+      operation(); // Execute the provided operation within the transaction
       await this.queryRunner.commitTransaction();
     } catch (error) {
       await this.queryRunner.rollbackTransaction();
@@ -39,7 +39,12 @@ export class BoardsService {
     return await this.connectDB(async () => {
       const previous = page * 15;
       const show = previous + 15;
-      return await this.boardsRepository.selectAllBoards(previous, show);
+      const result = await this.boardsRepository.selectAllBoards(
+        previous,
+        show,
+      );
+      console.log(result);
+      return result;
     });
   }
 

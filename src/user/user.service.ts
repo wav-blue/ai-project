@@ -15,7 +15,7 @@ import * as dotenv from 'dotenv';
 import * as config from 'config';
 
 dotenv.config();
-const jwtConfig = config.get('jwt');
+//const jwtConfig = config.get('jwt');
 
 @Injectable()
 export class UserService {
@@ -68,22 +68,22 @@ export class UserService {
         email: user.email,
       };
       // 없는 유저면 DB에 유저정보 저장
-      if (!findUser) {
-        findUser = await this.userRepository.createUser(createuserDto);
-      }
+      // if (!findUser) {
+      //   findUser = await this.userRepository.createUser(createuserDto);
+      // }
 
       // 구글 가입이 되어 있는 경우 accessToken 및 refreshToken 발급
-      const findUserPayload = { user_id: findUser.user_id };
-      
-      const eid_access_token = this.jwt.sign(
-        findUserPayload,
-        jwtConfig.SECRET,
-        {
-          expiresIn: jwtConfig.access_expiresIn,
-        },
-      );
-      
-      res.
+      // const findUserPayload = { user_id: findUser.user_id };
+
+      // const eid_access_token = this.jwt.sign(
+      //   findUserPayload,
+      //   jwtConfig.SECRET,
+      //   {
+      //     expiresIn: jwtConfig.access_expiresIn,
+      //   },
+      // );
+
+      //res.
       // refreshToken나중에..
       // const eid_refresh_token = this.jwt.sign(
       //   findUserPayload,
@@ -107,10 +107,10 @@ export class UserService {
       //   secure: process.env.NODE_ENV === 'production' ? true : false,
       //   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       // });
-      return {
-        ok: true,
-        eid_access_token,
-      };
+      // return {
+      //   ok: true,
+      //   //eid_access_token,
+      // };
     } catch (error) {
       return { ok: false, error: '구글 로그인 인증을 실패 하였습니다.' };
     }
