@@ -1,18 +1,17 @@
 import {
   BaseEntity,
-  BeforeInsert,
   Column,
   Entity,
-  PrimaryGeneratedColumn,
   OneToOne,
+  PrimaryColumn,
+  Generated,
   JoinColumn,
 } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
 import { MemberShip } from './membership.entity';
 @Entity({ name: 'User' })
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  @Column({ type: 'varchar', length: 50, name: 'user_id' })
+  @PrimaryColumn({ type: 'varchar', length: 50, name: 'user_id' })
+  @Generated('uuid')
   userId: string;
 
   @Column({ type: 'varchar', length: 100 })
@@ -33,15 +32,8 @@ export class User extends BaseEntity {
   @Column({ type: 'datetime', nullable: true })
   deleted_at: Date;
 
-  @BeforeInsert()
-  generateUserId() {
-    if (!this.userId) {
-      this.userId = uuidv4();
-    }
-  }
-
   @OneToOne(() => MemberShip)
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'userId' })
   membership: MemberShip;
 
   readonlyData() {
