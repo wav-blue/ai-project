@@ -16,7 +16,11 @@ export class CommentsService {
     return found;
   }
 
-  async getBoardComments(boardId: number): Promise<Comment[]> {
+  async getBoardComments(boardId: number, page: number): Promise<Comment[]> {
+    const check = await this.commentRepository.checkBoardNull();
+    if (!check) {
+      throw new NotFoundException('Not FOund!!');
+    }
     const found = this.commentRepository.getBoardComments(boardId);
     return found;
   }
@@ -69,10 +73,10 @@ export class CommentsService {
       // commit transaction now:
       await queryRunner.commitTransaction();
     } catch (err) {
-      // since we have errors let's rollback changes we made
       console.log('error catch!!');
+      // since we have errors let's rollback changes we made
       await queryRunner.rollbackTransaction();
-      return err;
+      throw new NotFoundException();
     } finally {
       // you need to release query runner which is manually created:
       console.log('finally!!');

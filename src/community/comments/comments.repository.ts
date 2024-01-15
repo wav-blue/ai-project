@@ -73,44 +73,21 @@ export class CommentRepository {
   ) {
     const { boardId, content } = createCommentDto;
     this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
-    try {
-      // 1. 추가한 값이 필요 없는 경우 return값 : string
-      //   const sqlResult = await queryRunner.manager
-      //     .createQueryBuilder()
-      //     .insert()
-      //     .into(Comment)
-      //     .values({
-      //       boardId,
-      //       userId: user,
-      //       content,
-      //       position: 'positive',
-      //       status: 'not_deleted',
-      //       createdAt: new Date(),
-      //       updatedAt: new Date(),
-      //     })
-      //     .execute();
-      //   if (sqlResult.raw.affectedRows === 0) {
-      //     throw new ConflictException('댓글 작성에 실패했습니다');
-      //   }
-      //   return '작성 완료';
-      // 2. 추가한 값이 필요한 경우 return값 : json
-      const newComment = this.commentRepository.create({
-        boardId,
-        userId: user,
-        content,
-        position: 'positive',
-        status: 'not_deleted',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      });
 
-      console.log('newComment', newComment);
-      const result = await this.commentRepository.save(newComment);
-      return result;
-    } catch (error) {
-      throw new ConflictException('댓글 작성에 실패했습니다');
-    }
+    const newComment = queryRunner.manager.create(Comment, {
+      boardId,
+      userId: user,
+      content,
+      position: 'positive',
+      status: 'not_deleted',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    console.log('newComment', newComment);
+    const result = await queryRunner.manager.save(newComment);
+    return result;
   }
 
   async deleteComment(user, commentId) {
