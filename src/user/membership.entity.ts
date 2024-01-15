@@ -1,10 +1,18 @@
-import { BaseEntity, Column, Entity, OneToOne } from 'typeorm';
+import {
+  PrimaryColumn,
+  BaseEntity,
+  Column,
+  Entity,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
 export class MemberShip extends BaseEntity {
+  @PrimaryColumn({ type: 'varchar', length: 50, name: 'user_id' })
   @OneToOne(() => User)
-  @Column({ type: 'varchar', length: 50, name: 'user_id' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'userId' })
   userId: string;
 
   @Column({ type: 'datetime' })
@@ -16,7 +24,7 @@ export class MemberShip extends BaseEntity {
   @Column({ type: 'enum', enum: ['non-member', 'trail', 'basic', 'premium'] })
   usingService: string;
 
-  @Column({ type: 'number' })
+  @Column({ type: 'int' })
   remainChances: number;
 
   @Column({ type: 'datetime' })
