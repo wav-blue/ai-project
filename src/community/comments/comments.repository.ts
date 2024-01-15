@@ -1,7 +1,8 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { Board } from '../boards/boards.entity';
 
 @Injectable()
 export class CommentRepository {
@@ -29,6 +30,19 @@ export class CommentRepository {
     return null;
   }
 
+  async checkBoard(boardId: number, queryRunner: QueryRunner) {
+    const found = await queryRunner.manager
+      .createQueryBuilder()
+      .select('boards')
+      .from(Board, 'boards')
+      .where('boards.board_id = :boardId', {
+        boardId,
+      })
+      .getOne();
+
+    return found;
+  }
+
   async getCommentById(commentId: number): Promise<Comment> {
     const found = this.commentRepository
       .createQueryBuilder()
@@ -52,12 +66,16 @@ export class CommentRepository {
     return found;
   }
 
-  async createComment(user: string, createCommentDto: CreateCommentDto) {
+  async createComment(
+    user: string,
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ) {
     const { boardId, content } = createCommentDto;
     this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
     try {
       // 1. 추가한 값이 필요 없는 경우 return값 : string
-      const sqlResult = await this.commentRepository
+      const sqlResult = await queryRunner.manager
         .createQueryBuilder()
         .insert()
         .into(Comment)
