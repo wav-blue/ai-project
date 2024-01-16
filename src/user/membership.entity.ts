@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity({ name: 'MemberShip' })
+@Entity({ name: 'MEMBERSHIP' })
 export class MemberShip extends BaseEntity {
   @OneToOne(() => User)
   @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })

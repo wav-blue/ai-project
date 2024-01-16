@@ -9,7 +9,7 @@ import {
 import { User } from './user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
-@Entity({ name: 'RefreshToken' })
+@Entity({ name: 'REFRESHTOKEN' })
 export class RefreshToken extends BaseEntity {
   @OneToOne(() => User)
   @Column({ type: 'varchar', length: 50 })

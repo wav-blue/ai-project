@@ -10,7 +10,7 @@ import {
 import { MemberShip } from './membership.entity';
 import { RefreshToken } from './refreshtoken.entity';
 import { v4 as uuidv4 } from 'uuid';
-@Entity({ name: 'User' })
+@Entity({ name: 'USER' })
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   user_id: string;

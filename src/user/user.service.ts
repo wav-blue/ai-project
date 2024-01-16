@@ -90,6 +90,13 @@ export class UserService {
     return { user: found, accessToken, refreshToken };
   }
 
+  async findUserRefreshToken(tokenId: string): Promise<RefreshToken> {
+    const userRefreshToken =
+      this.refreshTokenRepository.getRefreshTokenbyTokenId(tokenId);
+
+    return userRefreshToken;
+  }
+
   // async googleLogin(
   //   req: GoogleRequest,
   //   res: Response,
@@ -114,9 +121,9 @@ export class UserService {
   // }
 
   async TokenCreate(
-    userId: string,
+    user_id: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const findUserPayload = { user_id: userId };
+    const findUserPayload = { user_id: user_id };
 
     const accessToken = this.jwt.sign(findUserPayload, {
       expiresIn: 600,
@@ -126,11 +133,22 @@ export class UserService {
       expiresIn: 3600,
     });
 
+    const foundRefeshToken =
+      await this.refreshTokenRepository.getRefreshTokenbyUserId(user_id);
+
+    if (foundRefeshToken) {
+      await this.refreshTokenRepository.updateRefreshToken(
+        user_id,
+        refreshToken,
+      );
+    } else {
+      await this.refreshTokenRepository.createRefreshToken(
+        user_id,
+        refreshToken,
+      );
+    }
     /* refreshToken 필드 업데이트 */
-    const refreshTokenId = await this.refreshTokenRepository.createRefreshToken(
-      userId,
-      refreshToken,
-    );
-    return { accessToken, refreshToken: refreshTokenId.token_id };
+
+    return { accessToken, refreshToken };
   }
 }

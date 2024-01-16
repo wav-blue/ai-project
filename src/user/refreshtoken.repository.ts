@@ -35,35 +35,31 @@ export class RefreshTokenRepository {
   async createRefreshToken(
     userId: string,
     refreshToken: string,
-  ): Promise<RefreshToken> {
-    console.log(userId, refreshToken);
-    let found = await this.getRefreshTokenbyUserId(userId);
+  ): Promise<void> {
+    await this.refreshRepository
+      .createQueryBuilder()
+      .insert()
+      .into(RefreshToken)
+      .values({
+        user_id: userId,
+        token: refreshToken,
+      })
+      .execute();
+    return;
+  }
 
-    console.log(found);
-    if (found) {
-      await this.refreshRepository
-        .createQueryBuilder()
-        .update(RefreshToken)
-        .set({
-          token: refreshToken,
-        })
-        .where('token_id = :tokenId', { tokenId: found.token_id })
-        .execute();
-    } else {
-      console.log('없');
-
-      await this.refreshRepository
-        .createQueryBuilder()
-        .insert()
-        .into(RefreshToken)
-        .values({
-          user_id: userId,
-          token: refreshToken,
-        })
-        .execute();
-    }
-
-    found = await this.getRefreshTokenbyUserId(userId);
-    return found;
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.refreshRepository
+      .createQueryBuilder()
+      .update(RefreshToken)
+      .set({
+        token: refreshToken,
+      })
+      .where('user_id = :userId', { userId })
+      .execute();
+    return;
   }
 }

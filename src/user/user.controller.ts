@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
@@ -18,7 +19,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { LoginRequestType } from './dtos/loginrequesttype .dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GoogleRequest } from 'passport-google-oauth20';
-import { LoginRequiredMiddleware } from './loginRequired.middleware';
+import { LocalAuthGuard } from './guards/local-service.guard';
 
 import { Response } from 'express';
 
@@ -37,13 +38,12 @@ export class UserController {
     const newUser = (
       await this.userService.createUser(createUserDto)
     ).readonlyData();
-    console.log(newUser);
     return newUser;
   }
 
   @Post('/resign')
   @UsePipes(ValidationPipe)
-  @UseGuards(LoginRequiredMiddleware)
+  @UseGuards(LocalAuthGuard)
   async deleteUser(): Promise<boolean> {
     this.logger.log(' user create 요청 실행 !');
 
@@ -53,10 +53,19 @@ export class UserController {
   }
 
   @Put('/edit')
-  @UseGuards(LoginRequiredMiddleware)
   @UsePipes(ValidationPipe)
-  async updateUser(@Body() updateUserDto: UpdateUserDto): Promise<User> {
+  @UseGuards(LocalAuthGuard)
+  async updateUser(
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: Request,
+  ): Promise<User> {
     this.logger.log(' user put 요청 실행 !');
+    const userId = req['user'];
+
+    if (updateUserDto.userId != userId) {
+      throw new UnauthorizedException('다른 유저의 정보를 수정할수 없습니다.');
+    }
+
     const newUser = await this.userService.updateUser(updateUserDto);
     return newUser;
   }
