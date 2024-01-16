@@ -37,19 +37,11 @@ export class UserService {
 
   async connectDB(operation: () => Promise<any>): Promise<any> {
     const queryRunner = await this.dataSource.createQueryRunner();
-    console.log('1');
     try {
       await queryRunner.connect();
-      console.log('2');
-
       await queryRunner.startTransaction();
-      console.log('3');
-
       await operation(); // 비동기 작업 앞에 await 추가
-      console.log('4');
-
       await queryRunner.commitTransaction();
-      console.log('5');
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
