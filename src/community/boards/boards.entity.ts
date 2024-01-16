@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ name: 'boards' })
+@Entity({ name: 'BOARD' })
 export class Board extends BaseEntity {
   //user, report 보드와 관계 맺어야 함
 
@@ -16,7 +16,7 @@ export class Board extends BaseEntity {
   @Column({ type: 'varchar', length: 50, name: 'user_id' })
   userId: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, name: 'title' })
   title: string;
 
   @Column({ type: 'text' })
@@ -32,7 +32,10 @@ export class Board extends BaseEntity {
   })
   status: string;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({
+    type: 'datetime',
+    name: 'created_at',
+  })
   createdAt: Date;
 
   @Column({ type: 'datetime', nullable: true, name: 'updated_at' })

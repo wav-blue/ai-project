@@ -15,7 +15,9 @@ export class CreateBoardDto {
 
 //게시물 수정
 export class UpdateBoardDto {
-  boardId?: number;
+  @IsNotEmpty()
+  @IsNumber()
+  boardId: number;
 
   @IsNotEmpty()
   @IsString()

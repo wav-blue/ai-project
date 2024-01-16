@@ -65,6 +65,6 @@ export class UserRepository {
 
     const newUser = await this.getUserbyId(userId);
 
-    //return newUser;
+    return newUser;
   }
 }
