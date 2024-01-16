@@ -1,4 +1,4 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -17,9 +17,12 @@ export class UserRepository {
       .createQueryBuilder()
       .select('user')
       .from(User, 'user')
-      .where('user.userId = :userId', { userId })
+      .where('user.user_id = :userId', { userId })
       .getOne();
 
+    // const found = await this.userRepository.findOne({
+    //   where: { user_id: userId },
+    // });
     return found;
   }
 
@@ -27,12 +30,15 @@ export class UserRepository {
     const found = await this.userRepository
       .createQueryBuilder()
       .select('user')
+      //.select(['user.user_id', 'user.email', 'user.password']) // 원하는 컬럼을 명시적으로 선택
       .from(User, 'user')
       .where('user.email = :email', { email })
       .getOne();
 
+    // const found = await this.userRepository.findOne({ where: { email } });
     return found;
   }
+
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { email, logintype, password } = createUserDto;
 
@@ -47,7 +53,16 @@ export class UserRepository {
       })
       .execute();
 
-    const newUser = this.getUserbyId(newUserResults.identifiers[0].userId);
+    const newUser = await this.getUserbyId(
+      newUserResults.identifiers[0].user_id,
+    );
+    // const newUser = await this.userRepository.create({
+    //   email: email,
+    //   logintype: logintype,
+    //   password: password,
+    // });
+    // await this.userRepository.save(newUser);
+
     return newUser;
   }
 
@@ -60,11 +75,13 @@ export class UserRepository {
       .set({
         password: password,
       })
-      .where('user.userId = :userId', { userId })
+      .where('user_id = :userId', { userId })
       .execute();
 
-    const newUser = await this.getUserbyId(userId);
+    const found = await this.getUserbyId(userId);
+    // found.password = password;
+    // await this.userRepository.save(found);
 
-    return newUser;
+    return found;
   }
 }

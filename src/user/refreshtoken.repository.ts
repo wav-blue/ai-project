@@ -4,62 +4,66 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RefreshTokenRepository {
-  private userRepository: Repository<RefreshToken>;
+  private refreshRepository: Repository<RefreshToken>;
 
   constructor(private readonly dataSource: DataSource) {
-    this.userRepository = this.dataSource.getRepository(RefreshToken);
+    this.refreshRepository = this.dataSource.getRepository(RefreshToken);
   }
 
   async getRefreshTokenbyUserId(userId: string): Promise<RefreshToken> {
-    const found = await this.userRepository
+    const found = await this.refreshRepository
       .createQueryBuilder()
       .select('refreshtoken')
       .from(RefreshToken, 'refreshtoken')
-      .where('refreshtoken.userId = :userId', { userId })
+      .where('refreshtoken.user_id = :userId', { userId })
       .getOne();
 
     return found;
   }
 
   async getRefreshTokenbyTokenId(tokenId: string): Promise<RefreshToken> {
-    const found = await this.userRepository
+    const found = await this.refreshRepository
       .createQueryBuilder()
-      .select('refreshtoken')
+      .select('tokenId')
       .from(RefreshToken, 'refreshtoken')
-      .where('refreshtoken.tokenId = :tokenId', { tokenId })
+      .where('refreshtoken.token_id = :tokenId', { tokenId })
       .getOne();
 
     return found;
   }
 
-  async createRefreshToken(userId, refreshToken): Promise<RefreshToken> {
-    let found = this.getRefreshTokenbyUserId(userId);
+  async createRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<RefreshToken> {
+    console.log(userId, refreshToken);
+    let found = await this.getRefreshTokenbyUserId(userId);
 
+    console.log(found);
     if (found) {
-      await this.userRepository
+      await this.refreshRepository
         .createQueryBuilder()
         .update(RefreshToken)
         .set({
           token: refreshToken,
         })
-        .where('user.userId = :userId', { userId })
+        .where('token_id = :tokenId', { tokenId: found.token_id })
         .execute();
-    }
+    } else {
+      console.log('없');
 
-    //const newTokenResults =
-    else {
-      await this.userRepository
+      await this.refreshRepository
         .createQueryBuilder()
         .insert()
         .into(RefreshToken)
         .values({
-          userId,
+          user_id: userId,
           token: refreshToken,
         })
         .execute();
     }
 
-    found = this.getRefreshTokenbyUserId(userId);
+    found = await this.getRefreshTokenbyUserId(userId);
     return found;
   }
 }

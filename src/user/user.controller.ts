@@ -32,9 +32,12 @@ export class UserController {
 
   @Post('/register')
   @UsePipes(ValidationPipe)
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
+  async createUser(@Body() createUserDto: CreateUserDto) {
     this.logger.log(' user create 요청 실행 !');
-    const newUser = await this.userService.createUser(createUserDto);
+    const newUser = (
+      await this.userService.createUser(createUserDto)
+    ).readonlyData();
+    console.log(newUser);
     return newUser;
   }
 
@@ -50,8 +53,8 @@ export class UserController {
   }
 
   @Put('/edit')
-  @UsePipes(ValidationPipe)
   @UseGuards(LoginRequiredMiddleware)
+  @UsePipes(ValidationPipe)
   async updateUser(@Body() updateUserDto: UpdateUserDto): Promise<User> {
     this.logger.log(' user put 요청 실행 !');
     const newUser = await this.userService.updateUser(updateUserDto);
@@ -62,7 +65,7 @@ export class UserController {
   async userLoginbyEmail(
     @Body() loginRequest: LoginRequestType,
     @Res() res: Response,
-  ): Promise<User> {
+  ) {
     const { email, password } = loginRequest;
     this.logger.log(' user login 요청 실행 !');
 
@@ -70,7 +73,7 @@ export class UserController {
       await this.userService.userLoginbyEmail(email, password);
 
     this.setCookies(res, accessToken, refreshToken);
-    return user;
+    res.send(user.readonlyData());
   }
 
   // @Get('/login/google')
@@ -94,23 +97,20 @@ export class UserController {
   //   return true;
   // }
   setCookies(@Res() res: Response, accessToken, refreshToken): void {
-    const accesscookieExpires = new Date();
-    accesscookieExpires.setDate(
-      accesscookieExpires.getDate() + +jwtConfig.refresh_expiresIn,
-    );
-    const refreshcookieExpires = new Date();
-    refreshcookieExpires.setDate(
-      refreshcookieExpires.getDate() + +jwtConfig.refresh_expiresIn,
-    );
     //토큰 설정
     res.cookie('accessToken', accessToken, {
-      expires: accesscookieExpires,
+      domain: 'localhost',
+      maxAge: 600 * 1000,
       httpOnly: true,
+      path: '/',
+    });
+    res.cookie('refreshToken', refreshToken, {
+      domain: 'localhost',
+      maxAge: 3600 * 1000,
+      httpOnly: true,
+      path: '/',
     });
 
-    res.cookie('refreshToken', refreshToken, {
-      expires: refreshcookieExpires,
-      httpOnly: true,
-    });
+    return;
   }
 }

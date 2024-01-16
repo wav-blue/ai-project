@@ -15,6 +15,7 @@ export class LoginRequiredMiddleware implements NestMiddleware {
   constructor(private jwt: JwtService) {}
 
   use(req: Request, res: Response, next: NextFunction) {
+    console.log('login확인');
     // 쿠키에서 토큰을 가져옵니다.
     const userAccessToken = req.cookies.accessToken;
     const userRefreshToken = req.cookies.refreshToken;

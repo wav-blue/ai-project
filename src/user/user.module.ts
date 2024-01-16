@@ -7,10 +7,11 @@ import { User } from './user.entity';
 import { MemberShip } from './membership.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokenRepository } from './refreshtoken.repository';
+import { RefreshToken } from './refreshtoken.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, MemberShip]),
+    TypeOrmModule.forFeature([User, MemberShip, RefreshToken]),
     JwtModule.register({
       secret: 'SECRET_KEY', // JWT Signature의 Secret 값 입력
     }),
