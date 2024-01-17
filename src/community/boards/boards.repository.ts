@@ -8,23 +8,20 @@ export class BoardsRepository {
   //생성자 필요???
 
   //게시판 목록
+  // //게시판 목록 카운팅
   async countAllBoards(queryRunner: QueryRunner): Promise<number> {
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
         .select('COUNT(B.boardId) AS count')
-        .where('B.status= :status', { status: 'normal' })
         .getRawOne();
-      return result.count;
+      return parseInt(result.count);
     } catch (err) {
       console.error('게시판 목록 카운팅 중 뭔가 잘못됨:', err.message);
       throw new Error('게시글 카운팅 실패');
     }
   }
-
-  //커버링 인덱스 페이지네이션으로 수정 필요??(typeorm skip, take는 limit offset이 아님??)
-  //게시글 수 계산 + 가져오기 + 페이지네이션?? 어떤 순서??
-  //페이지네이션은 ts코드로 하나??
+  // //게시판 목록 페이지네이션
   async selectAllBoards(
     previous: number,
     show: number,
@@ -36,11 +33,11 @@ export class BoardsRepository {
         .select([
           'B.boardId',
           'B.title',
+          'B.tag',
           'B.views',
           'B.createdAt',
           'B.updatedAt',
         ])
-        .where('B.status= :status', { status: 'normal' })
         .orderBy('B.createdAt', 'DESC')
         .skip(previous)
         .take(show)
@@ -53,10 +50,112 @@ export class BoardsRepository {
     }
   }
 
-  //검색
-  //게시판 페이지 목록 총 몇페이지인지 계산하는거 필요한가?
-  //한 쿼리에서 갯수 계산 vs 갯수 계산 쿼리 따로 만들기?
-  //게시글 수 계산 + 가져오기 + 페이지네이션?? 어떤 순서??
+  //태그(카테고리)별 게시글 목록
+  // //태그별 목록 카운팅
+  async countBoardsByTag(
+    tag: string,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder(Board, 'B')
+        .select('COUNT(B.boardId) AS count')
+        .where('B.tag = :tag', { tag })
+        .getRawOne();
+      return parseInt(result.count);
+    } catch (err) {
+      console.error('게시판 태그별 카운팅 중 뭔가 잘못됨:', err.message);
+      throw new Error('게시글 태그별 카운팅 실패');
+    }
+  }
+  // //태그별 목록 페이지네이션
+  async selectBoardsByTag(
+    tag: string,
+    previous: number,
+    show: number,
+    queryRunner: QueryRunner,
+  ): Promise<Board[]> {
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder(Board, 'B')
+        .select([
+          'B.boardId',
+          'B.title',
+          'B.tag',
+          'B.views',
+          'B.createdAt',
+          'B.updatedAt',
+        ])
+        .where('B.tag = :tag', { tag })
+        .orderBy('B.createdAt', 'DESC')
+        .skip(previous)
+        .take(show)
+        .getMany();
+      return result;
+    } catch (err) {
+      console.error('게시판 태그별 리스팅중 뭔가 잘못됨:', err.message);
+      throw new Error('게시글 태그별 목록 읽기 실패');
+    }
+  }
+
+  //태그(카테고리)별 게시글 검색
+  // // 태그별 검색 카운팅
+  async countBoardsByTagAndSearch(
+    tag: string,
+    keyword: string,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder(Board, 'B')
+        .select('COUNT(B.boardId) AS count')
+        .where('B.tag = :tag', { tag })
+        .andWhere('B.title LIKE :keyword OR B.content LIKE :keyword', {
+          keyword: `%${keyword}%`,
+        })
+        .getRawOne();
+      return parseInt(result.count);
+    } catch (err) {
+      console.error('게시판 태그별 검색 카운팅중 뭔가 잘못됨:', err.message);
+      throw new Error('게시글 태그별 검색 결과 카운팅 실패');
+    }
+  }
+  // // 태그별 검색 페이지네이션
+  async selectBoardsByTagAndSearch(
+    tag: string,
+    keyword: string,
+    previous: number,
+    show: number,
+    queryRunner: QueryRunner,
+  ): Promise<Board[]> {
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder(Board, 'B')
+        .select([
+          'B.boardId',
+          'B.title',
+          'B.tag',
+          'B.views',
+          'B.createdAt',
+          'B.updatedAt',
+        ])
+        .where('B.tag = :tag', { tag })
+        .andWhere('B.title LIKE :keyword OR B.content LIKE :keyword', {
+          keyword: `%${keyword}%`,
+        })
+        .orderBy('B.createdAt', 'DESC')
+        .skip(previous)
+        .take(show)
+        .getMany();
+      return result;
+    } catch (err) {
+      console.error('게시판 태그별 검색중 뭔가 잘못됨:', err.message);
+      throw new Error('게시글 태그별 검색 결과 읽기 실패');
+    }
+  }
+
+  //일반 검색
+  // //일반 검색 카운팅
   async countBoardsBySearch(
     keyword: string,
     queryRunner: QueryRunner,
@@ -65,17 +164,17 @@ export class BoardsRepository {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
         .select('COUNT(B.boardId) AS count')
-        .where('B.status= :status', { status: 'nomal' })
-        .andWhere('B.title LIKE :keyword OR B.content LIKE :keyword', {
+        .where('B.title LIKE :keyword OR B.content LIKE :keyword', {
           keyword: `%${keyword}%`,
         })
         .getRawOne();
-      return result.count;
+      return parseInt(result.count);
     } catch (err) {
       console.error('게시글 검색 카운팅 중 뭔가 잘못됨:', err.message);
       throw new Error('게시글 검색 카운팅 실패');
     }
   }
+  // //일반 검색 페이지네이션
   async selectBoardsBySearch(
     keyword: string,
     previous: number,
@@ -88,15 +187,15 @@ export class BoardsRepository {
         .select([
           'B.boardId',
           'B.title',
+          'B.tag',
           'B.views',
           'B.createdAt',
           'B.updatedAt',
         ])
-        .where('B.status= :status', { status: 'nomal' })
-        .andWhere('B.title LIKE :keyword OR B.content LIKE :keyword', {
+        .where('B.title LIKE :keyword OR B.content LIKE :keyword', {
           keyword: `%${keyword}%`,
         })
-        .orderBy('createdAt', 'DESC')
+        .orderBy('B.createdAt', 'DESC')
         .skip(previous)
         .take(show)
         .getMany();
@@ -107,8 +206,8 @@ export class BoardsRepository {
     }
   }
 
-  //특정 유저의 게시글 가져오기
-  //삭제 신고도 보여줌
+  //특정 유저 작성글 목록
+  // //특정 유저글 카운팅
   async countUserBoards(
     userId: string,
     queryRunner: QueryRunner,
@@ -119,12 +218,13 @@ export class BoardsRepository {
         .select('COUNT(B.boardId) AS count')
         .where('B.userId= :userId', { userId })
         .getRawOne();
-      return result.count;
+      return parseInt(result.count);
     } catch (err) {
       console.error(`${userId}의 게시물 카운팅 중 뭔가 잘못됨:`, err.message);
       throw new Error(`${userId}의 게시물 카운팅 실패`);
     }
   }
+  // //특정 유저글 페이지네이션
   async selectUserBoards(
     userId: string,
     previous: number,
@@ -137,8 +237,8 @@ export class BoardsRepository {
         .select([
           'B.boardId',
           'B.title',
+          'B.tag',
           'B.views',
-          'B.status',
           'B.createdAt',
           'B.updatedAt',
         ])
@@ -154,11 +254,12 @@ export class BoardsRepository {
     }
   }
 
-  //게시글 읽기
+  //게시글 하나 읽기
   async selectBoard(boardId: number, queryRunner: QueryRunner): Promise<Board> {
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
+        .withDeleted()
         .where('B.boardId = :boardId', { boardId })
         .getOneOrFail();
 
@@ -170,7 +271,6 @@ export class BoardsRepository {
   }
 
   //조회수 카운팅
-  //자기가 작성한 게시글 조회수 올리나?
   async updateView(boardId: number, queryRunner: QueryRunner): Promise<Board> {
     try {
       const result = await queryRunner.manager
@@ -193,24 +293,22 @@ export class BoardsRepository {
     queryRunner: QueryRunner,
   ): Promise<Board> {
     try {
+      console.log(typeof boardId, boardId);
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
-        .select(['B.boardId', 'B.userId'])
+        .select('B.userId')
         .where('B.boardId = :boardId', { boardId })
         .getOneOrFail();
       console.log(result);
-
       return result;
     } catch (err) {
       console.error('게시물 작성자 확인 중 뭔가 잘못됨:', err.message);
-      throw new Error('게시물 작성자 확인 실패');
+      throw new Error('삭제된 글이거나 게시물 작성자 확인 실패');
     }
   }
 
   //게시글 작성
-  //createdAt 이 자동으로 들어가지 않는 문제 발생중!!!
   //이미지 url 테이블 따로 생성
-  //createdAt 자동으로 들어가는지 확인
   async insertBoard(
     createBoardDto: CreateBoardDto,
     queryRunner: QueryRunner,
@@ -223,27 +321,26 @@ export class BoardsRepository {
         .values(createBoardDto)
         .execute();
 
-      return result.raw;
+      return result.identifiers[0] as Board;
     } catch (err) {
       console.error('게시물 저장 중 뭔가 잘못됨:', err.message);
       throw new Error('게시물 저장 실패');
     }
   }
+
   //게시글 수정
   async updateBoard(
     updateBoardDto: UpdateBoardDto,
     queryRunner: QueryRunner,
-  ): Promise<Board> {
+  ): Promise<void> {
     try {
-      const { boardId, title, content } = updateBoardDto;
-      const result = await queryRunner.manager
+      const { boardId, ...Dto } = updateBoardDto;
+      await queryRunner.manager
         .createQueryBuilder()
         .update(Board)
-        .set({ title, content, updatedAt: new Date() })
+        .set(Dto)
         .where('boardId = :boardId', { boardId })
         .execute();
-
-      return result.raw;
     } catch (err) {
       console.error('게시물 수정 중 뭔가 잘못됨:', err.message);
       throw new Error('게시물 수정 실패');
@@ -251,21 +348,17 @@ export class BoardsRepository {
   }
 
   //게시글 삭제
-  //softdelete?
-  //삭제 성공하면 리디렉트 시키고, 삭제 페이지는 삭제로 보여야 함.
   async softDeleteBoard(
     boardId: number,
     queryRunner: QueryRunner,
-  ): Promise<Board> {
+  ): Promise<void> {
     try {
-      const result = await queryRunner.manager
-        .createQueryBuilder()
-        .update(Board)
-        .set({ status: 'deleted', deletedAt: new Date() })
+      await queryRunner.manager
+        .createQueryBuilder(Board, 'B')
+        .update()
+        .set({ status: 'deleted', deletedAt: () => 'CURRENT_TIMESTAMP' })
         .where('boardId = :boardId', { boardId })
         .execute();
-
-      return result.raw;
     } catch (err) {
       console.error('게시물 삭제 중 뭔가 잘못됨:', err.message);
       throw new Error('게시물 삭제 실패');
