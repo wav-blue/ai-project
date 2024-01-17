@@ -3,6 +3,7 @@ import { CommentRepository } from './comments.repository';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DataSource } from 'typeorm';
+import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 
 @Injectable()
 export class CommentsService {
@@ -65,6 +66,48 @@ export class CommentsService {
       await this.commentRepository.createComment(
         'copyUser123',
         createCommentDto,
+        queryRunner,
+      );
+
+      console.log('createComment 완료');
+
+      // commit transaction now:
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      console.log('error catch!!');
+      // since we have errors let's rollback changes we made
+      await queryRunner.rollbackTransaction();
+      throw new NotFoundException();
+    } finally {
+      // you need to release query runner which is manually created:
+      console.log('finally!!');
+      await queryRunner.release();
+    }
+
+    return 'complete';
+  }
+
+  async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
+    const { commentId } = createCommentReportDto;
+    // create a new query runner
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    // establish real database connection using our new query runner
+    await queryRunner.connect();
+
+    // lets now open a new transaction:
+    await queryRunner.startTransaction();
+    console.log('queryRunner 시도');
+    try {
+      //const found = await this.commentRepository.findComment(commentId);
+      const found = null;
+      if (!found) {
+        // deleted 상태이거나 데이터베이스에서 찾을 수 없는 댓글
+        console.log('에러 실행');
+        throw new NotFoundException('이미 삭제된 댓글');
+      }
+      await this.commentRepository.createCommentReport(
+        createCommentReportDto,
         queryRunner,
       );
 

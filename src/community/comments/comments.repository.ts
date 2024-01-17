@@ -3,6 +3,7 @@ import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
+import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 
 @Injectable()
 export class CommentRepository {
@@ -87,6 +88,23 @@ export class CommentRepository {
 
     console.log('newComment', newComment);
     const result = await queryRunner.manager.save(newComment);
+    return result;
+  }
+
+  // 신고 내역 업로드
+  async createCommentReport(
+    createCommentReportDto: CreateCommentReportDto,
+    queryRunner: QueryRunner,
+  ) {
+    const newReport = queryRunner.manager.create(Comment, {
+      ...createCommentReportDto,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    console.log('newComment', newReport);
+    const result = await queryRunner.manager.save(newReport);
     return result;
   }
 
