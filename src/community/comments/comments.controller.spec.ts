@@ -1,3 +1,4 @@
+import { DataSource } from 'typeorm';
 import { CommentsController } from './comments.controller';
 import { CommentRepository } from './comments.repository';
 import { CommentsService } from './comments.service';
@@ -6,9 +7,10 @@ describe('commentsController', () => {
   let commentsController: CommentsController;
   let commentsService: CommentsService;
   let commentRepository: CommentRepository;
+  let dataSource: DataSource;
 
   beforeEach(() => {
-    commentsService = new CommentsService(commentRepository);
+    commentsService = new CommentsService(commentRepository, dataSource);
     commentsController = new CommentsController(commentsService);
   });
 

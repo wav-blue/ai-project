@@ -9,3 +9,5 @@ jwt:
   represh_expiresIn: 3600
   access_expiresIn: 600
 
+pagination:
+  comment_size: 10
