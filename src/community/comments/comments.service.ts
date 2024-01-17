@@ -1,9 +1,15 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
+import { parseDateTimeToString } from 'src/utils/dateFunction';
 
 @Injectable()
 export class CommentsService {
@@ -17,120 +23,139 @@ export class CommentsService {
     return found;
   }
 
+  // 해당 Board의 Comment 조회
   async getBoardComments(boardId: number, page: number): Promise<Comment[]> {
-    const check = await this.commentRepository.checkBoardNull();
-    if (!check) {
-      throw new NotFoundException('Not FOund!!');
-    }
-    const found = this.commentRepository.getBoardComments(boardId);
-    return found;
-  }
+    let results = null;
 
-  async createComment(user: string, createCommentDto: CreateCommentDto) {
-    // create a new query runner
     const queryRunner = this.dataSource.createQueryRunner();
-
-    // establish real database connection using our new query runner
     await queryRunner.connect();
 
-    // lets now open a new transaction:
     await queryRunner.startTransaction();
-    console.log('queryRunner 시도');
     try {
-      console.log('실험용으로 댓글 1개 추가');
+      const found = await this.commentRepository.checkBoard(
+        boardId,
+        queryRunner,
+      );
+
+      if (!found) {
+        throw new NotFoundException('해당하는 게시글이 없습니다.');
+      }
+
+      results = this.commentRepository.getBoardComments(boardId);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      if (err instanceof NotFoundException) {
+        throw new NotFoundException();
+      } else {
+        throw new ConflictException();
+      }
+    } finally {
+      await queryRunner.release();
+    }
+    return results;
+  }
+
+  // Comment 작성
+  async createComment(user: string, createCommentDto: CreateCommentDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+    try {
+      const found = await this.commentRepository.checkBoard(
+        createCommentDto.boardId,
+        queryRunner,
+      );
+
+      if (!found) {
+        throw new NotFoundException('해당하는 게시글이 없습니다.');
+      }
+
       await this.commentRepository.createComment(
         user,
         createCommentDto,
         queryRunner,
       );
-
-      // console.log('board_id로 Board가 존재하는지 확인');
-      //   const found = await this.commentRepository.checkBoard(
-      //     createCommentDto.boardId,
-      //     queryRunner,
-      //   );
-
-      // < 테스트용!! >
-      // checkBoardNull => 무조건 null을 반환
-      // 주석 풀어두면 동작이 제대로 Rollback되는지 확인 가능
-      //   const found = await this.commentRepository.checkBoardNull();
-      //   console.log('found 값: ', found);
-
-      //   if (!found) {
-      //     console.log('NotFoundException 발생!!');
-      //     throw new NotFoundException('Not Found!!');
-      //   }
-
-      console.log('실험용으로 댓글 1개 더 추가');
-      // execute some operations on this transaction:
-      await this.commentRepository.createComment(
-        'copyUser123',
-        createCommentDto,
-        queryRunner,
-      );
-
-      console.log('createComment 완료');
-
-      // commit transaction now:
       await queryRunner.commitTransaction();
     } catch (err) {
-      console.log('error catch!!');
-      // since we have errors let's rollback changes we made
       await queryRunner.rollbackTransaction();
-      throw new NotFoundException();
+      if (err instanceof NotFoundException) {
+        throw new NotFoundException(err.message);
+      } else {
+        throw new ConflictException(err.message);
+      }
     } finally {
-      // you need to release query runner which is manually created:
-      console.log('finally!!');
       await queryRunner.release();
     }
 
-    return 'complete';
+    return 'request success';
   }
 
+  // 신고 내역 작성 && 신고 누적 시 삭제
   async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
     const { commentId } = createCommentReportDto;
-    // create a new query runner
     const queryRunner = this.dataSource.createQueryRunner();
-
-    // establish real database connection using our new query runner
     await queryRunner.connect();
 
-    // lets now open a new transaction:
     await queryRunner.startTransaction();
     console.log('queryRunner 시도');
     try {
-      //const found = await this.commentRepository.findComment(commentId);
       const found = null;
       if (!found) {
         // deleted 상태이거나 데이터베이스에서 찾을 수 없는 댓글
-        console.log('에러 실행');
-        throw new NotFoundException('이미 삭제된 댓글');
+        throw new ConflictException('이미 삭제된 댓글입니다.');
       }
       await this.commentRepository.createCommentReport(
         createCommentReportDto,
         queryRunner,
       );
 
-      console.log('createComment 완료');
-
-      // commit transaction now:
       await queryRunner.commitTransaction();
     } catch (err) {
-      console.log('error catch!!');
-      // since we have errors let's rollback changes we made
       await queryRunner.rollbackTransaction();
-      throw new NotFoundException();
+      if (err instanceof NotFoundException) {
+        throw new NotFoundException(err.message);
+      } else {
+        throw new ConflictException(err.message);
+      }
     } finally {
-      // you need to release query runner which is manually created:
-      console.log('finally!!');
       await queryRunner.release();
     }
-
-    return 'complete';
+    return 'request success';
   }
 
-  async deleteComment(user, commentId: number) {
-    const result = this.commentRepository.deleteComment(user, commentId);
-    return result;
+  // 댓글 상태 변경
+  async deleteComment(user: string, commentId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+    console.log('queryRunner 시도');
+    try {
+      const found = await this.commentRepository.checkComment(commentId);
+      if (!found || found.status != 'normal') {
+        // deleted 상태이거나 데이터베이스에서 찾을 수 없는 댓글
+        throw new NotFoundException('댓글이 존재하지 않습니다.');
+      }
+      const result = await this.commentRepository.deleteComment(
+        user,
+        commentId,
+      );
+
+      console.log('result: ', result);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      if (err instanceof NotFoundException) {
+        throw new NotFoundException(err.message);
+      } else {
+        throw new ConflictException(err.message);
+      }
+    } finally {
+      await queryRunner.release();
+    }
+    return 'request success';
   }
 }

@@ -1,6 +1,5 @@
 import {
   Body,
-  ConflictException,
   Controller,
   Delete,
   Get,
@@ -23,6 +22,7 @@ export class CommentsController {
   private logger = new Logger('commentsController');
   constructor(private commentsService: CommentsService) {}
 
+  // 테스트용 전체 조회
   @Get('/')
   getAllComments(): Promise<Comment[]> {
     this.logger.log(`get 요청 받아짐`);
@@ -36,10 +36,8 @@ export class CommentsController {
     @Param('boardId', ParseIntPipe) boardId: number,
     @Query() page: number,
   ): Promise<Comment[]> {
-    console.log(page);
+    const user = 'user001';
     const comments = await this.commentsService.getBoardComments(boardId, page);
-    console.log('Get result : ');
-    console.log(comments);
     return comments;
   }
 
@@ -50,10 +48,11 @@ export class CommentsController {
     @GetUserTemp() user: string,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    const result = this.commentsService.createComment(user, createCommentDto);
+    const result = this.commentsService.createComment(
+      'user001',
+      createCommentDto,
+    );
     // result : 작성 완료
-    console.log('Post result : ');
-    console.log(result);
     return result;
   }
 

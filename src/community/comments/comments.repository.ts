@@ -31,12 +31,23 @@ export class CommentRepository {
     return null;
   }
 
+  async checkComment(commentId: number) {
+    const found = this.commentRepository
+      .createQueryBuilder()
+      .select('comment')
+      .from(Comment, 'comment')
+      .where('comment.comment_id = :commentId', { commentId })
+      .getOne();
+
+    return found;
+  }
+
   async checkBoard(boardId: number, queryRunner: QueryRunner) {
     const found = await queryRunner.manager
       .createQueryBuilder()
-      .select('boards')
-      .from(Board, 'boards')
-      .where('boards.board_id = :boardId', {
+      .select('board')
+      .from(Board, 'board')
+      .where('board.board_id = :boardId', {
         boardId,
       })
       .getOne();
@@ -59,9 +70,11 @@ export class CommentRepository {
     this.logger.log(`${boardId}번 게시글 댓글 조회`);
     const found = this.commentRepository
       .createQueryBuilder()
-      .select('comments')
-      .from(Comment, 'comments')
-      .where('comments.board_id = :boardId', { boardId })
+      .select('comment')
+      .from(Comment, 'comment')
+      .where(`comment.board_id = :boardId`, {
+        boardId,
+      })
       .getMany();
 
     return found;
