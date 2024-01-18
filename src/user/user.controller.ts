@@ -91,29 +91,27 @@ export class UserController {
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req: Request) {}
 
-  /* Get Google Auth Callback */
-  @Get('/auth/google/callback')
+  @Get('/login/google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(
     @Req() req: GoogleRequest,
     @Res() res: Response, // : Promise<GoogleLoginAuthOutputDto>
   ) {
-    // return res.send(user);
     console.log('callback tests, google');
     const userDto = req['user'];
+
+    console.log(userDto);
 
     const { user, accessToken, refreshToken } =
       await this.userService.googleLogin(userDto);
 
+    console.log('cont', user, accessToken, refreshToken);
+
     this.setCookies(res, accessToken, refreshToken);
-    return user;
+    console.log('user login end');
+    res.send(user.readonlyData());
   }
 
-  // @Post('/logout')
-  // async userLogout(): Promise<boolean> {
-  //   // 쿠키 삭제
-  //   return true;
-  // }
   setCookies(@Res() res: Response, accessToken, refreshToken): void {
     //토큰 설정
     res.cookie('accessToken', accessToken, {

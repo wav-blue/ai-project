@@ -27,10 +27,10 @@ dotenv.config();
 export class UserService {
   constructor(
     private dataSource: DataSource,
-    //@InjectRepository(User)
+    // @InjectRepository(User)
     private userRepository: UserRepository,
 
-    //@InjectRepository(RefreshToken)
+    // @InjectRepository(RefreshToken)
     private refreshTokenRepository: RefreshTokenRepository,
     private jwt: JwtService,
   ) {}
@@ -100,9 +100,10 @@ export class UserService {
   async googleLogin(
     user,
   ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    console.log('service:');
     // 유저 중복 검사
     let found = await this.userRepository.getUserbyEmail(user.email);
-
+    console.log(found);
     // 없는 유저면 DB에 유저정보 저장
     if (!found) {
       const createuserDto = {
