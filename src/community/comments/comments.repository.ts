@@ -96,9 +96,29 @@ export class CommentRepository {
     return found;
   }
 
-  async getBoardComments(boardId: number): Promise<Comment[]> {
+  async getMyComments(
+    userId: string,
+    page: number,
+    queryRunner: QueryRunner,
+  ): Promise<Comment[]> {
+    this.logger.log(`${userId}가 작성한 댓글 조회`);
+    const comments = await queryRunner.manager
+      .createQueryBuilder()
+      .select('comment')
+      .from(Comment, 'comment')
+      .where(`comment.user_id = :userId`, {
+        userId,
+      })
+      .getMany();
+
+    return comments;
+  }
+  async getBoardComments(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<Comment[]> {
     this.logger.log(`${boardId}번 게시글 댓글 조회`);
-    const comments = this.commentRepository
+    const comments = await queryRunner.manager
       .createQueryBuilder()
       .select('comment')
       .from(Comment, 'comment')
@@ -152,13 +172,14 @@ export class CommentRepository {
     return result;
   }
 
-  async deleteComment(user, commentId) {
+  async deleteComment(userId: string, commentId: number) {
     try {
       const result = await this.commentRepository
         .createQueryBuilder()
         .update(Comment)
         .set({
           status: 'deleted',
+          updatedAt: new Date(),
           deletedAt: new Date(),
         })
         .where('comment_id = :commentId', { commentId })

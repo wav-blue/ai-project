@@ -9,8 +9,6 @@ import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
-import { parseDateTimeToString } from 'src/utils/dateFunction';
-import { ReadCommentDto } from './dto/read-comment.dto';
 
 @Injectable()
 export class CommentsService {
@@ -23,6 +21,65 @@ export class CommentsService {
   async getAllComments(): Promise<Comment[]> {
     const found = this.commentRepository.getAllComments();
     return found;
+  }
+
+  async getMyComments(userId: string, page: number): Promise<Comment[]> {
+    let results = null;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+    try {
+      results = await this.commentRepository.getMyComments(
+        userId,
+        page,
+        queryRunner,
+      );
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      if (err instanceof NotFoundException) {
+        throw new NotFoundException();
+      } else {
+        throw new ConflictException();
+      }
+    } finally {
+      await queryRunner.release();
+    }
+    try {
+      if (!results) {
+        return;
+      }
+      for (let i = 0; i < results.length; i++) {
+        delete results[i].updatedAt;
+        delete results[i].deletedAt;
+        if (results[i].status !== 'normal') {
+          results[i].anonymous_number = 0;
+          results[i].content = '삭제된 댓글입니다.';
+          results[i].status = 'deleted';
+          results[i].position = 'deleted';
+          results[i].createdAt = 'deleted';
+        }
+      }
+      // const comments: ReadCommentDto[] = results.map((comment: any) => {
+      //   if (comment.status !== 'normal') {
+      //     comment.anonymous_number = 0;
+      //     comment.content = '삭제된 댓글입니다.';
+      //     comment.status = 'deleted';
+      //     comment.position = 'deleted';
+      //     comment.createdAt = 'deleted';
+      //     return new ReadCommentDto(comment);
+      //   } else {
+      //     comment.createdAt = parseDateTimeToString(comment.createdAt);
+      //     new ReadCommentDto(comment);
+      //   }
+      // });
+      return results;
+    } catch (err) {
+      throw new ConflictException();
+    }
   }
 
   // 해당 Board의 Comment 조회
@@ -43,7 +100,10 @@ export class CommentsService {
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
-      results = await this.commentRepository.getBoardComments(boardId);
+      results = await this.commentRepository.getBoardComments(
+        boardId,
+        queryRunner,
+      );
 
       await queryRunner.commitTransaction();
     } catch (err) {
@@ -146,7 +206,10 @@ export class CommentsService {
   }
 
   // 신고 내역 작성 && 신고 누적 시 삭제
-  async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
+  async createCommentReport(
+    createCommentReportDto: CreateCommentReportDto,
+    userId: string,
+  ) {
     const { commentId } = createCommentReportDto;
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
