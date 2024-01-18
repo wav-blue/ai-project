@@ -9,13 +9,14 @@ export class BoardsService {
   constructor(
     private dataSource: DataSource,
     private boardsRepository: BoardsRepository,
+    // private readonly s3Service: S3Service,
   ) {}
   //추후수정
   ////페이지 작성단위 상수로 만들어서 불러오거나 or 클라이언트에서 목록 보기 갯수 쿼리파람으로 받아오기
 
   //게시판 목록 읽기
   //페이지 네이션 이게 맞는지?
-  //전체 컬럼 전부 긁기 전에 총 갯수 먼저 확인 => 정상적 요청이면 필요 컬럼 전체 긁으며 페이지네이션
+  //현재는: 전체 컬럼 전부 긁기 전에 총 갯수 먼저 확인 => 정상적 요청이면 필요 컬럼 전체 긁으며 페이지네이션
   async listBoards(
     page: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
@@ -199,9 +200,10 @@ export class BoardsService {
 
   //읽기 전 먼저 view 카운트 처리
   //비회원 가능 서비스이므로 본인작성 글도 그냥 조회수 올라가게 처리
-  //스테이터스 먼저 가져가서 읽기 처리. 삭제나 신고된상태면 status만 전송, 노말일 경우 전체 읽어오기
-  //이미지 보드에서 이미지들도 가져오기?
-  //with delete 적용해야함
+  //스테이터스 먼저 가져가서 읽기 처리  //with delete 적용
+  ////삭제나 신고된상태면 status만 전송: 프론트에서 삭제/신고된 게시물입니다 구분 안내 위해서..
+  ////상태 정상일 경우 전체 읽어오기
+  //이미지 url은 content 에 낑겨있음.
   async readBoard(boardId: number): Promise<Board> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -229,6 +231,7 @@ export class BoardsService {
   }
 
   //게시글 작성
+  //이미지 url은 content 에 낑겨있음.
   async writeBoard(createBoardDto: CreateBoardDto): Promise<Board> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -248,8 +251,23 @@ export class BoardsService {
     }
   }
 
+  //presignedURL 받아오기
+  // async getPreSignedUrl() {
+  //config 에서 키 넣은채로 만들어버리면 안되나?
+  //이슈에 질문할 것.
+  //config는 어디서 import 하는거지? 컨트롤러? 여기 서비스? 모듈?
+  //   try {
+  //     const clientUrl = this.s3Service.createPresignedUrlWithClientFORBOARDS(); //원래는 여기 키 같은거 들어감
+  //     console.log('Calling PUT using presigned URL with client');
+  //     await this.s3Service.put(clientUrl, 'Hello World');
+  //     console.log('\nDone. Check your S3 console.');
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // }
+
   //게시글 수정
-  //삭제된 글인지 먼저 확인하기!!!
+  //삭제된 글을 수정하려고 하면 사용자 검증 부분에서부터 에러 반환
   async editBoard(
     userId: string,
     updateboardDto: UpdateBoardDto,
@@ -276,7 +294,7 @@ export class BoardsService {
   }
 
   //게시글 삭제
-  //이미 삭제된 글인지 먼저 확인!!!!
+  //삭제된 글을 또 삭제하려고 하면 사용자 검증 부분에서부터 에러 반환
   async eraseBoard(userId: string, boardId: number): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

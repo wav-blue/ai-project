@@ -17,11 +17,7 @@ import { CreateBoardDto, UpdateBoardDto } from './boards.dto';
 @Controller('boards')
 export class BoardsController {
   constructor(private boardsService: BoardsService) {}
-  // !!!!게시글 태그 넣기!!!
-  //검색?(태그 검색)
-
-  //게시판 리스트 or 키워드 검색 or 태그(카테고리) 별 게시물 리스트
-  //태그 + 검색일경우 태그로 먼저 거르고 + 조인해서 검색?
+  //게시판 리스트 or 키워드 검색 or 태그(카테고리)별 게시물 리스트 or 태그별 검색 게시물 리스트
   @Get()
   async getBoardsList(
     @Query('keyword') keyword: string,
@@ -86,13 +82,12 @@ export class BoardsController {
   }
 
   //게시글쓰기
-  //생성일자 자동으로 안되는 문제 발생중
   @Post()
   @UsePipes(ValidationPipe)
   async createBoard(
     @Body() boardDto: CreateBoardDto,
   ): Promise<{ boardId: number; message: string }> {
-    const userId = 'user001'; //임시, Dto 수정 어떻게?
+    const userId = 'user001'; //임시
     boardDto.userId = userId;
     try {
       const result = await this.boardsService.writeBoard(boardDto);
@@ -102,6 +97,17 @@ export class BoardsController {
       throw err;
     }
   }
+
+  //게시글 이미지 업로드용 presigned URL 요청
+  // @Get()
+  // async getBoardImgsUrl(
+  //   @Body('filenames')filenames:Array<string>):Promise<string>{
+  //   const userId = 'user001'; //임시
+  //   try{
+  //     const result = await
+  //     return result
+  //   }catch(err){throw err}
+  // }
 
   //게시글 수정
   @Put()
