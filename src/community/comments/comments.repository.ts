@@ -25,10 +25,40 @@ export class CommentRepository {
     return found;
   }
 
-  async checkBoardNull() {
-    // 테스트용으로 Null 반환
-    // 해당하는 게시글이 없는 상황을 가정
-    return null;
+  async getAnonymousNumber(
+    user: string,
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ) {
+    const { boardId } = createCommentDto;
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('DISTINCT `anonymous_number`', 'anonymous_number')
+      .from(Comment, 'comment')
+      .where(`user_id = :user AND board_id = :boardId`, { user, boardId })
+      .getRawMany();
+
+    if (result.length === 0) {
+      return 0;
+    }
+    const { anonymous_number } = result[0];
+    return anonymous_number;
+  }
+
+  async getNewAnonymousNumber(
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ) {
+    const { boardId } = createCommentDto;
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(DISTINCT(`user_id`))', 'count')
+      .from(Comment, 'comment')
+      .where({ boardId })
+      .getRawMany();
+    console.log('count : ');
+    const { count } = result[0];
+    return count;
   }
 
   async checkComment(commentId: number) {
@@ -68,7 +98,7 @@ export class CommentRepository {
 
   async getBoardComments(boardId: number): Promise<Comment[]> {
     this.logger.log(`${boardId}번 게시글 댓글 조회`);
-    const found = this.commentRepository
+    const comments = this.commentRepository
       .createQueryBuilder()
       .select('comment')
       .from(Comment, 'comment')
@@ -77,7 +107,7 @@ export class CommentRepository {
       })
       .getMany();
 
-    return found;
+    return comments;
   }
 
   async createComment(
@@ -85,15 +115,16 @@ export class CommentRepository {
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
   ) {
-    const { boardId, content } = createCommentDto;
+    const { boardId, content, anonymous_number } = createCommentDto;
     this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
 
     const newComment = queryRunner.manager.create(Comment, {
       boardId,
       userId: user,
       content,
+      anonymous_number,
       position: 'positive',
-      status: 'not_deleted',
+      status: 'normal',
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
