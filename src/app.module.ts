@@ -7,7 +7,6 @@ import { APP_FILTER } from '@nestjs/core';
 import { ServiceExceptionToHttpExceptionFilter } from './common/exception-filter';
 import { UserModule } from './user/user.module';
 import { OrderModule } from './order/order.module';
-
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeORMConfig),

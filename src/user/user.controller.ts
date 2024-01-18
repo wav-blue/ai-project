@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
@@ -18,7 +19,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { LoginRequestType } from './dtos/loginrequesttype .dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GoogleRequest } from 'passport-google-oauth20';
-import { LoginRequiredMiddleware } from './loginRequired.middleware';
+import { LocalAuthGuard } from './guards/local-service.guard';
 
 import { Response } from 'express';
 
@@ -32,15 +33,17 @@ export class UserController {
 
   @Post('/register')
   @UsePipes(ValidationPipe)
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
+  async createUser(@Body() createUserDto: CreateUserDto) {
     this.logger.log(' user create 요청 실행 !');
-    const newUser = await this.userService.createUser(createUserDto);
+    const newUser = (
+      await this.userService.createUser(createUserDto)
+    ).readonlyData();
     return newUser;
   }
 
   @Post('/resign')
   @UsePipes(ValidationPipe)
-  @UseGuards(LoginRequiredMiddleware)
+  @UseGuards(LocalAuthGuard)
   async deleteUser(): Promise<boolean> {
     this.logger.log(' user create 요청 실행 !');
 
@@ -51,9 +54,18 @@ export class UserController {
 
   @Put('/edit')
   @UsePipes(ValidationPipe)
-  @UseGuards(LoginRequiredMiddleware)
-  async updateUser(@Body() updateUserDto: UpdateUserDto): Promise<User> {
+  @UseGuards(LocalAuthGuard)
+  async updateUser(
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: Request,
+  ): Promise<User> {
     this.logger.log(' user put 요청 실행 !');
+    const userId = req['user'];
+
+    if (updateUserDto.userId != userId) {
+      throw new UnauthorizedException('다른 유저의 정보를 수정할수 없습니다.');
+    }
+
     const newUser = await this.userService.updateUser(updateUserDto);
     return newUser;
   }
@@ -62,7 +74,7 @@ export class UserController {
   async userLoginbyEmail(
     @Body() loginRequest: LoginRequestType,
     @Res() res: Response,
-  ): Promise<User> {
+  ) {
     const { email, password } = loginRequest;
     this.logger.log(' user login 요청 실행 !');
 
@@ -70,7 +82,7 @@ export class UserController {
       await this.userService.userLoginbyEmail(email, password);
 
     this.setCookies(res, accessToken, refreshToken);
-    return user;
+    res.send(user.readonlyData());
   }
 
   // @Get('/login/google')
@@ -94,23 +106,20 @@ export class UserController {
   //   return true;
   // }
   setCookies(@Res() res: Response, accessToken, refreshToken): void {
-    const accesscookieExpires = new Date();
-    accesscookieExpires.setDate(
-      accesscookieExpires.getDate() + +jwtConfig.refresh_expiresIn,
-    );
-    const refreshcookieExpires = new Date();
-    refreshcookieExpires.setDate(
-      refreshcookieExpires.getDate() + +jwtConfig.refresh_expiresIn,
-    );
     //토큰 설정
     res.cookie('accessToken', accessToken, {
-      expires: accesscookieExpires,
+      domain: 'localhost',
+      maxAge: 600 * 1000,
       httpOnly: true,
+      path: '/',
+    });
+    res.cookie('refreshToken', refreshToken, {
+      domain: 'localhost',
+      maxAge: 3600 * 1000,
+      httpOnly: true,
+      path: '/',
     });
 
-    res.cookie('refreshToken', refreshToken, {
-      expires: refreshcookieExpires,
-      httpOnly: true,
-    });
+    return;
   }
 }

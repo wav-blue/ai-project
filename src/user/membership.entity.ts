@@ -1,19 +1,19 @@
 import {
-  PrimaryColumn,
   BaseEntity,
   Column,
   Entity,
   OneToOne,
   JoinColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity()
+@Entity({ name: 'MEMBERSHIP' })
 export class MemberShip extends BaseEntity {
-  @PrimaryColumn({ type: 'varchar', length: 50, name: 'user_id' })
   @OneToOne(() => User)
-  @JoinColumn({ name: 'userId', referencedColumnName: 'userId' })
-  userId: string;
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
+  @PrimaryGeneratedColumn('uuid')
+  user_id: string;
 
   @Column({ type: 'datetime' })
   start_at: Date;

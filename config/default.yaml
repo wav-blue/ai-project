@@ -6,6 +6,5 @@ db:
   port: 3306
 
 jwt:
-  represh_expiresIn: 3600
-  access_expiresIn: 600
-
+  represh_expiresIn: 3600 * 1000 * s
+  access_expiresIn: 600 * 1000 * s
