@@ -3,16 +3,17 @@ import {
   Column,
   Entity,
   OneToOne,
-  PrimaryColumn,
-  Generated,
+  BeforeInsert,
   JoinColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { MemberShip } from './membership.entity';
-@Entity({ name: 'User' })
+import { RefreshToken } from './refreshtoken.entity';
+import { v4 as uuidv4 } from 'uuid';
+@Entity({ name: 'USER' })
 export class User extends BaseEntity {
-  @PrimaryColumn({ type: 'varchar', length: 50, name: 'user_id' })
-  @Generated('uuid')
-  userId: string;
+  @PrimaryGeneratedColumn('uuid')
+  user_id: string;
 
   @Column({ type: 'varchar', length: 100 })
   email: string;
@@ -33,12 +34,24 @@ export class User extends BaseEntity {
   deleted_at: Date;
 
   @OneToOne(() => MemberShip)
-  @JoinColumn({ name: 'userId', referencedColumnName: 'userId' })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
   membership: MemberShip;
+
+  @OneToOne(() => RefreshToken)
+  //@JoinColumn({ name: 'userId', referencedColumnName: 'userId' })
+  RefreshToken: RefreshToken;
+
+  @BeforeInsert()
+  createUserId() {
+    if (!this.user_id) {
+      this.user_id = uuidv4();
+    }
+  }
 
   readonlyData() {
     return {
-      userId: this.userId,
+      userId: this.user_id,
+      logintype: this.logintype,
       membership: this.membership,
     };
   }

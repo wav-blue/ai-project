@@ -2,11 +2,15 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
 } from '@nestjs/common';
+
+import { DataSource, QueryRunner } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from './user.repository';
 import { RefreshTokenRepository } from './refreshtoken.repository';
-
 import { User } from './user.entity';
+import { RefreshToken } from './refreshtoken.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { GoogleRequest } from 'passport-google-oauth20';
@@ -14,24 +18,39 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
-import * as config from 'config';
+import * as jwtConfig from 'config';
 
 dotenv.config();
-const jwtConfig = config.get('jwt');
+//const jwtConfig = config.get('jwt');
 
 @Injectable()
 export class UserService {
   constructor(
-    //@InjectRepository(UserRepository)
+    private dataSource: DataSource,
+    //@InjectRepository(User)
     private userRepository: UserRepository,
-    private refreshTokenRepository: RefreshTokenRepository,
 
+    //@InjectRepository(RefreshToken)
+    private refreshTokenRepository: RefreshTokenRepository,
     private jwt: JwtService,
   ) {}
 
+  async connectDB(operation: () => Promise<any>): Promise<any> {
+    const queryRunner = await this.dataSource.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      await operation(); // 비동기 작업 앞에 await 추가
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    } finally {
+      await queryRunner.release();
+    }
+  }
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { email, logintype, password } = createUserDto;
-    //console.log(createUserDto, email);
 
     const found = await this.userRepository.getUserbyEmail(email);
     if (found) throw new ConflictException('이미 존재하는 계정입니다.');
@@ -66,8 +85,16 @@ export class UserService {
       throw new BadRequestException('비밀번호가 일치하지 않습니다.');
     }
     // 토큰 할당
-    const { accessToken, refreshToken } = await this.TokenCreate(found.userId);
+    const { accessToken, refreshToken } = await this.TokenCreate(found.user_id);
+
     return { user: found, accessToken, refreshToken };
+  }
+
+  async findUserRefreshToken(tokenId: string): Promise<RefreshToken> {
+    const userRefreshToken =
+      this.refreshTokenRepository.getRefreshTokenbyTokenId(tokenId);
+
+    return userRefreshToken;
   }
 
   // async googleLogin(
@@ -94,26 +121,34 @@ export class UserService {
   // }
 
   async TokenCreate(
-    userId: string,
+    user_id: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const findUserPayload = { userId: userId };
+    const findUserPayload = { user_id: user_id };
 
     const accessToken = this.jwt.sign(findUserPayload, {
-      expiresIn: jwtConfig.access_expiresIn,
+      expiresIn: 600,
     });
 
     const refreshToken = this.jwt.sign(findUserPayload, {
-      expiresIn: jwtConfig.refresh_expiresIn,
-      audience: String(userId), // 수신대상 표시?
+      expiresIn: 3600,
     });
 
+    const foundRefeshToken =
+      await this.refreshTokenRepository.getRefreshTokenbyUserId(user_id);
+
+    if (foundRefeshToken) {
+      await this.refreshTokenRepository.updateRefreshToken(
+        user_id,
+        refreshToken,
+      );
+    } else {
+      await this.refreshTokenRepository.createRefreshToken(
+        user_id,
+        refreshToken,
+      );
+    }
     /* refreshToken 필드 업데이트 */
-    const refreshTokenId = await this.refreshTokenRepository.createRefreshToken(
-      userId,
-      refreshToken,
-    );
-    // 토큰 확인
-    console.log(accessToken, refreshTokenId);
-    return { accessToken, refreshToken: refreshTokenId.tokenId };
+
+    return { accessToken, refreshToken };
   }
 }

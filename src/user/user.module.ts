@@ -7,15 +7,28 @@ import { User } from './user.entity';
 import { MemberShip } from './membership.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokenRepository } from './refreshtoken.repository';
+import { RefreshToken } from './refreshtoken.entity';
+import { PassportModule } from '@nestjs/passport';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { AccessStrategy } from './strategies/local-service.strategy';
 
+import * as config from 'config';
+const jwtConfig = config.get('jwt');
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, MemberShip]),
+    TypeOrmModule.forFeature([User, MemberShip, RefreshToken]),
     JwtModule.register({
-      secret: 'SECRET_KEY', // JWT Signature의 Secret 값 입력
+      secret: jwtConfig.secret, // JWT Signature의 Secret 값 입력
     }),
+    PassportModule.register({ session: false }),
   ],
   controllers: [UserController],
-  providers: [UserService, UserRepository, RefreshTokenRepository],
+  providers: [
+    UserService,
+    UserRepository,
+    RefreshTokenRepository,
+    GoogleStrategy,
+    AccessStrategy,
+  ],
 })
 export class UserModule {}

@@ -1,8 +1,13 @@
 import { IsNotEmpty, IsEnum, IsString } from 'class-validator';
 
+enum loginEnum {
+  EMAIL = 'EMAIL',
+  GOOGLE = 'GOOGLE',
+  KAKAO = 'KAKAO',
+}
 export class CreateUserDto {
   @IsNotEmpty()
-  @IsEnum({ enum: ['EMAIL', 'GOOGLE', 'KAKAO'] })
+  @IsEnum(Object.values(loginEnum))
   logintype: string;
 
   @IsNotEmpty()
