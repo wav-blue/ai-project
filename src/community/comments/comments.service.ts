@@ -114,7 +114,7 @@ export class CommentsService {
       );
       createCommentDto.anonymous_number = parseInt(anonymous_number);
       this.logger.log(`익명 번호 ${anonymous_number}으로 댓글 생성`);
-      if (anonymous_number > 0) {
+      if (anonymous_number === 0) {
         // 기록이 없을 시 새로 익명 번호 부여
         const new_anonymous_number =
           await this.commentRepository.getNewAnonymousNumber(

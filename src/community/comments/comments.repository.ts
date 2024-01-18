@@ -18,8 +18,8 @@ export class CommentRepository {
     this.logger.log('Comment 조회 실행');
     const found = this.commentRepository
       .createQueryBuilder()
-      .select('comments')
-      .from(Comment, 'comments')
+      .select('comment')
+      .from(Comment, 'comment')
       .getMany();
 
     return found;
