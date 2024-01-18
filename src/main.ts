@@ -16,6 +16,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.setGlobalPrefix('api');
+
   await app.listen(serverConfig.port);
   Logger.log(`Application running on port ${serverConfig.port}`);
 }

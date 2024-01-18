@@ -90,35 +90,33 @@ export class UserService {
     return { user: found, accessToken, refreshToken };
   }
 
-  async findUserRefreshToken(tokenId: string): Promise<RefreshToken> {
+  async findUserRefreshToken(userId: string): Promise<RefreshToken> {
     const userRefreshToken =
-      this.refreshTokenRepository.getRefreshTokenbyTokenId(tokenId);
+      await this.refreshTokenRepository.getRefreshTokenbyUserId(userId);
 
     return userRefreshToken;
   }
 
-  // async googleLogin(
-  //   req: GoogleRequest,
-  //   res: Response,
-  //   // googleLoginAuthInputDto, // : Promise<GoogleLoginAuthOutputDto>
-  // ) {
-  //   const { user } = req;
-  //   user.logintype = 'google';
+  async googleLogin(
+    user,
+  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    // 유저 중복 검사
+    let found = await this.userRepository.getUserbyEmail(user.email);
 
-  //   // 유저 중복 검사
-  //   let found = await this.userRepository.getUserbyEmail(user.email);
+    // 없는 유저면 DB에 유저정보 저장
+    if (!found) {
+      const createuserDto = {
+        logintype: 'GOOGLE',
+        email: user.email,
+        password: null,
+      };
+      found = await this.userRepository.createUser(createuserDto);
+    }
 
-  //   const createuserDto = {
-  //     logintype: 'GOOGLE',
-  //     email: user.email,
-  //   };
-  //   // 없는 유저면 DB에 유저정보 저장
-  //   if (!found) {
-  //     found = await this.userRepository.createUser(createuserDto);
-  //   }
+    const { accessToken, refreshToken } = await this.TokenCreate(found.user_id);
 
-  //   await this.userTokenSetting(res, found.userId);
-  // }
+    return { user: found, accessToken, refreshToken };
+  }
 
   async TokenCreate(
     user_id: string,

@@ -24,11 +24,11 @@ export class RefreshTokenRepository {
   async getRefreshTokenbyTokenId(tokenId: string): Promise<RefreshToken> {
     const found = await this.refreshRepository
       .createQueryBuilder()
-      .select('tokenId')
+      .select('refreshtoken')
       .from(RefreshToken, 'refreshtoken')
       .where('refreshtoken.token_id = :tokenId', { tokenId })
       .getOne();
-
+    console.log(found);
     return found;
   }
 
