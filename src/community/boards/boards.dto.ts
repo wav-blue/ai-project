@@ -11,11 +11,16 @@ export class CreateBoardDto {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @IsString()
+  tag?: string;
 }
 
 //게시물 수정
 export class UpdateBoardDto {
-  boardId?: number;
+  @IsNotEmpty()
+  @IsNumber()
+  boardId: number;
 
   @IsNotEmpty()
   @IsString()
@@ -24,4 +29,7 @@ export class UpdateBoardDto {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @IsString()
+  tag?: string;
 }

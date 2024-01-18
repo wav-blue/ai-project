@@ -2,6 +2,7 @@
 
 db:
   synchronize: false
+  logging: true
 
 jwt:
   secret: 'mySecretKey'
