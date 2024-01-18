@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -14,12 +15,14 @@ import { CommentsService } from './comments.service';
 import { Comment } from './comments.entity';
 import { GetUserTemp } from './get-user-temp.decorator';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 
 @Controller('comments')
 export class CommentsController {
   private logger = new Logger('commentsController');
   constructor(private commentsService: CommentsService) {}
 
+  // 테스트용 전체 조회
   @Get('/')
   getAllComments(): Promise<Comment[]> {
     this.logger.log(`get 요청 받아짐`);
@@ -29,10 +32,12 @@ export class CommentsController {
   // 게시글에 작성된 댓글 목록 조회
   // 페이지네이션 나중에 적용
   @Get('/:boardId')
-  getBoardComments(
+  async getBoardComments(
     @Param('boardId', ParseIntPipe) boardId: number,
+    @Query() page: number,
   ): Promise<Comment[]> {
-    const comments = this.commentsService.getBoardComments(boardId);
+    const user = 'user001';
+    const comments = await this.commentsService.getBoardComments(boardId, page);
     return comments;
   }
 
@@ -43,7 +48,10 @@ export class CommentsController {
     @GetUserTemp() user: string,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    const result = this.commentsService.createComment(user, createCommentDto);
+    const result = this.commentsService.createComment(
+      'user001',
+      createCommentDto,
+    );
     // result : 작성 완료
     return result;
   }
@@ -56,6 +64,15 @@ export class CommentsController {
   ) {
     const result = this.commentsService.deleteComment(user, commentId);
     // '삭제 완료'
+    return result;
+  }
+
+  // 신고 내역 추가 (신고 누적 상황에 따라 해당 댓글 삭제)
+  @Post('/report')
+  createCommentReport(@Body() createCommentReportDto: CreateCommentReportDto) {
+    const result = this.commentsService.createCommentReport(
+      createCommentReportDto,
+    );
     return result;
   }
 

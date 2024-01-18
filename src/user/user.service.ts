@@ -18,10 +18,10 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
-import * as config from 'config';
+import * as jwtConfig from 'config';
 
 dotenv.config();
-const jwtConfig = config.get('jwt');
+//const jwtConfig = config.get('jwt');
 
 @Injectable()
 export class UserService {
