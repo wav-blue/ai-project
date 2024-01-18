@@ -1,6 +1,8 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
 import * as config from 'config';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+
 dotenv.config();
 const dbConfig = config.get('db');
 
@@ -14,4 +16,5 @@ export const typeORMConfig: TypeOrmModuleOptions = {
   entities: [__dirname + '/../**/*.entity.{js, ts}'],
   synchronize: dbConfig.synchronize,
   logging: dbConfig.logging,
+  namingStrategy: new SnakeNamingStrategy(),
 };
