@@ -10,7 +10,10 @@ import { RefreshTokenRepository } from './refreshtoken.repository';
 import { RefreshToken } from './refreshtoken.entity';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './strategies/google.strategy';
-import { AccessStrategy } from './strategies/local-service.strategy';
+import {
+  AccessStrategy,
+  RefreshStrategy,
+} from './strategies/local-service.strategy';
 
 import * as config from 'config';
 const jwtConfig = config.get('jwt');
@@ -29,6 +32,7 @@ const jwtConfig = config.get('jwt');
     RefreshTokenRepository,
     GoogleStrategy,
     AccessStrategy,
+    RefreshStrategy,
   ],
 })
 export class UserModule {}

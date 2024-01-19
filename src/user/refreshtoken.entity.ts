@@ -15,7 +15,7 @@ export class RefreshToken extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   user_id: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 300 })
   token: string;
 
   @PrimaryGeneratedColumn('uuid')

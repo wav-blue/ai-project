@@ -7,6 +7,7 @@ import { CommentsController } from './comments/comments.controller';
 import { CommentsService } from './comments/comments.service';
 import { BoardsRepository } from './boards/boards.repository';
 import { CommentRepository } from './comments/comments.repository';
+import { S3Service } from '../common/s3.presigned';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Board])],
@@ -16,6 +17,7 @@ import { CommentRepository } from './comments/comments.repository';
     CommentsService,
     BoardsRepository,
     CommentRepository,
+    S3Service,
   ],
 })
 export class CommunityModule {}

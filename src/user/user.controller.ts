@@ -18,12 +18,13 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { LoginRequestType } from './dtos/loginrequesttype .dto';
 import { AuthGuard } from '@nestjs/passport';
-import { GoogleRequest } from 'passport-google-oauth20';
 import { LocalAuthGuard } from './guards/local-service.guard';
+import { GoogleRequest } from 'passport-google-oauth20';
 
 import { Response } from 'express';
 
 import * as config from 'config';
+
 const jwtConfig = config.get('jwt');
 
 @Controller('user')
@@ -43,7 +44,7 @@ export class UserController {
 
   @Post('/resign')
   @UsePipes(ValidationPipe)
-  @UseGuards(LocalAuthGuard)
+  @UseGuards()
   async deleteUser(): Promise<boolean> {
     this.logger.log(' user create 요청 실행 !');
 
@@ -60,6 +61,7 @@ export class UserController {
     @Req() req: Request,
   ): Promise<User> {
     this.logger.log(' user put 요청 실행 !');
+    console.log(req['user']);
     const userId = req['user'];
 
     if (updateUserDto.userId != userId) {
@@ -85,26 +87,31 @@ export class UserController {
     res.send(user.readonlyData());
   }
 
-  // @Get('/login/google')
-  // @UseGuards(AuthGuard('google'))
-  // async googleAuth(@Req() req: Request) {}
+  @Get('/login/google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req: Request) {}
 
-  // /* Get Google Auth Callback */
-  // @Get('/auth/google/callback')
-  // @UseGuards(AuthGuard('google'))
-  // async googleAuthCallback(
-  //   @Req() req: GoogleRequest,
-  //   @Res() res: Response, // : Promise<GoogleLoginAuthOutputDto>
-  // ) {
-  //   // return res.send(user);
-  //   return this.userService.googleLogin(req, res);
-  // }
+  @Get('/login/google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthCallback(
+    @Req() req: GoogleRequest,
+    @Res() res: Response, // : Promise<GoogleLoginAuthOutputDto>
+  ) {
+    console.log('callback tests, google');
+    const userDto = req['user'];
 
-  // @Post('/logout')
-  // async userLogout(): Promise<boolean> {
-  //   // 쿠키 삭제
-  //   return true;
-  // }
+    console.log(userDto);
+
+    const { user, accessToken, refreshToken } =
+      await this.userService.googleLogin(userDto);
+
+    console.log('cont', user, accessToken, refreshToken);
+
+    this.setCookies(res, accessToken, refreshToken);
+    console.log('user login end');
+    res.send(user.readonlyData());
+  }
+
   setCookies(@Res() res: Response, accessToken, refreshToken): void {
     //토큰 설정
     res.cookie('accessToken', accessToken, {

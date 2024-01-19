@@ -6,26 +6,19 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  //ManyToOne,
 } from 'typeorm';
+//import { User } from 'src/user/user.entity';
 
 @Entity({ name: 'BOARD' })
 export class Board extends BaseEntity {
-  //user, report 보드와 관계 맺어야 함
-
-  // 이거 왜 안되지?
-  // @AfterSoftRemove()
-  // updateStatus() {
-  //   console.log('이거 왜 안되는데');
-  //   this.status = 'deleted';
-  // }
-
-  @PrimaryGeneratedColumn({ name: 'board_id' })
+  @PrimaryGeneratedColumn()
   boardId: number;
 
-  @Column({ type: 'varchar', length: 50, name: 'user_id' })
+  @Column({ type: 'varchar', length: 50 })
   userId: string;
 
-  @Column({ type: 'varchar', length: 100, name: 'title' })
+  @Column({ type: 'varchar', length: 100 })
   title: string;
 
   @Column({ type: 'text' })
@@ -44,15 +37,12 @@ export class Board extends BaseEntity {
   })
   status: string;
 
-  @CreateDateColumn({
-    type: 'datetime',
-    name: 'created_at',
-  })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'datetime', nullable: true, name: 'updated_at' })
+  @UpdateDateColumn({ type: 'datetime', nullable: true })
   updatedAt: Date;
 
-  @DeleteDateColumn({ type: 'datetime', nullable: true, name: 'deleted_at' })
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
   deletedAt: Date;
 }

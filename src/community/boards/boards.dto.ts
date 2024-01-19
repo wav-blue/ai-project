@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { User } from 'src/user/user.entity';
 
 //게시물 작성
 export class CreateBoardDto {
@@ -18,6 +19,8 @@ export class CreateBoardDto {
 
 //게시물 수정
 export class UpdateBoardDto {
+  userId?: User;
+
   @IsNotEmpty()
   @IsNumber()
   boardId: number;

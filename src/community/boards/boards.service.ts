@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BoardsRepository } from './boards.repository';
+import { S3Service } from '../../common/s3.presigned';
 import { Board } from './boards.entity';
 import { CreateBoardDto, UpdateBoardDto } from './boards.dto';
 
@@ -9,6 +10,7 @@ export class BoardsService {
   constructor(
     private dataSource: DataSource,
     private boardsRepository: BoardsRepository,
+    private s3Service: S3Service,
     // private readonly s3Service: S3Service,
   ) {}
   //추후수정
@@ -237,6 +239,7 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      console.log('dto:', createBoardDto);
       const result = await this.boardsRepository.insertBoard(
         createBoardDto,
         queryRunner,
@@ -252,38 +255,30 @@ export class BoardsService {
   }
 
   //presignedURL 받아오기
-  // async getPreSignedUrl() {
-  //config 에서 키 넣은채로 만들어버리면 안되나?
-  //이슈에 질문할 것.
-  //config는 어디서 import 하는거지? 컨트롤러? 여기 서비스? 모듈?
-  //   try {
-  //     const clientUrl = this.s3Service.createPresignedUrlWithClientFORBOARDS(); //원래는 여기 키 같은거 들어감
-  //     console.log('Calling PUT using presigned URL with client');
-  //     await this.s3Service.put(clientUrl, 'Hello World');
-  //     console.log('\nDone. Check your S3 console.');
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // }
+  async getPreSignedUrl(userId: string, files: string[]) {
+    const bucket = 'guruguru-board';
+    const keys = files.map(
+      (file) => userId + '_' + new Date().toISOString() + '_' + file,
+    );
+    try {
+      const clientUrls = await this.s3Service.createPresignedUrl({
+        bucket,
+        keys,
+      });
+      return clientUrls;
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   //게시글 수정
   //삭제된 글을 수정하려고 하면 사용자 검증 부분에서부터 에러 반환
-  async editBoard(
-    userId: string,
-    updateboardDto: UpdateBoardDto,
-  ): Promise<void> {
+  async editBoard(updateBoardDto: UpdateBoardDto): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const wirterCheck = await this.boardsRepository.selectWriter(
-        updateboardDto.boardId,
-        queryRunner,
-      );
-      if (userId !== wirterCheck.userId) {
-        throw new Error('작성자가 아님');
-      }
-      await this.boardsRepository.updateBoard(updateboardDto, queryRunner);
+      await this.boardsRepository.updateBoard(updateBoardDto, queryRunner);
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -300,14 +295,7 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const wirterCheck = await this.boardsRepository.selectWriter(
-        boardId,
-        queryRunner,
-      );
-      if (userId !== wirterCheck.userId) {
-        throw new Error('작성자가 아님');
-      }
-      await this.boardsRepository.softDeleteBoard(boardId, queryRunner);
+      await this.boardsRepository.softDeleteBoard(userId, boardId, queryRunner);
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
