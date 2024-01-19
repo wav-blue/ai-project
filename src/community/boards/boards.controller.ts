@@ -22,8 +22,8 @@ export class BoardsController {
   constructor(private boardsService: BoardsService) {}
   // !!이슈!! board entity랑 user entity 관계설정 하면 잘 되던 쿼리들이 안됨 ㅠㅠ WHY....
 
-  // !!수정!! 검색기능 역인덱스 적용!!
-  // !!수정!! 에러처리 필터 거펴가게 하기!!
+  // !!수정!! 검색기능 역인덱스 적용하기!!
+  // !!수정!! 에러처리 필터 거쳐가게 하기!!
 
   // !!개선!! 서비스에서 목록조회 코드들이 중복되는데 똑같은 코드 여러번 쓰지 않고 할 수 있는 방법 생각해보기
   // !!개선!! presigned URL 요청받을때 파일 확장자 이미지인지 먼저 확인하고 이미지 아니면 거절할 수 있는지 알아보기
@@ -37,14 +37,13 @@ export class BoardsController {
     @Query('page') page: number,
     @Query('limit') limit: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
+    if (!page) {
+      page = 1;
+    }
+    if (!limit) {
+      limit = 15;
+    }
     try {
-      if (!page) {
-        page = 1;
-      }
-      if (!limit) {
-        limit = 15;
-      }
-
       if (keyword && tag) {
         //태그별 검색
         const result = await this.boardsService.tagAndSearchBoards(
@@ -146,7 +145,6 @@ export class BoardsController {
   ): Promise<{ boardId: number; message: string }> {
     const userId = req['user'];
     boardDto.userId = userId;
-    console.log('dto:', boardDto);
     try {
       const result = await this.boardsService.writeBoard(boardDto);
       console.log(result);

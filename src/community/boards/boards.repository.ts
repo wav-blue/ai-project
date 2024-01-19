@@ -288,13 +288,11 @@ export class BoardsRepository {
   }
 
   //게시글 작성
-  //이미지 url 테이블 따로 생성
   async insertBoard(
     createBoardDto: CreateBoardDto,
     queryRunner: QueryRunner,
   ): Promise<Board> {
     try {
-      console.log(' repo dto:', createBoardDto);
       const result = await queryRunner.manager
         .createQueryBuilder()
         .insert()
