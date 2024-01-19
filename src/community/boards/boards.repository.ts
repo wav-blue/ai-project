@@ -23,8 +23,8 @@ export class BoardsRepository {
   }
   // //게시판 목록 페이지네이션
   async selectAllBoards(
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -39,8 +39,8 @@ export class BoardsRepository {
           'B.updatedAt',
         ])
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
 
       return result;
@@ -71,8 +71,8 @@ export class BoardsRepository {
   // //태그별 목록 페이지네이션
   async selectBoardsByTag(
     tag: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -88,8 +88,8 @@ export class BoardsRepository {
         ])
         .where('B.tag = :tag', { tag })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -124,8 +124,8 @@ export class BoardsRepository {
   async selectBoardsByTagAndSearch(
     tag: string,
     keyword: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -144,8 +144,8 @@ export class BoardsRepository {
           keyword: `%${keyword}%`,
         })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -177,8 +177,8 @@ export class BoardsRepository {
   // //일반 검색 페이지네이션
   async selectBoardsBySearch(
     keyword: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -196,8 +196,8 @@ export class BoardsRepository {
           keyword: `%${keyword}%`,
         })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -227,8 +227,8 @@ export class BoardsRepository {
   // //특정 유저글 페이지네이션
   async selectUserBoards(
     userId: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -244,8 +244,8 @@ export class BoardsRepository {
         ])
         .where('B.userId= :userId', { userId })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {

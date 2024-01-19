@@ -11,36 +11,28 @@ export class BoardsService {
     private dataSource: DataSource,
     private boardsRepository: BoardsRepository,
     private s3Service: S3Service,
-    // private readonly s3Service: S3Service,
   ) {}
-  //추후수정
-  ////페이지 작성단위 상수로 만들어서 불러오거나 or 클라이언트에서 목록 보기 갯수 쿼리파람으로 받아오기
 
   //게시판 목록 읽기
-  //페이지 네이션 이게 맞는지?
-  //현재는: 전체 컬럼 전부 긁기 전에 총 갯수 먼저 확인 => 정상적 요청이면 필요 컬럼 전체 긁으며 페이지네이션
   async listBoards(
     page: number,
+    limit: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      if (!page) {
-        page = 1;
-      }
       const count = await this.boardsRepository.countAllBoards(queryRunner);
       console.log(count);
       if (count === 0) {
         return { count };
-      } else if (Math.ceil(count / 15) < page) {
+      } else if (Math.ceil(count / limit) < page) {
         throw new Error('너무 큰 페이지 요청');
       }
-      const previous = (page - 1) * 15;
-      const show = previous + 15;
+      const offset = (page - 1) * limit;
       const result = await this.boardsRepository.selectAllBoards(
-        previous,
-        show,
+        offset,
+        limit,
         queryRunner,
       );
       await queryRunner.commitTransaction();
@@ -57,30 +49,26 @@ export class BoardsService {
   async tagBoards(
     tag: string,
     page: number,
+    limit: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      if (!page) {
-        page = 1;
-      }
       const count = await this.boardsRepository.countBoardsByTag(
         tag,
         queryRunner,
       );
       if (count === 0) {
         return { count };
-      } else if (Math.ceil(count / 15) < page) {
+      } else if (Math.ceil(count / limit) < page) {
         throw new Error('너무 큰 페이지 요청');
       }
-      const previous = (page - 1) * 15;
-      const show = previous + 15;
-
+      const offset = (page - 1) * limit;
       const result = await this.boardsRepository.selectBoardsByTag(
         tag,
-        previous,
-        show,
+        offset,
+        limit,
         queryRunner,
       );
       await queryRunner.commitTransaction();
@@ -97,30 +85,26 @@ export class BoardsService {
   async searchBoards(
     keyword: string,
     page: number,
+    limit: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      if (!page) {
-        page = 1;
-      }
       const count = await this.boardsRepository.countBoardsBySearch(
         keyword,
         queryRunner,
       );
       if (count === 0) {
         return { count };
-      } else if (Math.ceil(count / 15) < page) {
+      } else if (Math.ceil(count / limit) < page) {
         throw new Error('너무 큰 페이지 요청');
       }
-      const previous = (page - 1) * 15;
-      const show = previous + 15;
-
+      const offset = (page - 1) * limit;
       const result = await this.boardsRepository.selectBoardsBySearch(
         keyword,
-        previous,
-        show,
+        offset,
+        limit,
         queryRunner,
       );
       await queryRunner.commitTransaction();
@@ -138,14 +122,12 @@ export class BoardsService {
     tag: string,
     keyword: string,
     page: number,
+    limit: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      if (!page) {
-        page = 1;
-      }
       const count = await this.boardsRepository.countBoardsByTagAndSearch(
         tag,
         keyword,
@@ -153,17 +135,15 @@ export class BoardsService {
       );
       if (count === 0) {
         return { count };
-      } else if (Math.ceil(count / 15) < page) {
+      } else if (Math.ceil(count / limit) < page) {
         throw new Error('너무 큰 페이지 요청');
       }
-      const previous = (page - 1) * 15;
-      const show = previous + 15;
-
+      const offset = (page - 1) * limit;
       const result = await this.boardsRepository.selectBoardsByTagAndSearch(
         tag,
         keyword,
-        previous,
-        show,
+        offset,
+        limit,
         queryRunner,
       );
       await queryRunner.commitTransaction();
@@ -180,14 +160,12 @@ export class BoardsService {
   async listUserBoards(
     userId: string,
     page: number,
+    limit: number,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      if (!page) {
-        page = 1;
-      }
       const count = await this.boardsRepository.countUserBoards(
         userId,
         queryRunner,
@@ -197,12 +175,11 @@ export class BoardsService {
       } else if (Math.ceil(count / 15) < page) {
         throw new Error('너무 큰 페이지 요청');
       }
-      const previous = (page - 1) * 15;
-      const show = previous + 15;
+      const offset = (page - 1) * 15;
       const result = await this.boardsRepository.selectUserBoards(
         userId,
-        previous,
-        show,
+        offset,
+        limit,
         queryRunner,
       );
       await queryRunner.commitTransaction();
@@ -269,7 +246,7 @@ export class BoardsService {
     }
   }
 
-  //presignedURL 받아오기
+  //게시글 작성용 presignedURL 받아오기
   async getPreSignedUrl(userId: string, files: string[]) {
     const bucket = 'guruguru-board';
     const keys = files.map(
@@ -287,7 +264,6 @@ export class BoardsService {
   }
 
   //게시글 수정
-  //삭제된 글을 수정하려고 하면 사용자 검증 부분에서부터 에러 반환
   async editBoard(updateBoardDto: UpdateBoardDto): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -304,7 +280,6 @@ export class BoardsService {
   }
 
   //게시글 삭제
-  //삭제된 글을 또 삭제하려고 하면 사용자 검증 부분에서부터 에러 반환
   async eraseBoard(userId: string, boardId: number): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
