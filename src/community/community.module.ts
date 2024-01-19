@@ -8,6 +8,7 @@ import { CommentsService } from './comments/comments.service';
 import { BoardsRepository } from './boards/boards.repository';
 import { CommentRepository } from './comments/comments.repository';
 import { S3Service } from '../common/s3.presigned';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   // HttpModule을 추가했습니다!
