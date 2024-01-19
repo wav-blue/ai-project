@@ -29,9 +29,13 @@ export class CommentsController {
   //@UseGuards(LocalAuthGuard)
   getMyComments(
     @GetUser() userId: string,
-    @Query('page', ParseIntPipe) page: number,
-    @Query('limit', ParseIntPipe) limit: number,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
   ): Promise<{ count: number; list: Comment[] }> {
+    // query 값 없을 시 기본 값
+    if (!limit) limit = 15;
+    if (!page) page = 1;
+
     this.logger.log('/my 요청 받아짐!');
     if (!userId) {
       this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
@@ -46,10 +50,15 @@ export class CommentsController {
   @Get('/:boardId')
   async getBoardComments(
     @Param('boardId', ParseIntPipe) boardId: number,
-    @Query('page', ParseIntPipe) page: number,
-    @Query('limit', ParseIntPipe) limit: number,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
   ): Promise<{ count: number; list: Comment[] }> {
+    // query 값 없을 시 기본 값
+    if (!limit) limit = 15;
+    if (!page) page = 1;
+
     this.logger.log('/:boardId 요청 받아짐!');
+
     const comments = await this.commentsService.getBoardComments(
       boardId,
       page,
