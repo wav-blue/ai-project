@@ -50,6 +50,9 @@ export class BoardsController {
         const result = await this.boardsService.searchBoards(keyword, page);
         console.log(result);
         return result;
+      } else if (!page) {
+        const result = await this.boardsService.searchBoards(keyword, 1);
+        console.log(result);
       }
       //전체보드 리스트
       const result = await this.boardsService.listBoards(page);

@@ -26,6 +26,9 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      if (!page) {
+        page = 1;
+      }
       const count = await this.boardsRepository.countAllBoards(queryRunner);
       console.log(count);
       if (count === 0) {
@@ -59,6 +62,9 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      if (!page) {
+        page = 1;
+      }
       const count = await this.boardsRepository.countBoardsByTag(
         tag,
         queryRunner,
@@ -96,6 +102,9 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      if (!page) {
+        page = 1;
+      }
       const count = await this.boardsRepository.countBoardsBySearch(
         keyword,
         queryRunner,
@@ -134,6 +143,9 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      if (!page) {
+        page = 1;
+      }
       const count = await this.boardsRepository.countBoardsByTagAndSearch(
         tag,
         keyword,
@@ -173,6 +185,9 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      if (!page) {
+        page = 1;
+      }
       const count = await this.boardsRepository.countUserBoards(
         userId,
         queryRunner,
