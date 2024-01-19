@@ -8,4 +8,6 @@ export class CreateCommentDto {
   content: string;
 
   anonymous_number: number;
+
+  position: string;
 }

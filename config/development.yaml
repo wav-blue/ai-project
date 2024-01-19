@@ -6,3 +6,6 @@ db:
 
 jwt:
   secret: 'mySecretKey'
+
+flask:
+  url: 'http://127.0.0.1'

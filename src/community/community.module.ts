@@ -10,7 +10,8 @@ import { CommentRepository } from './comments/comments.repository';
 import { S3Service } from '../common/s3.presigned';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Board])],
+  // HttpModule을 추가했습니다!
+  imports: [HttpModule, TypeOrmModule.forFeature([Board])],
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,
