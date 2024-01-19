@@ -156,10 +156,11 @@ export class CommentsService {
 
   // Comment 작성
   async createComment(user: string, createCommentDto: CreateCommentDto) {
-    // axios 요청 테스트
+    // flask 서버로 요청 보낼 body 내용
     const req_body = {
       content: createCommentDto.content,
     };
+    // flask 서버로 요청
     const position = await firstValueFrom(
       this.httpService
         .post('http://127.0.0.1:5000/analysis', req_body)
@@ -171,7 +172,7 @@ export class CommentsService {
           }),
         ),
     );
-    console.log('position : ', position.data.position);
+    // 분석된 결과를 DTO에 추가
     createCommentDto.position = position.data.position;
 
     const queryRunner = this.dataSource.createQueryRunner();
