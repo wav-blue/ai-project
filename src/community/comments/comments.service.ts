@@ -9,6 +9,9 @@ import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
+import { HttpService } from '@nestjs/axios';
+import { AxiosError } from 'axios';
+import { catchError, firstValueFrom, map } from 'rxjs';
 
 @Injectable()
 export class CommentsService {
@@ -16,6 +19,7 @@ export class CommentsService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
+    private readonly httpService: HttpService,
   ) {}
 
   async getAllComments(): Promise<Comment[]> {
@@ -152,6 +156,24 @@ export class CommentsService {
 
   // Comment 작성
   async createComment(user: string, createCommentDto: CreateCommentDto) {
+    // axios 요청 테스트
+    const req_body = {
+      content: createCommentDto.content,
+    };
+    const position = await firstValueFrom(
+      this.httpService
+        .post('http://127.0.0.1:5000/analysis', req_body)
+        .pipe(map((res) => res))
+        .pipe(
+          catchError((error: AxiosError) => {
+            this.logger.error(error);
+            throw 'An error happened!';
+          }),
+        ),
+    );
+    console.log('position : ', position.data.position);
+    createCommentDto.position = position.data.position;
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 

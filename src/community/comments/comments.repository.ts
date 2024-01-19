@@ -135,7 +135,7 @@ export class CommentRepository {
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
   ) {
-    const { boardId, content, anonymous_number } = createCommentDto;
+    const { boardId, content, anonymous_number, position } = createCommentDto;
     this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
 
     const newComment = queryRunner.manager.create(Comment, {
@@ -143,7 +143,7 @@ export class CommentRepository {
       userId: user,
       content,
       anonymous_number,
-      position: 'positive',
+      position,
       status: 'normal',
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -7,9 +7,10 @@ import { CommentsController } from './comments/comments.controller';
 import { CommentsService } from './comments/comments.service';
 import { BoardsRepository } from './boards/boards.repository';
 import { CommentRepository } from './comments/comments.repository';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Board])],
+  imports: [HttpModule, TypeOrmModule.forFeature([Board])],
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,
