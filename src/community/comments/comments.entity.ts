@@ -2,16 +2,16 @@ import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { CommentPosition } from './enum/CommentPosition.enum';
 import { CommentStatus } from './enum/CommentStatus.enum';
 
-@Entity('comments')
+@Entity('COMMENT')
 export class Comment extends BaseEntity {
   @PrimaryGeneratedColumn()
-  comment_id: number;
+  commentId: number;
 
   @Column({ type: 'int' })
-  board_id: number;
+  boardId: number;
 
   @Column({ type: 'varchar', length: 50 })
-  user_id: string;
+  userId: string;
 
   // 해당 게시글에서 익명으로 부여되는 숫자 (ex. 익명3)
   @Column({ type: 'int' })
@@ -28,11 +28,11 @@ export class Comment extends BaseEntity {
   status: string;
 
   @Column({ type: 'datetime' })
-  created_at: Date;
+  createdAt: Date;
 
   @Column({ type: 'datetime' })
-  updated_at: Date;
+  updatedAt: Date;
 
   @Column({ type: 'datetime', nullable: true })
-  deleted_at: Date;
+  deletedAt: Date;
 }

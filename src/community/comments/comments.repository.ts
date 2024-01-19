@@ -1,7 +1,9 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { Board } from '../boards/boards.entity';
+import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 
 @Injectable()
 export class CommentRepository {
@@ -16,17 +18,71 @@ export class CommentRepository {
     this.logger.log('Comment 조회 실행');
     const found = this.commentRepository
       .createQueryBuilder()
-      .select('comments')
-      .from(Comment, 'comments')
+      .select('comment')
+      .from(Comment, 'comment')
       .getMany();
 
     return found;
   }
 
-  async checkBoardNull() {
-    // 테스트용으로 Null 반환
-    // 해당하는 게시글이 없는 상황을 가정
-    return null;
+  async getAnonymousNumber(
+    user: string,
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ) {
+    const { boardId } = createCommentDto;
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('DISTINCT `anonymous_number`', 'anonymous_number')
+      .from(Comment, 'comment')
+      .where(`user_id = :user AND board_id = :boardId`, { user, boardId })
+      .getRawMany();
+
+    if (result.length === 0) {
+      return 0;
+    }
+    const { anonymous_number } = result[0];
+    return anonymous_number;
+  }
+
+  async getNewAnonymousNumber(
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ) {
+    const { boardId } = createCommentDto;
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(DISTINCT(`user_id`))', 'count')
+      .from(Comment, 'comment')
+      .where({ boardId })
+      .getRawMany();
+    console.log('count : ');
+    const { count } = result[0];
+    return count;
+  }
+
+  async checkComment(commentId: number) {
+    const found = this.commentRepository
+      .createQueryBuilder()
+      .select('comment')
+      .from(Comment, 'comment')
+      .where('comment.comment_id = :commentId', { commentId })
+      .getOne();
+
+    return found;
+  }
+
+  async checkBoard(boardId: number, queryRunner: QueryRunner) {
+    const found = await queryRunner.manager
+      .createQueryBuilder()
+      .select('board')
+      .from(Board, 'board')
+      .where('board.board_id = :boardId', {
+        boardId,
+      })
+      .getOne();
+
+    return found;
   }
 
   async getCommentById(commentId: number): Promise<Comment> {
@@ -42,57 +98,58 @@ export class CommentRepository {
 
   async getBoardComments(boardId: number): Promise<Comment[]> {
     this.logger.log(`${boardId}번 게시글 댓글 조회`);
-    const found = this.commentRepository
+    const comments = this.commentRepository
       .createQueryBuilder()
-      .select('comments')
-      .from(Comment, 'comments')
-      .where('comments.board_id = :boardId', { boardId })
+      .select('comment')
+      .from(Comment, 'comment')
+      .where(`comment.board_id = :boardId`, {
+        boardId,
+      })
       .getMany();
 
-    return found;
+    return comments;
   }
 
-  async createComment(user: string, createCommentDto: CreateCommentDto) {
-    const { boardId, content } = createCommentDto;
+  async createComment(
+    user: string,
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ) {
+    const { boardId, content, anonymous_number } = createCommentDto;
     this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
-    try {
-      // 1. 추가한 값이 필요 없는 경우 return값 : string
-      const sqlResult = await this.commentRepository
-        .createQueryBuilder()
-        .insert()
-        .into(Comment)
-        .values({
-          board_id: boardId,
-          user_id: user,
-          content,
-          position: 'positive',
-          status: 'not_deleted',
-          created_at: new Date(),
-          updated_at: new Date(),
-        })
-        .execute();
 
-      if (sqlResult.raw.affectedRows === 0) {
-        throw new ConflictException('댓글 작성에 실패했습니다');
-      }
-      return '작성 완료';
+    const newComment = queryRunner.manager.create(Comment, {
+      boardId,
+      userId: user,
+      content,
+      anonymous_number,
+      position: 'positive',
+      status: 'normal',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
 
-      // 2. 추가한 값이 필요한 경우 return값 : json
-      // const newComment = this.commentRepository.create({
-      //   board_id: boardId,
-      //   user_id: user,
-      //   content,
-      //   position: 'positive',
-      //   status: 'not_deleted',
-      //   created_at: new Date(),
-      //   updated_at: new Date(),
-      // });
+    console.log('newComment', newComment);
+    const result = await queryRunner.manager.save(newComment);
+    return result;
+  }
 
-      // const result = await this.commentRepository.save(newComment);
-      //return result;
-    } catch (error) {
-      throw new ConflictException('댓글 작성에 실패했습니다');
-    }
+  // 신고 내역 업로드
+  async createCommentReport(
+    createCommentReportDto: CreateCommentReportDto,
+    queryRunner: QueryRunner,
+  ) {
+    const newReport = queryRunner.manager.create(Comment, {
+      ...createCommentReportDto,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    console.log('newComment', newReport);
+    const result = await queryRunner.manager.save(newReport);
+    return result;
   }
 
   async deleteComment(user, commentId) {
@@ -102,7 +159,7 @@ export class CommentRepository {
         .update(Comment)
         .set({
           status: 'deleted',
-          deleted_at: new Date(),
+          deletedAt: new Date(),
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
