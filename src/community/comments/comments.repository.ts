@@ -56,7 +56,6 @@ export class CommentRepository {
       .from(Comment, 'comment')
       .where({ boardId })
       .getRawMany();
-    console.log('count : ');
     const { count } = result[0];
     return count;
   }
@@ -96,18 +95,78 @@ export class CommentRepository {
     return found;
   }
 
-  async getBoardComments(boardId: number): Promise<Comment[]> {
+  async getBoardComments(
+    boardId: number,
+    page: number,
+    limit: number,
+    queryRunner: QueryRunner,
+  ): Promise<Comment[]> {
     this.logger.log(`${boardId}번 게시글 댓글 조회`);
-    const comments = this.commentRepository
+    this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
+    const previous = (page - 1) * limit;
+    const comments = await queryRunner.manager
       .createQueryBuilder()
       .select('comment')
       .from(Comment, 'comment')
       .where(`comment.board_id = :boardId`, {
         boardId,
       })
+      .skip(previous)
+      .take(limit)
       .getMany();
 
+    this.logger.log(`가져온 길이 : ${comments.length}`);
     return comments;
+  }
+
+  async getMyComments(
+    userId: string,
+    page: number,
+    limit: number,
+    queryRunner: QueryRunner,
+  ): Promise<Comment[]> {
+    this.logger.log(`${userId}가 작성한 댓글 조회`);
+    this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
+    const previous = (page - 1) * limit;
+    const comments = await queryRunner.manager
+      .createQueryBuilder()
+      .select('comment')
+      .from(Comment, 'comment')
+      .where(`comment.user_id = :userId`, {
+        userId,
+      })
+      .skip(previous)
+      .take(limit)
+      .getMany();
+    this.logger.log(`조회된 comments의 length: ${comments.length}`);
+    return comments;
+  }
+  async countCommentsByBoard(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(`comment_id`)', 'count')
+      .from(Comment, 'comment')
+      .where(`comment.board_id = :boardId`, {
+        boardId,
+      })
+      .getRawOne();
+    const total = result.count;
+    return total;
+  }
+  async countCommentsByUser(userId: string, queryRunner): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(`comment_id`)', 'count')
+      .from(Comment, 'comment')
+      .where(`comment.user_id = :userId`, {
+        userId,
+      })
+      .getRawOne();
+    const total = result.count;
+    return total;
   }
 
   async createComment(
@@ -115,7 +174,7 @@ export class CommentRepository {
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
   ) {
-    const { boardId, content, anonymous_number } = createCommentDto;
+    const { boardId, content, anonymous_number, position } = createCommentDto;
     this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
 
     const newComment = queryRunner.manager.create(Comment, {
@@ -123,14 +182,13 @@ export class CommentRepository {
       userId: user,
       content,
       anonymous_number,
-      position: 'positive',
+      position,
       status: 'normal',
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
     });
 
-    console.log('newComment', newComment);
     const result = await queryRunner.manager.save(newComment);
     return result;
   }
@@ -147,18 +205,18 @@ export class CommentRepository {
       deletedAt: null,
     });
 
-    console.log('newComment', newReport);
     const result = await queryRunner.manager.save(newReport);
     return result;
   }
 
-  async deleteComment(user, commentId) {
+  async deleteComment(userId: string, commentId: number) {
     try {
       const result = await this.commentRepository
         .createQueryBuilder()
         .update(Comment)
         .set({
           status: 'deleted',
+          updatedAt: new Date(),
           deletedAt: new Date(),
         })
         .where('comment_id = :commentId', { commentId })

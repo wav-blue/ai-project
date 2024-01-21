@@ -23,8 +23,8 @@ export class BoardsRepository {
   }
   // //게시판 목록 페이지네이션
   async selectAllBoards(
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -39,8 +39,8 @@ export class BoardsRepository {
           'B.updatedAt',
         ])
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
 
       return result;
@@ -71,8 +71,8 @@ export class BoardsRepository {
   // //태그별 목록 페이지네이션
   async selectBoardsByTag(
     tag: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -88,8 +88,8 @@ export class BoardsRepository {
         ])
         .where('B.tag = :tag', { tag })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -124,8 +124,8 @@ export class BoardsRepository {
   async selectBoardsByTagAndSearch(
     tag: string,
     keyword: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -144,8 +144,8 @@ export class BoardsRepository {
           keyword: `%${keyword}%`,
         })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -177,8 +177,8 @@ export class BoardsRepository {
   // //일반 검색 페이지네이션
   async selectBoardsBySearch(
     keyword: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -196,8 +196,8 @@ export class BoardsRepository {
           keyword: `%${keyword}%`,
         })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -227,8 +227,8 @@ export class BoardsRepository {
   // //특정 유저글 페이지네이션
   async selectUserBoards(
     userId: string,
-    previous: number,
-    show: number,
+    offset: number,
+    limit: number,
     queryRunner: QueryRunner,
   ): Promise<Board[]> {
     try {
@@ -244,8 +244,8 @@ export class BoardsRepository {
         ])
         .where('B.userId= :userId', { userId })
         .orderBy('B.createdAt', 'DESC')
-        .skip(previous)
-        .take(show)
+        .offset(offset)
+        .limit(limit)
         .getMany();
       return result;
     } catch (err) {
@@ -287,28 +287,7 @@ export class BoardsRepository {
     }
   }
 
-  //게시글 유저 확인
-  async selectWriter(
-    boardId: number,
-    queryRunner: QueryRunner,
-  ): Promise<Board> {
-    try {
-      console.log(typeof boardId, boardId);
-      const result = await queryRunner.manager
-        .createQueryBuilder(Board, 'B')
-        .select('B.userId')
-        .where('B.boardId = :boardId', { boardId })
-        .getOneOrFail();
-      console.log(result);
-      return result;
-    } catch (err) {
-      console.error('게시물 작성자 확인 중 뭔가 잘못됨:', err.message);
-      throw new Error('삭제된 글이거나 게시물 작성자 확인 실패');
-    }
-  }
-
   //게시글 작성
-  //이미지 url 테이블 따로 생성
   async insertBoard(
     createBoardDto: CreateBoardDto,
     queryRunner: QueryRunner,
@@ -334,12 +313,13 @@ export class BoardsRepository {
     queryRunner: QueryRunner,
   ): Promise<void> {
     try {
-      const { boardId, ...Dto } = updateBoardDto;
+      const { userId, boardId, ...Dto } = updateBoardDto;
       await queryRunner.manager
         .createQueryBuilder()
         .update(Board)
         .set(Dto)
         .where('boardId = :boardId', { boardId })
+        .andWhere('userId = :userId', { userId })
         .execute();
     } catch (err) {
       console.error('게시물 수정 중 뭔가 잘못됨:', err.message);
@@ -349,6 +329,7 @@ export class BoardsRepository {
 
   //게시글 삭제
   async softDeleteBoard(
+    userId: string,
     boardId: number,
     queryRunner: QueryRunner,
   ): Promise<void> {
@@ -358,10 +339,31 @@ export class BoardsRepository {
         .update()
         .set({ status: 'deleted', deletedAt: () => 'CURRENT_TIMESTAMP' })
         .where('boardId = :boardId', { boardId })
+        .andWhere('userId = :userId', { userId })
         .execute();
     } catch (err) {
       console.error('게시물 삭제 중 뭔가 잘못됨:', err.message);
       throw new Error('게시물 삭제 실패');
     }
   }
+
+  //게시글 유저 확인
+  // async selectWriter(
+  //   boardId: number,
+  //   queryRunner: QueryRunner,
+  // ): Promise<Board> {
+  //   try {
+  //     console.log(typeof boardId, boardId);
+  //     const result = await queryRunner.manager
+  //       .createQueryBuilder(Board, 'B')
+  //       .select('B.userId')
+  //       .where('B.boardId = :boardId', { boardId })
+  //       .getOneOrFail();
+  //     console.log(result);
+  //     return result;
+  //   } catch (err) {
+  //     console.error('게시물 작성자 확인 중 뭔가 잘못됨:', err.message);
+  //     throw new Error('삭제된 글이거나 게시물 작성자 확인 실패');
+  //   }
+  // }
 }
