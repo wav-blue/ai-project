@@ -19,6 +19,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
 import * as jwtConfig from 'config';
+import { LoginUserDto } from './dtos/login-user.dto';
 
 dotenv.config();
 //const jwtConfig = config.get('jwt');
@@ -50,10 +51,9 @@ export class UserService {
     }
   }
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const { email, logintype, password } = createUserDto;
+    const found = await this.userRepository.getUserbyEmail(createUserDto.email);
+    if (found) throw new ConflictException('이미 존재하는 이메일입니다.');
 
-    const found = await this.userRepository.getUserbyEmail(email);
-    if (found) throw new ConflictException('이미 존재하는 계정입니다.');
     createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
 
     const createdUser = await this.userRepository.createUser(createUserDto);
@@ -70,21 +70,20 @@ export class UserService {
     return updateUser;
   }
 
-  async userLoginbyEmail(
-    email: string,
-    password: string,
+  async userLogin(
+    loginUser: LoginUserDto,
   ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
-    const found = await this.userRepository.getUserbyEmail(email);
+    let found = await this.userRepository.getUserbyEmail(loginUser.email);
 
-    if (!found) throw new BadRequestException('존재하지 않는 계정입니다.');
-
-    //해시화된 비밀번호와 비교
-    const passwordCompare = await bcrypt.compare(password, found.password);
-
-    if (!passwordCompare) {
-      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+    // 없는 유저면 DB에 유저정보 저장
+    if (!found) {
+      if (loginUser.logintype != 'EMAIL') {
+        found = await this.userRepository.createUser(loginUser);
+      } else {
+        throw new BadRequestException('존재하지 않는 계정입니다.');
+      }
     }
-    // 토큰 할당
+
     const { accessToken, refreshToken } = await this.TokenCreate(found.user_id);
 
     return { user: found, accessToken, refreshToken };
@@ -95,28 +94,6 @@ export class UserService {
       await this.refreshTokenRepository.getRefreshTokenbyUserId(userId);
 
     return userRefreshToken;
-  }
-
-  async googleLogin(
-    user,
-  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
-    console.log('service:');
-    // 유저 중복 검사
-    let found = await this.userRepository.getUserbyEmail(user.email);
-    console.log(found);
-    // 없는 유저면 DB에 유저정보 저장
-    if (!found) {
-      const createuserDto = {
-        logintype: 'GOOGLE',
-        email: user.email,
-        password: null,
-      };
-      found = await this.userRepository.createUser(createuserDto);
-    }
-
-    const { accessToken, refreshToken } = await this.TokenCreate(found.user_id);
-
-    return { user: found, accessToken, refreshToken };
   }
 
   async TokenCreate(
@@ -146,7 +123,6 @@ export class UserService {
         refreshToken,
       );
     }
-    /* refreshToken 필드 업데이트 */
 
     return { accessToken, refreshToken };
   }

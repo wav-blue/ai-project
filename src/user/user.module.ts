@@ -14,6 +14,7 @@ import {
   AccessStrategy,
   RefreshStrategy,
 } from './strategies/local-service.strategy';
+import { KakaoStrategy } from './strategies/kakao.strategy';
 
 import * as config from 'config';
 const jwtConfig = config.get('jwt');
@@ -33,6 +34,7 @@ const jwtConfig = config.get('jwt');
     GoogleStrategy,
     AccessStrategy,
     RefreshStrategy,
+    KakaoStrategy,
   ],
 })
 export class UserModule {}

@@ -23,10 +23,6 @@ import { GoogleRequest } from 'passport-google-oauth20';
 
 import { Response } from 'express';
 
-import * as config from 'config';
-
-const jwtConfig = config.get('jwt');
-
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
@@ -78,10 +74,10 @@ export class UserController {
     @Res() res: Response,
   ) {
     const { email, password } = loginRequest;
-    this.logger.log(' user login 요청 실행 !');
+    const loginUser = { email, logintype: 'EMAIL', password };
 
     const { user, accessToken, refreshToken } =
-      await this.userService.userLoginbyEmail(email, password);
+      await this.userService.userLogin(loginUser);
 
     this.setCookies(res, accessToken, refreshToken);
     res.send(user.readonlyData());
@@ -89,7 +85,7 @@ export class UserController {
 
   @Get('/login/google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req: Request) {}
+  async googleAuth() {}
 
   @Get('/login/google/callback')
   @UseGuards(AuthGuard('google'))
@@ -98,12 +94,34 @@ export class UserController {
     @Res() res: Response, // : Promise<GoogleLoginAuthOutputDto>
   ) {
     console.log('callback tests, google');
+    const userDto = req.user;
+
+    console.log(userDto);
+
+    const { user, accessToken, refreshToken } =
+      await this.userService.userLogin(userDto);
+
+    console.log('cont', user, accessToken, refreshToken);
+
+    this.setCookies(res, accessToken, refreshToken);
+    console.log('user login end');
+    res.send(user.readonlyData());
+  }
+
+  @Get('/login/kakao')
+  @UseGuards(AuthGuard('kakao'))
+  async kakaoAuth() {}
+
+  @Get('/login/kakao/callback')
+  @UseGuards(AuthGuard('kakao'))
+  async kakaoAuthCallback(@Req() req: Request, @Res() res: Response) {
+    console.log('callback tests, kakao');
     const userDto = req['user'];
 
     console.log(userDto);
 
     const { user, accessToken, refreshToken } =
-      await this.userService.googleLogin(userDto);
+      await this.userService.userLogin(userDto);
 
     console.log('cont', user, accessToken, refreshToken);
 
