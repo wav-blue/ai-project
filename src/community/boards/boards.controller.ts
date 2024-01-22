@@ -173,12 +173,12 @@ export class BoardsController {
   }
 
   //게시글 삭제
-  @Delete()
+  @Delete('/:boardId')
   @UseGuards(LocalAuthGuard)
   @UsePipes(ValidationPipe)
   async deleteBoard(
     @Request() req: Request,
-    @Body('boardId') boardId: number,
+    @Param('boardId') boardId: number,
   ): Promise<{ message: string }> {
     const userId = req['user'];
     try {
