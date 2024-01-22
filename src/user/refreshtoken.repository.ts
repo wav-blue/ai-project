@@ -28,6 +28,7 @@ export class RefreshTokenRepository {
       .from(RefreshToken, 'refreshtoken')
       .where('refreshtoken.token_id = :tokenId', { tokenId })
       .getOne();
+
     console.log(found);
     return found;
   }
