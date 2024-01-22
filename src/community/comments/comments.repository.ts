@@ -1,9 +1,10 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
+import { CommentStatus } from './enum/CommentStatus.enum';
 
 @Injectable()
 export class CommentRepository {
@@ -39,7 +40,7 @@ export class CommentRepository {
       .getRawMany();
 
     if (result.length === 0) {
-      return 0;
+      return null;
     }
     const { anonymous_number } = result[0];
     return anonymous_number;
@@ -183,7 +184,7 @@ export class CommentRepository {
       content,
       anonymous_number,
       position,
-      status: 'normal',
+      status: CommentStatus.NOT_DELETED,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -223,7 +224,7 @@ export class CommentRepository {
         .execute();
       return result;
     } catch (error) {
-      throw new ConflictException('댓글 삭제에 실패했습니다');
+      return error;
     }
   }
 }

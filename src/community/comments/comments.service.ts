@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -68,9 +69,11 @@ export class CommentsService {
     } catch (err) {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
-        throw new NotFoundException();
+        throw new NotFoundException(err.message);
+      } else if (err instanceof ConflictException) {
+        throw new ConflictException(err.message);
       } else {
-        throw new ConflictException();
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -129,9 +132,11 @@ export class CommentsService {
     } catch (err) {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
-        throw new NotFoundException();
+        throw new NotFoundException(err.message);
+      } else if (err instanceof ConflictException) {
+        throw new ConflictException(err.message);
       } else {
-        throw new ConflictException();
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -221,7 +226,7 @@ export class CommentsService {
       );
       createCommentDto.anonymous_number = parseInt(anonymous_number);
       this.logger.log(`익명 번호 ${anonymous_number}으로 댓글 생성`);
-      if (anonymous_number === 0) {
+      if (!anonymous_number) {
         // 기록이 없을 시 새로 익명 번호 부여
         const new_anonymous_number =
           await this.commentRepository.getNewAnonymousNumber(
@@ -242,8 +247,10 @@ export class CommentsService {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
-      } else {
+      } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
+      } else {
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -283,8 +290,10 @@ export class CommentsService {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
-      } else {
+      } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
+      } else {
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -317,8 +326,10 @@ export class CommentsService {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
-      } else {
+      } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
+      } else {
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();

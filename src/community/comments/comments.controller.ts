@@ -26,7 +26,7 @@ export class CommentsController {
 
   // 자신이 작성한 댓글 목록 조회
   @Get('/my')
-  //@UseGuards(LocalAuthGuard)
+  @UseGuards(LocalAuthGuard)
   getMyComments(
     @GetUser() userId: string,
     @Query('page') page: number,
@@ -36,11 +36,11 @@ export class CommentsController {
     if (!limit) limit = 15;
     if (!page) page = 1;
 
-    this.logger.log('/my 요청 받아짐!');
-    if (!userId) {
-      this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
-      userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
-    }
+    // this.logger.log('/my 요청 받아짐!');
+    // if (!userId) {
+    //   this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
+    //   userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
+    // }
     this.logger.log(`현재 설정된 userId: ${userId}`);
     const comments = this.commentsService.getMyComments(userId, page, limit);
     return comments;
@@ -76,17 +76,19 @@ export class CommentsController {
 
   //댓글 작성
   @Post('/')
-  // @UseGuards(LocalAuthGuard)
+  @UseGuards(LocalAuthGuard)
   @UsePipes(ValidationPipe)
   createComment(
     @GetUser() userId: string,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    this.logger.log('댓글 작성 요청 받아짐!');
-    if (!userId) {
-      this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
-      userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
-    }
+    // this.logger.log('댓글 작성 요청 받아짐!');
+    // if (!userId) {
+    //   this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
+    //   userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
+    // }
+    console.log('createCommentDto');
+    console.log(createCommentDto);
     this.logger.log(`현재 설정된 userId: ${userId}`);
     const result = this.commentsService.createComment(userId, createCommentDto);
     // result : 작성 완료
