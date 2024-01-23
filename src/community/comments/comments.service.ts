@@ -14,12 +14,14 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { catchError, firstValueFrom, map } from 'rxjs';
 import * as config from 'config';
+import { CommentStatus } from './enum/CommentStatus.enum';
 
 const flaskConfig = config.get('flask');
 
 @Injectable()
 export class CommentsService {
-  private logger = new Logger('CommentsService');
+  private readonly logger = new Logger(CommentsService.name);
+
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
@@ -37,6 +39,7 @@ export class CommentsService {
     page: number,
     pageSize: number,
   ): Promise<{ count: number; list: Comment[] }> {
+    this.logger.log('logger 테스트');
     let results = null;
     let amount = 0;
     const queryRunner = this.dataSource.createQueryRunner();
@@ -264,26 +267,66 @@ export class CommentsService {
   }
 
   // 신고 내역 작성 && 신고 누적 시 삭제
-  // 작성 예정
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
     userId: string,
   ) {
-    const { commentId } = createCommentReportDto;
+    let commentStatus = 'normal';
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
     await queryRunner.startTransaction();
     try {
-      const found = null;
-      if (!found) {
+      const { commentId } = createCommentReportDto;
+
+      // 신고된 Comment의 정보 조회
+      const found = await this.commentRepository.checkComment(commentId);
+      if (!found || found.status !== 'normal') {
         // deleted 상태이거나 데이터베이스에서 찾을 수 없는 댓글
         throw new ConflictException('이미 삭제된 댓글입니다.');
       }
-      await this.commentRepository.createCommentReport(
-        createCommentReportDto,
+
+      // 작성자의 id 저장
+      const target_user_id = found.userId;
+
+      // 해당 댓글을 report한 User들의 기록을 조회
+      const checkResult = await this.commentRepository.checkReportUser(
+        commentId,
         queryRunner,
       );
+      console.log('checkResult: ', checkResult);
+      // 동일 인물이 하나의 댓글에 대해 중복 신고
+      const reportUserList = [];
+      for (let i = 0; i < checkResult.length; i++) {
+        if (checkResult[i].report_user_id !== userId) {
+          reportUserList.push(checkResult[i].report_user_id);
+        } else {
+          reportUserList.push(checkResult[i].report_user_id);
+          this.logger.warn('⚠️ 동일한 인물의 신고 발생!');
+          //throw new ConflictException('이미 신고된 댓글입니다.');
+        }
+      }
+
+      reportUserList.push(userId);
+      console.log('reportUserList: ', reportUserList);
+
+      await this.commentRepository.createCommentReport(
+        createCommentReportDto,
+        userId,
+        target_user_id,
+        queryRunner,
+      );
+
+      // 일정 횟수 신고되어 댓글 삭제
+      if (reportUserList.length === 5) {
+        this.logger.log(`${reportUserList.length}회 신고되어 댓글 삭제됨`);
+        this.commentRepository.deleteComment(
+          target_user_id,
+          commentId,
+          CommentStatus.REPORTED,
+        );
+        commentStatus = 'reported';
+      }
 
       await queryRunner.commitTransaction();
     } catch (err) {
@@ -298,7 +341,7 @@ export class CommentsService {
     } finally {
       await queryRunner.release();
     }
-    return 'request success';
+    return { status: commentStatus };
   }
 
   // 댓글 삭제 (status: deleted로 변경)
@@ -316,6 +359,7 @@ export class CommentsService {
       const result = await this.commentRepository.deleteComment(
         user,
         commentId,
+        CommentStatus.DELETED,
       );
 
       // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생 추가예정

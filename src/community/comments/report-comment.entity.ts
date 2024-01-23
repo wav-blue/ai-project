@@ -1,7 +1,7 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('report_comment')
-export class commentReport extends BaseEntity {
+@Entity('REPORT_COMMENT')
+export class CommentReport extends BaseEntity {
   @PrimaryGeneratedColumn()
   reportCommentId: number;
 
@@ -15,7 +15,7 @@ export class commentReport extends BaseEntity {
   targetUserId: string;
 
   @Column({ type: 'varchar', length: 100 })
-  reportType: number;
+  reportType: string;
 
   @Column({ type: 'datetime' })
   createdAt: Date;

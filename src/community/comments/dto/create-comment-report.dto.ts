@@ -5,11 +5,9 @@ export class CreateCommentReportDto {
   commentId: number;
 
   @IsNotEmpty()
+  reportType: string;
+
   reportUserId: string;
 
-  @IsNotEmpty()
   targetUserId: string;
-
-  @IsNotEmpty()
-  reportType: string;
 }
