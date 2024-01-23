@@ -90,7 +90,6 @@ export class CommentsService {
       for (let i = 0; i < results.length; i++) {
         delete results[i].userId;
         delete results[i].updatedAt;
-        delete results[i].deletedAt;
         if (results[i].status !== 'normal') {
           results[i].anonymous_number = AnonymousNumberType.DELETED;
           results[i].content = '삭제된 댓글입니다.';
@@ -101,7 +100,7 @@ export class CommentsService {
       }
       const maxPage = Math.ceil(amount / pageSize);
       this.logger.verbose(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount}\n계산된 페이지 수 : ${maxPage}`,
+        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
       );
       return { count: maxPage, list: results };
     } catch (err) {
@@ -154,7 +153,6 @@ export class CommentsService {
       for (let i = 0; i < results.length; i++) {
         delete results[i].userId;
         delete results[i].updatedAt;
-        delete results[i].deletedAt;
         if (results[i].status !== 'normal') {
           results[i].anonymous_number = AnonymousNumberType.DELETED;
           results[i].content = '삭제된 댓글입니다.';
@@ -165,7 +163,7 @@ export class CommentsService {
       }
       const maxPage = Math.ceil(amount / pageSize);
       this.logger.log(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount}\n계산된 페이지 수 : ${maxPage}`,
+        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
       );
       return { count: maxPage, list: results };
     } catch (err) {
@@ -340,10 +338,11 @@ export class CommentsService {
 
       reportUserList.push(userId);
 
+      createCommentReportDto.reportUserId = userId;
+      createCommentReportDto.targetUserId = target_user_id;
+
       await this.commentRepository.createCommentReport(
         createCommentReportDto,
-        userId,
-        target_user_id,
         queryRunner,
       );
 

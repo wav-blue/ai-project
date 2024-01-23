@@ -214,14 +214,10 @@ export class CommentRepository {
   // 신고 내역 업로드
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
-    userId: string,
-    targetUserId: string,
     queryRunner: QueryRunner,
   ) {
     const newReport = queryRunner.manager.create(CommentReport, {
       ...createCommentReportDto,
-      reportUserId: userId,
-      targetUserId,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,

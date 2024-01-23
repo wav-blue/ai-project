@@ -18,7 +18,7 @@ export class Mylogger extends ConsoleLogger {
   }
   // 상세한 로그를 출력
   verbose(message: any, ...optionalParams: [...any, string?]) {
-    super.warn(`📜 ${message}`, ...optionalParams);
+    super.verbose(`📜 ${message}`, ...optionalParams);
     this.saveLog();
   }
   // 디버그를 위한 메시지를 출력
