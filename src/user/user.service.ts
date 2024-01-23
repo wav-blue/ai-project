@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { DataSource, QueryRunner } from 'typeorm';
@@ -13,12 +14,10 @@ import { User } from './user.entity';
 import { RefreshToken } from './refreshtoken.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { GoogleRequest } from 'passport-google-oauth20';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
-import * as jwtConfig from 'config';
 import { LoginUserDto } from './dtos/login-user.dto';
 
 dotenv.config();
@@ -49,6 +48,12 @@ export class UserService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getUserById(userId: string): Promise<User> {
+    const found = await this.userRepository.getUserbyId(userId);
+    if (!found) throw new UnauthorizedException('존재하지 않는 계정입니다.');
+    return found;
   }
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const found = await this.userRepository.getUserbyEmail(createUserDto.email);

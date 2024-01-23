@@ -49,13 +49,20 @@ export class UserController {
     return true;
   }
 
+  @Get('/me')
+  @UseGuards(LocalAuthGuard)
+  async getUser(@Req() req: Request) {
+    const userId = req['user'];
+
+    const user = await this.userService.getUserById(userId);
+
+    return user.readonlyData();
+  }
+
   @Put('/edit')
   @UsePipes(ValidationPipe)
   @UseGuards(LocalAuthGuard)
-  async updateUser(
-    @Body() updateUserDto: UpdateUserDto,
-    @Req() req: Request,
-  ): Promise<User> {
+  async updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
     this.logger.log(' user put 요청 실행 !');
     console.log(req['user']);
     const userId = req['user'];
@@ -65,7 +72,7 @@ export class UserController {
     }
 
     const newUser = await this.userService.updateUser(updateUserDto);
-    return newUser;
+    return newUser.readonlyData();
   }
 
   @Post('/login/email')
@@ -80,7 +87,7 @@ export class UserController {
       await this.userService.userLogin(loginUser);
 
     this.setTokens(res, accessToken, refreshToken);
-    res.send(user.readonlyData());
+    res.redirect('http://localhost:3000');
   }
 
   @Get('/login/google')
@@ -100,7 +107,7 @@ export class UserController {
       await this.userService.userLogin(userDto);
 
     this.setTokens(res, accessToken, refreshToken);
-    res.send(user.readonlyData());
+    res.redirect('http://localhost:3000');
   }
 
   @Get('/login/kakao')
@@ -118,22 +125,17 @@ export class UserController {
       await this.userService.userLogin(userDto);
 
     this.setTokens(res, accessToken, refreshToken);
-    res.send(user.readonlyData());
+    res.redirect('http://localhost:3000');
   }
 
   setTokens(@Res() res: Response, accessToken, refreshToken): void {
     //토큰 설정
-    //headers['Authorization']에 accessToken 설정
-    // 토큰을 Bearer 형식으로 설정
-    const bearerToken = `Bearer ${accessToken}`;
-    res.header('Authorization', bearerToken);
-    // 헤더 설정
-    // res.cookie('accessToken', accessToken, {
-    //   domain: 'localhost',
-    //   maxAge: 600 * 1000,
-    //   httpOnly: true,
-    //   path: '/',
-    // });
+    res.cookie('accessToken', accessToken, {
+      domain: 'localhost',
+      maxAge: 600 * 1000,
+      httpOnly: true,
+      path: '/',
+    });
 
     res.cookie('refreshToken', refreshToken, {
       domain: 'localhost',

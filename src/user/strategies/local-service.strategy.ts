@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, ExtractJwt } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 
 import { Request } from 'express';
 import * as dotenv from 'dotenv';
@@ -14,16 +14,16 @@ const jwtConfig = config.get('jwt');
 export class AccessStrategy extends PassportStrategy(Strategy, 'access') {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: (req: Request) => {
+        const userAccessToken = req.cookies.accessToken;
+        return userAccessToken; // 쿠키에서 토큰 추출
+      },
       secretOrKey: jwtConfig.secret,
-      ignoreExpiration: false,
     });
   }
 
   async validate(payload: any) {
-    console.log('access', payload);
     const userId = payload.user_id;
-    console.log('access', userId);
 
     return userId;
   }
@@ -48,7 +48,6 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
 
   async validate(req: Request, payload: any) {
     const userId = payload.user_id;
-    console.log('refresh', payload);
 
     // foundRefreshToken이 존재하는지 확인하고 속성에 접근하기 전에 확인
     const foundRefreshToken =
@@ -61,7 +60,6 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
 
     const bearerToken = `Bearer ${accessToken}`;
     req.res.header('Authorization', bearerToken);
-    console.log('refresh', userId);
 
     return userId;
   }
