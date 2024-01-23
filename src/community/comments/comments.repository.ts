@@ -6,12 +6,12 @@ import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { CommentStatus } from './enum/CommentStatus.enum';
 import { CommentReport } from './report-comment.entity';
-import { MyloggerService } from 'src/common/logger/mylogger.service';
+import { Mylogger } from 'src/common/logger/mylogger.service';
 
 @Injectable()
 export class CommentRepository {
   private commentRepository: Repository<Comment>;
-  private logger = new MyloggerService(CommentRepository.name);
+  private logger = new Mylogger(CommentRepository.name);
 
   constructor(private readonly dataSource: DataSource) {
     this.commentRepository = this.dataSource.getRepository(Comment);
@@ -57,7 +57,9 @@ export class CommentRepository {
       .createQueryBuilder()
       .select('COUNT(DISTINCT(`user_id`))', 'count')
       .from(Comment, 'comment')
-      .where({ boardId })
+      .where('anonymous_number != 0 and comment.boardId = :boardId', {
+        boardId,
+      })
       .getRawMany();
     const { count } = result[0];
     return count;
@@ -75,7 +77,7 @@ export class CommentRepository {
     return found;
   }
 
-  async checkBoard(boardId: number, queryRunner: QueryRunner) {
+  async checkBoard(boardId: number, queryRunner: QueryRunner): Promise<Board> {
     const found = await queryRunner.manager
       .createQueryBuilder()
       .select('board')
