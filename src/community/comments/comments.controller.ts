@@ -18,11 +18,11 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
-import { MyloggerService } from 'src/common/logger/mylogger.service';
+import { Mylogger } from 'src/common/logger/mylogger.service';
 
 @Controller('comments')
 export class CommentsController {
-  private logger = new MyloggerService(CommentsController.name);
+  private logger = new Mylogger(CommentsController.name);
   constructor(private commentsService: CommentsService) {}
 
   @Get('logger')
@@ -52,7 +52,7 @@ export class CommentsController {
     //   this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
     //   userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
     // }
-    this.logger.log(`현재 설정된 userId: ${userId}`);
+    this.logger.verbose(`현재 설정된 userId: ${userId}`);
     const comments = this.commentsService.getMyComments(userId, page, limit);
     return comments;
   }
@@ -68,7 +68,7 @@ export class CommentsController {
     if (!limit) limit = 15;
     if (!page) page = 1;
 
-    this.logger.log(`${boardId}번 게시글의 댓글 조회!`);
+    this.logger.verbose(`${boardId}번 게시글의 댓글 조회!`);
 
     const comments = await this.commentsService.getBoardComments(
       boardId,
@@ -100,6 +100,7 @@ export class CommentsController {
   }
 
   // 댓글 삭제 : 삭제하지 않고 상태만 변경 status: not_deleted -> deleted
+  @UseGuards(LocalAuthGuard)
   @Delete('/:commentId')
   @HttpCode(204)
   deleteComment(
