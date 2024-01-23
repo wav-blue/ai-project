@@ -7,7 +7,7 @@ export class CreateCommentDto {
   @IsNotEmpty()
   content: string;
 
-  anonymous_number;
+  anonymous_number: number;
 
   position: string;
 }

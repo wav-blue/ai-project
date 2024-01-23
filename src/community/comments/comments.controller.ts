@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Logger,
   Param,
   ParseIntPipe,
@@ -97,6 +98,7 @@ export class CommentsController {
 
   // 댓글 삭제 : 삭제하지 않고 상태만 변경 status: not_deleted -> deleted
   @Delete('/:commentId')
+  @HttpCode(204)
   deleteComment(
     @GetUser() userId: string,
     @Param('commentId', ParseIntPipe) commentId: number,
@@ -108,11 +110,13 @@ export class CommentsController {
 
   // 신고 내역 추가 (신고 누적 상황에 따라 해당 댓글 삭제)
   @Post('/report')
+  @UseGuards(LocalAuthGuard)
   createCommentReport(
     @GetUser() userId: string,
     @Body() createCommentReportDto: CreateCommentReportDto,
   ) {
     this.logger.log('댓글 신고 내역 추가 요청 받아짐!');
+
     const result = this.commentsService.createCommentReport(
       createCommentReportDto,
       userId,
