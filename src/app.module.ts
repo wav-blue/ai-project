@@ -10,6 +10,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { UserModule } from './user/user.module';
 import { OrderModule } from './order/order.module';
 import { ExceptionToHttpExceptionFilter } from './common/exception-filter';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ExceptionToHttpExceptionFilter } from './common/exception-filter';
     MongooseModule.forRoot(mongoConfig.uri),
     UserModule,
     CommunityModule,
+    ChatModule,
     OrderModule,
     ItemModule,
   ],
