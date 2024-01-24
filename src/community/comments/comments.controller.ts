@@ -13,12 +13,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
-import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Comment } from './entity/comments.entity';
 
 @Controller('comments')
 export class CommentsController {
@@ -33,6 +33,12 @@ export class CommentsController {
     this.logger.verbose('this is verbose');
     this.logger.debug('this is debug');
     return 'success!';
+  }
+
+  @Get('now')
+  testDate(): string {
+    const date = new Date();
+    return date.toString();
   }
 
   // 자신이 작성한 댓글 목록 조회

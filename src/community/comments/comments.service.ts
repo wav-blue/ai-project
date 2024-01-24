@@ -4,10 +4,8 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
-import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
@@ -18,6 +16,7 @@ import * as config from 'config';
 import { CommentStatus } from './enum/CommentStatus.enum';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
+import { Comment } from './entity/comments.entity';
 
 const flaskConfig = config.get('flask');
 

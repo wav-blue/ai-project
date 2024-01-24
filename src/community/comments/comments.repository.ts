@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
-import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { CommentStatus } from './enum/CommentStatus.enum';
-import { CommentReport } from './report-comment.entity';
 import { Mylogger } from 'src/common/logger/mylogger.service';
+import { CommentReport } from './entity/report-comment.entity';
+import { Comment } from './entity/comments.entity';
 
 @Injectable()
 export class CommentRepository {
