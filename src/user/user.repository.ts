@@ -6,38 +6,39 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Injectable()
 export class UserRepository {
-  private userRepository: Repository<User>;
+  async getUserbyId(userId: string, queryRunner: QueryRunner): Promise<User> {
+    try {
+      const found = await queryRunner.manager
+        .createQueryBuilder()
+        .select('user')
+        .from(User, 'user')
+        .where('user.user_id = :userId', { userId })
+        .getOne();
 
-  constructor(private readonly dataSource: DataSource) {
-    this.userRepository = this.dataSource.getRepository(User);
+      return found;
+    } catch (err) {
+      console.error('getuserbyid error', err.message);
+      throw new Error('게시글 카운팅 실패');
+    }
   }
 
-  async getUserbyId(userId: string): Promise<User> {
-    const found = await this.userRepository
-      .createQueryBuilder()
-      .select('user')
-      .from(User, 'user')
-      .where('user.user_id = :userId', { userId })
-      .getOne();
-
-    return found;
-  }
-
-  async getUserbyEmail(email: string): Promise<User> {
-    const found = await this.userRepository
+  async getUserbyEmail(email: string, queryRunner: QueryRunner): Promise<User> {
+    try {
+    const found = await queryRunner.manager
       .createQueryBuilder()
       .select('user')
       .from(User, 'user')
       .where('user.email = :email', { email })
       .getOne();
 
-    return found;
+    return found;}
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(createUserDto: CreateUserDto, queryRunner: QueryRunner): Promise<User> {
+    try {
     const { email, logintype, password } = createUserDto;
 
-    const newUserResults = await this.userRepository
+    const newUserResults = await queryRunner.manager
       .createQueryBuilder()
       .insert()
       .into(User)
@@ -49,15 +50,16 @@ export class UserRepository {
       .execute();
 
     const newUser = await this.getUserbyId(
-      newUserResults.identifiers[0].user_id,
+      newUserResults.identifiers[0].user_id,queryRunner
     );
-    return newUser;
+    return newUser;}
   }
 
-  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
+  async updateUser(updateUserDto: UpdateUserDto, queryRunner: QueryRunner): Promise<User> {
+    try {
     const { userId, password } = updateUserDto;
 
-    await this.userRepository
+    await queryRunner.manager
       .createQueryBuilder()
       .update(User)
       .set({
@@ -66,8 +68,8 @@ export class UserRepository {
       .where('user_id = :userId', { userId })
       .execute();
 
-    const found = await this.getUserbyId(userId);
+    const found = await this.getUserbyId(userId, queryRunner);
 
     return found;
-  }
+  }}
 }
