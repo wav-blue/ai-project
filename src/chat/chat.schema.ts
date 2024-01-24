@@ -1,12 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, ObjectId } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type ChatDocument = HydratedDocument<Chat>;
 
-@Schema()
+@Schema({ collection: 'chat' })
 export class Chat {
-  @Prop({ required: true })
-  _id: ObjectId;
+  // @Prop({ type: Types.ObjectId })
+  // _id: Types.ObjectId;
 
   @Prop({ required: true })
   userId: string;
@@ -20,7 +20,7 @@ export class Chat {
   @Prop()
   log: Array<{ no: number; act: string; token: number; date: Date }>;
 
-  @Prop({ required: true })
+  @Prop()
   token: number;
 
   @Prop()

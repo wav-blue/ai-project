@@ -81,7 +81,7 @@ export class BoardsService {
     }
   }
 
-  //검색
+  //일반 전체 검색
   async searchBoards(
     keyword: string,
     page: number,
@@ -192,10 +192,8 @@ export class BoardsService {
     }
   }
 
-  //읽기 전 먼저 view 카운트 처리
-  //비회원 가능 서비스이므로 본인작성 글도 그냥 조회수 올라가게 처리
   //스테이터스 먼저 가져가서 읽기 처리  //with delete 적용
-  ////삭제나 신고된상태면 status만 전송: 프론트에서 삭제/신고된 게시물입니다 구분 안내 위해서..
+  ////삭제나 신고된상태면 status만 전송: 프론트에서 삭제/신고된 게시물입니다 구분해서 안내하기 위해서..
   ////상태 정상일 경우 전체 읽어오기
   //이미지 url은 content 에 낑겨있음.
   async readBoard(boardId: number): Promise<Board> {
@@ -212,8 +210,9 @@ export class BoardsService {
       if (result.status !== 'normal') {
         return { status, deletedAt } as Board;
       }
+      // 삭제 | 신고되지 않은 정상 게시물일 경우
       await this.boardsRepository.updateView(boardId, queryRunner); //조회수 올림
-      normalBoard.views += 1; //이미 가져왔던 결과에 조회수 1 반영.
+      normalBoard.views += 1; //보내주는 녀석엔 이미 가져왔던 결과에 조회수 1 반영.
       await queryRunner.commitTransaction();
       return normalBoard as Board;
     } catch (error) {
@@ -231,7 +230,6 @@ export class BoardsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      console.log('dto:', createBoardDto);
       const result = await this.boardsRepository.insertBoard(
         createBoardDto,
         queryRunner,
