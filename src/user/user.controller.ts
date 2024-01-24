@@ -87,7 +87,7 @@ export class UserController {
       await this.userService.userLogin(loginUser);
 
     this.setTokens(res, accessToken, refreshToken);
-    res.redirect('http://localhost:3000');
+    res.send(user.readonlyData());
   }
 
   @Get('/login/google')
