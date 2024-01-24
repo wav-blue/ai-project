@@ -1,14 +1,17 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
+import { CommentStatus } from './enum/CommentStatus.enum';
+import { CommentReport } from './report-comment.entity';
+import { Mylogger } from 'src/common/logger/mylogger.service';
 
 @Injectable()
 export class CommentRepository {
   private commentRepository: Repository<Comment>;
-  private logger = new Logger('commentRepository');
+  private logger = new Mylogger(CommentRepository.name);
 
   constructor(private readonly dataSource: DataSource) {
     this.commentRepository = this.dataSource.getRepository(Comment);
@@ -39,7 +42,7 @@ export class CommentRepository {
       .getRawMany();
 
     if (result.length === 0) {
-      return 0;
+      return null;
     }
     const { anonymous_number } = result[0];
     return anonymous_number;
@@ -54,12 +57,15 @@ export class CommentRepository {
       .createQueryBuilder()
       .select('COUNT(DISTINCT(`user_id`))', 'count')
       .from(Comment, 'comment')
-      .where({ boardId })
+      .where('anonymous_number != 0 and comment.boardId = :boardId', {
+        boardId,
+      })
       .getRawMany();
     const { count } = result[0];
     return count;
   }
-
+  // 필요한 것만 가져오도록 수정
+  // status 필요
   async checkComment(commentId: number) {
     const found = this.commentRepository
       .createQueryBuilder()
@@ -71,7 +77,7 @@ export class CommentRepository {
     return found;
   }
 
-  async checkBoard(boardId: number, queryRunner: QueryRunner) {
+  async checkBoard(boardId: number, queryRunner: QueryRunner): Promise<Board> {
     const found = await queryRunner.manager
       .createQueryBuilder()
       .select('board')
@@ -183,7 +189,7 @@ export class CommentRepository {
       content,
       anonymous_number,
       position,
-      status: 'normal',
+      status: CommentStatus.NOT_DELETED,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -193,12 +199,24 @@ export class CommentRepository {
     return result;
   }
 
+  async checkReportUser(commentId: number, queryRunner: QueryRunner) {
+    return await queryRunner.manager
+      .createQueryBuilder()
+      .select('report.report_user_id')
+      .from(CommentReport, 'report')
+      .where('report.commentId = :commentId', {
+        commentId,
+      })
+      .getRawMany();
+    // 원하는 형태: [{report_user_id: 'abc'}, {report_user_id: 'def'}]
+  }
+
   // 신고 내역 업로드
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
     queryRunner: QueryRunner,
   ) {
-    const newReport = queryRunner.manager.create(Comment, {
+    const newReport = queryRunner.manager.create(CommentReport, {
       ...createCommentReportDto,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -209,13 +227,13 @@ export class CommentRepository {
     return result;
   }
 
-  async deleteComment(userId: string, commentId: number) {
+  async deleteComment(userId: string, commentId: number, deleteType: string) {
     try {
       const result = await this.commentRepository
         .createQueryBuilder()
         .update(Comment)
         .set({
-          status: 'deleted',
+          status: deleteType,
           updatedAt: new Date(),
           deletedAt: new Date(),
         })
@@ -223,7 +241,7 @@ export class CommentRepository {
         .execute();
       return result;
     } catch (error) {
-      throw new ConflictException('댓글 삭제에 실패했습니다');
+      return error;
     }
   }
 }

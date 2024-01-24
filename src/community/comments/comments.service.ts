@@ -1,8 +1,9 @@
 import {
   ConflictException,
   Injectable,
-  Logger,
+  InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
 import { Comment } from './comments.entity';
@@ -13,12 +14,16 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { catchError, firstValueFrom, map } from 'rxjs';
 import * as config from 'config';
+import { CommentStatus } from './enum/CommentStatus.enum';
+import { Mylogger } from 'src/common/logger/mylogger.service';
+import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
 
 const flaskConfig = config.get('flask');
 
 @Injectable()
 export class CommentsService {
-  private logger = new Logger('CommentsService');
+  private readonly logger = new Mylogger(CommentsService.name);
+
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
@@ -49,6 +54,7 @@ export class CommentsService {
       );
 
       if (!found) {
+        this.logger.error('해당하는 게시글을 찾을 수 없음');
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
@@ -68,9 +74,11 @@ export class CommentsService {
     } catch (err) {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
-        throw new NotFoundException();
+        throw new NotFoundException(err.message);
+      } else if (err instanceof ConflictException) {
+        throw new ConflictException(err.message);
       } else {
-        throw new ConflictException();
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -80,10 +88,10 @@ export class CommentsService {
         return;
       }
       for (let i = 0; i < results.length; i++) {
+        delete results[i].userId;
         delete results[i].updatedAt;
-        delete results[i].deletedAt;
         if (results[i].status !== 'normal') {
-          results[i].anonymous_number = 0;
+          results[i].anonymous_number = AnonymousNumberType.DELETED;
           results[i].content = '삭제된 댓글입니다.';
           results[i].status = 'deleted';
           results[i].position = 'deleted';
@@ -91,8 +99,8 @@ export class CommentsService {
         }
       }
       const maxPage = Math.ceil(amount / pageSize);
-      this.logger.log(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount}\n계산된 페이지 수 : ${maxPage}`,
+      this.logger.verbose(
+        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
       );
       return { count: maxPage, list: results };
     } catch (err) {
@@ -100,7 +108,7 @@ export class CommentsService {
     }
   }
 
-  // 해당 Board의 Comment 조회
+  // 로그인한 유저가 작성한 Comment 조회
   async getMyComments(
     userId: string,
     page: number,
@@ -129,9 +137,11 @@ export class CommentsService {
     } catch (err) {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
-        throw new NotFoundException();
+        throw new NotFoundException(err.message);
+      } else if (err instanceof ConflictException) {
+        throw new ConflictException(err.message);
       } else {
-        throw new ConflictException();
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -141,10 +151,10 @@ export class CommentsService {
         return;
       }
       for (let i = 0; i < results.length; i++) {
+        delete results[i].userId;
         delete results[i].updatedAt;
-        delete results[i].deletedAt;
         if (results[i].status !== 'normal') {
-          results[i].anonymous_number = 0;
+          results[i].anonymous_number = AnonymousNumberType.DELETED;
           results[i].content = '삭제된 댓글입니다.';
           results[i].status = 'deleted';
           results[i].position = 'deleted';
@@ -153,7 +163,7 @@ export class CommentsService {
       }
       const maxPage = Math.ceil(amount / pageSize);
       this.logger.log(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount}\n계산된 페이지 수 : ${maxPage}`,
+        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
       );
       return { count: maxPage, list: results };
     } catch (err) {
@@ -162,7 +172,10 @@ export class CommentsService {
   }
 
   // Comment 작성
-  async createComment(user: string, createCommentDto: CreateCommentDto) {
+  async createComment(
+    user: string,
+    createCommentDto: CreateCommentDto,
+  ): Promise<Comment> {
     // 모델을 이용한 API 확정 전까지 임시로 position 설정
     const random_number = Math.random();
     console.log('random: ', random_number);
@@ -200,38 +213,59 @@ export class CommentsService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
-    let createResult;
+    // 생성된 댓글의 정보를 저장
+    let createResult: Comment;
 
     await queryRunner.startTransaction();
     try {
-      const foundByBoardId = await this.commentRepository.checkBoard(
+      const boardInfoByBoardId = await this.commentRepository.checkBoard(
         createCommentDto.boardId,
         queryRunner,
       );
-
-      if (!foundByBoardId) {
+      const { status } = boardInfoByBoardId;
+      if (!boardInfoByBoardId || status !== 'normal') {
+        this.logger.error('해당 게시글을 조회할 수 없음');
+        if (boardInfoByBoardId) this.logger.error(`게시글의 상태: ${status}`);
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
-      // 이미 댓글을 쓴 적이 있는 유저인지 확인
-      const anonymous_number = await this.commentRepository.getAnonymousNumber(
-        user,
-        createCommentDto,
-        queryRunner,
-      );
-      createCommentDto.anonymous_number = parseInt(anonymous_number);
-      this.logger.log(`익명 번호 ${anonymous_number}으로 댓글 생성`);
-      if (anonymous_number === 0) {
-        // 기록이 없을 시 새로 익명 번호 부여
-        const new_anonymous_number =
-          await this.commentRepository.getNewAnonymousNumber(
+      // 익명 번호를 부여
+      // 게시글 작성자는 특수 익명 번호 부여(0)
+      const boardWriter = boardInfoByBoardId.userId;
+      if (user === boardWriter) {
+        createCommentDto.anonymous_number = AnonymousNumberType.WRITER;
+        this.logger.verbose(
+          `게시글 작성자가 댓글 작성함 : ${AnonymousNumberType.WRITER}`,
+        );
+      } else {
+        // 일반 작성자
+        // 이미 댓글을 쓴 적이 있는 유저인지 확인
+        const existingAnonymousNumber =
+          await this.commentRepository.getAnonymousNumber(
+            user,
             createCommentDto,
             queryRunner,
           );
-
-        createCommentDto.anonymous_number = parseInt(new_anonymous_number) + 1;
-        this.logger.log('새로 부여한 유저 번호: ', new_anonymous_number);
+        if (existingAnonymousNumber) {
+          createCommentDto.anonymous_number = parseInt(existingAnonymousNumber);
+          this.logger.verbose(
+            `기존의 익명 번호가 존재함 : ${existingAnonymousNumber}`,
+          );
+        } else {
+          // 기록이 없을 시 새로 익명 번호 부여
+          const new_anonymous_number =
+            await this.commentRepository.getNewAnonymousNumber(
+              createCommentDto,
+              queryRunner,
+            );
+          createCommentDto.anonymous_number =
+            parseInt(new_anonymous_number) + 1;
+          this.logger.verbose(
+            `새로 익명 번호가 부여됨 : ${new_anonymous_number}`,
+          );
+        }
       }
+
       createResult = await this.commentRepository.createComment(
         user,
         createCommentDto,
@@ -242,8 +276,10 @@ export class CommentsService {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
-      } else {
+      } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
+      } else {
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
@@ -257,45 +293,92 @@ export class CommentsService {
   }
 
   // 신고 내역 작성 && 신고 누적 시 삭제
-  // 작성 예정
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
     userId: string,
   ) {
-    const { commentId } = createCommentReportDto;
+    let commentStatus = 'normal';
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
     await queryRunner.startTransaction();
     try {
-      const found = null;
+      const { commentId } = createCommentReportDto;
+
+      // 신고된 Comment의 정보 조회
+      const found = await this.commentRepository.checkComment(commentId);
       if (!found) {
-        // deleted 상태이거나 데이터베이스에서 찾을 수 없는 댓글
-        throw new ConflictException('이미 삭제된 댓글입니다.');
+        this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
+        throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
+      if (found.status !== 'normal') {
+        this.logger.error(`댓글의 상태가 ${found.status}이므로 신고할 수 없음`);
+        throw new NotFoundException('이미 삭제된 댓글입니다.');
+      }
+
+      // 작성자의 id 저장
+      const target_user_id = found.userId;
+
+      // 해당 댓글을 report한 User들의 기록을 조회
+      const checkResult = await this.commentRepository.checkReportUser(
+        commentId,
+        queryRunner,
+      );
+      console.log('checkResult: ', checkResult);
+      // 동일 인물이 하나의 댓글에 대해 중복 신고
+      const reportUserList = [];
+      for (let i = 0; i < checkResult.length; i++) {
+        if (checkResult[i].report_user_id !== userId) {
+          reportUserList.push(checkResult[i].report_user_id);
+        } else {
+          this.logger.error(`한 유저가 같은 댓글을 두번 신고할 수 없음`);
+          throw new ConflictException('이미 신고된 댓글입니다.');
+        }
+      }
+
+      reportUserList.push(userId);
+
+      createCommentReportDto.reportUserId = userId;
+      createCommentReportDto.targetUserId = target_user_id;
+
       await this.commentRepository.createCommentReport(
         createCommentReportDto,
         queryRunner,
       );
+
+      console.log('commentStatus: ', commentStatus);
+      // 일정 횟수 신고되어 댓글 삭제
+      if (reportUserList.length >= 5) {
+        this.logger.verbose(`${reportUserList.length}회 신고되어 댓글 삭제됨`);
+        commentStatus = CommentStatus.REPORTED;
+        this.commentRepository.deleteComment(
+          target_user_id,
+          commentId,
+          commentStatus,
+        );
+      }
 
       await queryRunner.commitTransaction();
     } catch (err) {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
-      } else {
+      } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
+      } else {
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
     }
-    return 'request success';
+    return { status: commentStatus };
   }
 
   // 댓글 삭제 (status: deleted로 변경)
-  async deleteComment(user: string, commentId: number) {
+  async deleteComment(reqUserId: string, commentId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
+    console.log(reqUserId);
 
     await queryRunner.startTransaction();
     try {
@@ -304,9 +387,17 @@ export class CommentsService {
         // 이미 삭제됐거나 데이터베이스에서 찾을 수 없는 댓글
         throw new NotFoundException('댓글이 존재하지 않습니다.');
       }
+      if (found.userId !== reqUserId) {
+        this.logger.error(`삭제 권한이 없는 유저의 요청`);
+        this.logger.verbose(
+          `요청 유저 아이디: ${reqUserId}\n작성자의 유저 아이디: ${found.userId}`,
+        );
+        throw new UnauthorizedException('삭제 권한이 없습니다.');
+      }
       const result = await this.commentRepository.deleteComment(
-        user,
+        reqUserId,
         commentId,
+        CommentStatus.DELETED,
       );
 
       // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생 추가예정
@@ -317,8 +408,12 @@ export class CommentsService {
       await queryRunner.rollbackTransaction();
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
-      } else {
+      } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
+      } else if (err instanceof UnauthorizedException) {
+        throw new UnauthorizedException(err.message);
+      } else {
+        throw new InternalServerErrorException(err.message);
       }
     } finally {
       await queryRunner.release();
