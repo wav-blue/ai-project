@@ -91,7 +91,7 @@ export class UserController {
     const { user, accessToken, refreshToken } =
       await this.userService.userLogin(loginUser);
 
-    await this.setTokens(res, accessToken, refreshToken);
+    this.setTokens(res, accessToken, refreshToken);
     res.send(user.readonlyData());
   }
 
