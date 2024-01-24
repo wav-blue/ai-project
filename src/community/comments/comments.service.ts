@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -392,7 +393,7 @@ export class CommentsService {
         this.logger.verbose(
           `요청 유저 아이디: ${reqUserId}\n작성자의 유저 아이디: ${found.userId}`,
         );
-        throw new UnauthorizedException('삭제 권한이 없습니다.');
+        throw new ForbiddenException('삭제 권한이 없습니다.');
       }
       const result = await this.commentRepository.deleteComment(
         reqUserId,
@@ -410,8 +411,8 @@ export class CommentsService {
         throw new NotFoundException(err.message);
       } else if (err instanceof ConflictException) {
         throw new ConflictException(err.message);
-      } else if (err instanceof UnauthorizedException) {
-        throw new UnauthorizedException(err.message);
+      } else if (err instanceof ForbiddenException) {
+        throw new ForbiddenException(err.message);
       } else {
         throw new InternalServerErrorException(err.message);
       }
