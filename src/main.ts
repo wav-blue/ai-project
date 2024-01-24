@@ -20,6 +20,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
   await app.listen(serverConfig.port);
   Logger.log(`Application running on port ${serverConfig.port}`);
 }

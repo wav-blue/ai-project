@@ -23,7 +23,6 @@ export class AccessStrategy extends PassportStrategy(Strategy, 'access') {
   }
 
   async validate(payload: any) {
-    console.log('acccc');
     const userId = payload.user_id;
 
     return userId;
@@ -42,13 +41,12 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
         return userRefreshToken; // 쿠키에서 토큰 추출
       },
       secretOrKey: jwtConfig.secret,
+      ignoreExpiration: false,
       passReqToCallback: true,
-      callbackURL: 'http://localhost:5001/api/user/login/email/callback',
     });
   }
 
   async validate(req: Request, payload: any) {
-    console.log('refe');
     const userId = payload.user_id;
 
     // foundRefreshToken이 존재하는지 확인하고 속성에 접근하기 전에 확인
@@ -60,13 +58,8 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
     }
     const accessToken = this.jwt.sign({ user_id: userId }, { expiresIn: 600 });
 
-    // AccessToken을 쿠키로 설정
-    req.res.cookie('accessToken', accessToken, {
-      domain: 'localhost',
-      maxAge: 600 * 1000,
-      httpOnly: true,
-      path: '/',
-    });
+    const bearerToken = `Bearer ${accessToken}`;
+    req.res.header('Authorization', bearerToken);
 
     return userId;
   }

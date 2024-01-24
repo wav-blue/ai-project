@@ -20,9 +20,6 @@ export class UserRepository {
       .where('user.user_id = :userId', { userId })
       .getOne();
 
-    // const found = await this.userRepository.findOne({
-    //   where: { user_id: userId },
-    // });
     return found;
   }
 
@@ -30,12 +27,10 @@ export class UserRepository {
     const found = await this.userRepository
       .createQueryBuilder()
       .select('user')
-      //.select(['user.user_id', 'user.email', 'user.password']) // 원하는 컬럼을 명시적으로 선택
       .from(User, 'user')
       .where('user.email = :email', { email })
       .getOne();
 
-    // const found = await this.userRepository.findOne({ where: { email } });
     return found;
   }
 
@@ -56,13 +51,6 @@ export class UserRepository {
     const newUser = await this.getUserbyId(
       newUserResults.identifiers[0].user_id,
     );
-    // const newUser = await this.userRepository.create({
-    //   email: email,
-    //   logintype: logintype,
-    //   password: password,
-    // });
-    // await this.userRepository.save(newUser);
-
     return newUser;
   }
 
@@ -79,8 +67,6 @@ export class UserRepository {
       .execute();
 
     const found = await this.getUserbyId(userId);
-    // found.password = password;
-    // await this.userRepository.save(found);
 
     return found;
   }

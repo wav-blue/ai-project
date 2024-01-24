@@ -23,10 +23,6 @@ import { GoogleRequest } from 'passport-google-oauth20';
 
 import { Response } from 'express';
 
-import * as config from 'config';
-
-const jwtConfig = config.get('jwt');
-
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
@@ -53,13 +49,20 @@ export class UserController {
     return true;
   }
 
+  @Get('/me')
+  @UseGuards(LocalAuthGuard)
+  async getUser(@Req() req: Request) {
+    const userId = req['user'];
+
+    const user = await this.userService.getUserById(userId);
+
+    return user.readonlyData();
+  }
+
   @Put('/edit')
   @UsePipes(ValidationPipe)
   @UseGuards(LocalAuthGuard)
-  async updateUser(
-    @Body() updateUserDto: UpdateUserDto,
-    @Req() req: Request,
-  ): Promise<User> {
+  async updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
     this.logger.log(' user put 요청 실행 !');
     console.log(req['user']);
     const userId = req['user'];
@@ -69,7 +72,7 @@ export class UserController {
     }
 
     const newUser = await this.userService.updateUser(updateUserDto);
-    return newUser;
+    return newUser.readonlyData();
   }
 
   @Post('/login/email')
@@ -78,18 +81,18 @@ export class UserController {
     @Res() res: Response,
   ) {
     const { email, password } = loginRequest;
-    this.logger.log(' user login 요청 실행 !');
+    const loginUser = { email, logintype: 'EMAIL', password };
 
     const { user, accessToken, refreshToken } =
-      await this.userService.userLoginbyEmail(email, password);
+      await this.userService.userLogin(loginUser);
 
-    this.setCookies(res, accessToken, refreshToken);
-    res.send(user.readonlyData());
+    this.setTokens(res, accessToken, refreshToken);
+    res.redirect('http://localhost:3000');
   }
 
   @Get('/login/google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req: Request) {}
+  async googleAuth() {}
 
   @Get('/login/google/callback')
   @UseGuards(AuthGuard('google'))
@@ -98,21 +101,34 @@ export class UserController {
     @Res() res: Response, // : Promise<GoogleLoginAuthOutputDto>
   ) {
     console.log('callback tests, google');
+    const userDto = req.user;
+
+    const { user, accessToken, refreshToken } =
+      await this.userService.userLogin(userDto);
+
+    this.setTokens(res, accessToken, refreshToken);
+    res.redirect('http://localhost:3000');
+  }
+
+  @Get('/login/kakao')
+  @UseGuards(AuthGuard('kakao'))
+  async kakaoAuth() {}
+
+  @Get('/login/kakao/callback')
+  @UseGuards(AuthGuard('kakao'))
+  async kakaoAuthCallback(@Req() req: Request, @Res() res: Response) {
     const userDto = req['user'];
 
     console.log(userDto);
 
     const { user, accessToken, refreshToken } =
-      await this.userService.googleLogin(userDto);
+      await this.userService.userLogin(userDto);
 
-    console.log('cont', user, accessToken, refreshToken);
-
-    this.setCookies(res, accessToken, refreshToken);
-    console.log('user login end');
-    res.send(user.readonlyData());
+    this.setTokens(res, accessToken, refreshToken);
+    res.redirect('http://localhost:3000');
   }
 
-  setCookies(@Res() res: Response, accessToken, refreshToken): void {
+  setTokens(@Res() res: Response, accessToken, refreshToken): void {
     //토큰 설정
     res.cookie('accessToken', accessToken, {
       domain: 'localhost',
@@ -120,6 +136,7 @@ export class UserController {
       httpOnly: true,
       path: '/',
     });
+
     res.cookie('refreshToken', refreshToken, {
       domain: 'localhost',
       maxAge: 3600 * 1000,
