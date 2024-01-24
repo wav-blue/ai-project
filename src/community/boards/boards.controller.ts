@@ -16,6 +16,7 @@ import { LocalAuthGuard } from '../../user/guards/local-service.guard';
 import { BoardsService } from './boards.service';
 import { Board } from './boards.entity';
 import { CreateBoardDto, UpdateBoardDto } from './boards.dto';
+//import { GetUser } from 'src/common/decorator/get-user.decorator';
 
 @Controller('boards')
 export class BoardsController {

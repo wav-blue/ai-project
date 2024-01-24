@@ -1,39 +1,38 @@
-import { Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { Chat } from './chat.schema';
+import { CreateFreeChatDto } from './chat.dto';
+import { LocalAuthGuard } from '../user/guards/local-service.guard';
+import { GetUser } from 'src/common/decorator/get-user.decorator';
+//리턴타입 만들기?
 
 @Controller('chat')
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
-  // @Post('/free')
-  // async startFirstChat(
-  //   @Request() req: Request,
-  //   @Body() chatDto: CreateFreeChatDto
-  // ) {
-  //   try {
-  //   } catch (err) {
-  //     console.error(err);
-  //     throw err;
-  //   }
-  // }
-
-  @Post()
-  async getTest() {
+  @Post('/free')
+  @UseGuards(LocalAuthGuard)
+  @UsePipes(ValidationPipe)
+  async createFirstChat(
+    @GetUser() userId: string,
+    @Body() chatDto: CreateFreeChatDto,
+  ): Promise<void> {
+    chatDto.userId = userId;
     try {
-      const result = await this.chatService.getCompletion();
+      const result = await this.chatService.startFisrtChat(chatDto);
       console.log(result);
-      return result;
     } catch (err) {
       console.error(err);
       throw err;
     }
   }
 
-  @Post('/test')
-  async create(): Promise<Chat> {
-    return this.chatService.testChatSave();
-  }
   //첫채팅
   //질문은 그냥 바로 보내주고 답변이랑 같이 받기??
   //아무튼 로그를 메타데이터랑 같이 저장:주제, 날짜 토큰..
