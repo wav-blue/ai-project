@@ -17,6 +17,7 @@ import { CommentStatus } from './enum/CommentStatus.enum';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
 import { Comment } from './entity/comments.entity';
+import { randomPosition } from 'src/utils/comment.util';
 
 const flaskConfig = config.get('flask');
 
@@ -90,12 +91,12 @@ export class CommentsService {
       for (let i = 0; i < results.length; i++) {
         delete results[i].userId;
         delete results[i].updatedAt;
-        if (results[i].status !== 'normal') {
+        if (results[i].status !== CommentStatus.NOT_DELETED) {
           results[i].anonymous_number = AnonymousNumberType.DELETED;
           results[i].content = '삭제된 댓글입니다.';
-          results[i].status = 'deleted';
-          results[i].position = 'deleted';
-          results[i].createdAt = 'deleted';
+          results[i].status = CommentStatus.DELETED;
+          results[i].position = CommentStatus.DELETED;
+          results[i].createdAt = CommentStatus.DELETED;
         }
       }
       const maxPage = Math.ceil(amount / pageSize);
@@ -153,12 +154,12 @@ export class CommentsService {
       for (let i = 0; i < results.length; i++) {
         delete results[i].userId;
         delete results[i].updatedAt;
-        if (results[i].status !== 'normal') {
+        if (results[i].status !== CommentStatus.NOT_DELETED) {
           results[i].anonymous_number = AnonymousNumberType.DELETED;
           results[i].content = '삭제된 댓글입니다.';
-          results[i].status = 'deleted';
-          results[i].position = 'deleted';
-          results[i].createdAt = 'deleted';
+          results[i].status = CommentStatus.DELETED;
+          results[i].position = CommentStatus.DELETED;
+          results[i].createdAt = CommentStatus.DELETED;
         }
       }
       const maxPage = Math.ceil(amount / pageSize);
@@ -177,12 +178,8 @@ export class CommentsService {
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
     // 모델을 이용한 API 확정 전까지 임시로 position 설정
-    const random_number = Math.random();
-    console.log('random: ', random_number);
-    let position = 'positive';
-    if (random_number < 0.5) {
-      position = 'negative';
-    }
+    const position = randomPosition();
+    this.logger.verbose(`랜덤으로 결정된 position: ${position}`);
     createCommentDto.position = position;
 
     // Flask 서버로 요청하여 position 설정
@@ -218,20 +215,20 @@ export class CommentsService {
 
     await queryRunner.startTransaction();
     try {
-      const boardInfoByBoardId = await this.commentRepository.checkBoard(
+      const foundBoard = await this.commentRepository.checkBoard(
         createCommentDto.boardId,
         queryRunner,
       );
-      const { status } = boardInfoByBoardId;
-      if (!boardInfoByBoardId || status !== 'normal') {
+      const boardStatus = foundBoard?.status;
+      if (!foundBoard || boardStatus !== 'normal') {
         this.logger.error('해당 게시글을 조회할 수 없음');
-        if (boardInfoByBoardId) this.logger.error(`게시글의 상태: ${status}`);
+        if (foundBoard) this.logger.error(`게시글의 상태: ${boardStatus}`);
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
       // 익명 번호를 부여
       // 게시글 작성자는 특수 익명 번호 부여(0)
-      const boardWriter = boardInfoByBoardId.userId;
+      const boardWriter = foundBoard.userId;
       if (user === boardWriter) {
         createCommentDto.anonymous_number = AnonymousNumberType.WRITER;
         this.logger.verbose(
@@ -297,7 +294,8 @@ export class CommentsService {
     createCommentReportDto: CreateCommentReportDto,
     userId: string,
   ) {
-    let commentStatus = 'normal';
+    // 응답으로 보내줄 댓글의 상태 저장
+    let commentStatus = CommentStatus.NOT_DELETED;
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
@@ -311,7 +309,7 @@ export class CommentsService {
         this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
-      if (found.status !== 'normal') {
+      if (found.status !== CommentStatus.NOT_DELETED) {
         this.logger.error(`댓글의 상태가 ${found.status}이므로 신고할 수 없음`);
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
@@ -346,7 +344,6 @@ export class CommentsService {
         queryRunner,
       );
 
-      console.log('commentStatus: ', commentStatus);
       // 일정 횟수 신고되어 댓글 삭제
       if (reportUserList.length >= 5) {
         this.logger.verbose(`${reportUserList.length}회 신고되어 댓글 삭제됨`);
@@ -383,7 +380,7 @@ export class CommentsService {
     await queryRunner.startTransaction();
     try {
       const found = await this.commentRepository.checkComment(commentId);
-      if (!found || found.status != 'normal') {
+      if (!found || found.status != CommentStatus.NOT_DELETED) {
         // 이미 삭제됐거나 데이터베이스에서 찾을 수 없는 댓글
         throw new NotFoundException('댓글이 존재하지 않습니다.');
       }
