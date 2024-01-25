@@ -53,11 +53,6 @@ export class CommentsController {
     if (!limit) limit = 15;
     if (!page) page = 1;
 
-    // this.logger.log('/my 요청 받아짐!');
-    // if (!userId) {
-    //   this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
-    //   userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
-    // }
     this.logger.verbose(`현재 설정된 userId: ${userId}`);
     const comments = this.commentsService.getMyComments(userId, page, limit);
     return comments;
@@ -69,7 +64,12 @@ export class CommentsController {
     @Param('boardId', ParseIntPipe) boardId: number,
     @Query('page') page: number,
     @Query('limit') limit: number,
-  ): Promise<{ count: number; list: Comment[] }> {
+  ): Promise<{
+    count: number;
+    list: Comment[];
+    positive_count: number;
+    negative_count: number;
+  }> {
     // query 값 없을 시 기본 값
     if (!limit) limit = 15;
     if (!page) page = 1;
@@ -122,6 +122,24 @@ export class CommentsController {
   @Post('/report')
   @UseGuards(LocalAuthGuard)
   createCommentReport(
+    @GetUser() userId: string,
+    @Body() createCommentReportDto: CreateCommentReportDto,
+  ): Promise<{ status: string }> {
+    this.logger.log(
+      `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
+    );
+
+    const result = this.commentsService.createCommentReport(
+      createCommentReportDto,
+      userId,
+    );
+    return result;
+  }
+
+  // 댓글 좋아요 기능
+  @Post('/:commentId/like')
+  @UseGuards(LocalAuthGuard)
+  updateCommentLike(
     @GetUser() userId: string,
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {

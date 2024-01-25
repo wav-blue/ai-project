@@ -32,7 +32,7 @@ export class CommentRepository {
     user: string,
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
-  ) {
+  ): Promise<number> {
     const { boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
@@ -45,13 +45,13 @@ export class CommentRepository {
       return null;
     }
     const { anonymous_number } = result[0];
-    return anonymous_number;
+    return parseInt(anonymous_number);
   }
 
   async getNewAnonymousNumber(
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
-  ) {
+  ): Promise<number> {
     const { boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
@@ -62,10 +62,8 @@ export class CommentRepository {
       })
       .getRawMany();
     const { count } = result[0];
-    return count;
+    return parseInt(count);
   }
-  // 필요한 것만 가져오도록 수정
-  // status 필요
   async checkComment(commentId: number) {
     const found = this.commentRepository
       .createQueryBuilder()
@@ -179,16 +177,10 @@ export class CommentRepository {
     user: string,
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
-  ) {
-    const { boardId, content, anonymous_number, position } = createCommentDto;
-    this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
-
+  ): Promise<Comment> {
     const newComment = queryRunner.manager.create(Comment, {
-      boardId,
+      ...createCommentDto,
       userId: user,
-      content,
-      anonymous_number,
-      position,
       status: CommentStatus.NOT_DELETED,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -199,7 +191,10 @@ export class CommentRepository {
     return result;
   }
 
-  async checkReportUser(commentId: number, queryRunner: QueryRunner) {
+  async checkReportUser(
+    commentId: number,
+    queryRunner: QueryRunner,
+  ): Promise<{ report_user_id: string }[]> {
     return await queryRunner.manager
       .createQueryBuilder()
       .select('report.report_user_id')
@@ -208,14 +203,13 @@ export class CommentRepository {
         commentId,
       })
       .getRawMany();
-    // 원하는 형태: [{report_user_id: 'abc'}, {report_user_id: 'def'}]
   }
 
   // 신고 내역 업로드
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
     queryRunner: QueryRunner,
-  ) {
+  ): Promise<CommentReport> {
     const newReport = queryRunner.manager.create(CommentReport, {
       ...createCommentReportDto,
       createdAt: new Date(),
@@ -227,7 +221,11 @@ export class CommentRepository {
     return result;
   }
 
-  async deleteComment(userId: string, commentId: number, deleteType: string) {
+  async deleteComment(
+    userId: string,
+    commentId: number,
+    deleteType: string,
+  ): Promise<{ affected: number }> {
     try {
       const result = await this.commentRepository
         .createQueryBuilder()
@@ -239,7 +237,9 @@ export class CommentRepository {
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
-      return result;
+      console.log('delete시 쿼리문 실행 결과 확인 : ', result);
+      const { affected } = result;
+      return { affected };
     } catch (error) {
       return error;
     }

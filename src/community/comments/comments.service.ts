@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -17,7 +18,12 @@ import { CommentStatus } from './enum/CommentStatus.enum';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
 import { Comment } from './entity/comments.entity';
-import { randomPosition } from 'src/utils/comment.util';
+import {
+  countPositionOfComment,
+  parseDeletedComment,
+  randomPosition,
+} from 'src/utils/comment.util';
+import { bytesToBase64 } from 'src/utils/base64Function';
 
 const flaskConfig = config.get('flask');
 
@@ -41,7 +47,12 @@ export class CommentsService {
     boardId: number,
     page: number,
     pageSize: number,
-  ): Promise<{ count: number; list: Comment[] }> {
+  ): Promise<{
+    count: number;
+    list: Comment[];
+    positive_count: number;
+    negative_count: number;
+  }> {
     let results = null;
     let amount = 0;
     const queryRunner = this.dataSource.createQueryRunner();
@@ -53,7 +64,6 @@ export class CommentsService {
         boardId,
         queryRunner,
       );
-
       if (!found) {
         this.logger.error('해당하는 게시글을 찾을 수 없음');
         throw new NotFoundException('해당하는 게시글이 없습니다.');
@@ -85,25 +95,24 @@ export class CommentsService {
       await queryRunner.release();
     }
     try {
-      if (!results) {
-        return;
-      }
-      for (let i = 0; i < results.length; i++) {
-        delete results[i].userId;
-        delete results[i].updatedAt;
-        if (results[i].status !== CommentStatus.NOT_DELETED) {
-          results[i].anonymous_number = AnonymousNumberType.DELETED;
-          results[i].content = '삭제된 댓글입니다.';
-          results[i].status = CommentStatus.DELETED;
-          results[i].position = CommentStatus.DELETED;
-          results[i].createdAt = CommentStatus.DELETED;
-        }
-      }
+      // 삭제된 댓글은 자세한 정보 제거
+      results = parseDeletedComment(results);
+
+      // positive, negative 갯수 카운팅
+      const { positive_count, negative_count } =
+        countPositionOfComment(results);
+
+      // 총 페이지 수 계산
       const maxPage = Math.ceil(amount / pageSize);
       this.logger.verbose(
         `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
       );
-      return { count: maxPage, list: results };
+      return {
+        count: maxPage,
+        list: results,
+        positive_count,
+        negative_count,
+      };
     } catch (err) {
       throw new ConflictException();
     }
@@ -148,20 +157,9 @@ export class CommentsService {
       await queryRunner.release();
     }
     try {
-      if (!results) {
-        return;
-      }
-      for (let i = 0; i < results.length; i++) {
-        delete results[i].userId;
-        delete results[i].updatedAt;
-        if (results[i].status !== CommentStatus.NOT_DELETED) {
-          results[i].anonymous_number = AnonymousNumberType.DELETED;
-          results[i].content = '삭제된 댓글입니다.';
-          results[i].status = CommentStatus.DELETED;
-          results[i].position = CommentStatus.DELETED;
-          results[i].createdAt = CommentStatus.DELETED;
-        }
-      }
+      // 삭제된 댓글은 자세한 정보 제거
+      results = parseDeletedComment(results);
+
       const maxPage = Math.ceil(amount / pageSize);
       this.logger.log(
         `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
@@ -177,35 +175,58 @@ export class CommentsService {
     user: string,
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
-    // 모델을 이용한 API 확정 전까지 임시로 position 설정
-    const position = randomPosition();
-    this.logger.verbose(`랜덤으로 결정된 position: ${position}`);
-    createCommentDto.position = position;
-
     // Flask 서버로 요청하여 position 설정
-    // this.logger.error(
-    //   `http://${flaskConfig.url}:${flaskConfig.port}/analysis`,
-    //   '로 Post 요청!',
-    // );
+    try {
+      // flask 서버로 요청 보낼 body 내용
+      const apiUrl = `${flaskConfig.url}:${flaskConfig.port}/analysis`;
+      const body = {
+        content: createCommentDto.content,
+      };
 
-    // // flask 서버로 요청 보낼 body 내용
-    // const body = {
-    //   content: createCommentDto.content,
-    // };
+      this.logger.log(
+        `http://${flaskConfig.url}:${flaskConfig.port}/analysis`,
+        '로 Post 요청!',
+      );
 
-    // const flask_response = await firstValueFrom(
-    //   this.httpService
-    //     .post(`${flaskConfig.url}:${flaskConfig.port}/analysis`, body)
-    //     .pipe(map((res) => res))
-    //     .pipe(
-    //       catchError((error: AxiosError) => {
-    //         this.logger.error('Axios Error::', error);
-    //         throw 'An error happened!';
-    //       }),
-    //     ),
-    // );
-    // // 분석된 결과를 DTO에 추가
-    // createCommentDto.position = flask_response.data.position;
+      //const username = 'asdsadsadas' || flaskConfig.username;
+      const username = process.env.FLASK_USER_NAME || flaskConfig.username;
+      const password = process.env.FLASK_PASSWORD || flaskConfig.password;
+
+      const encodedUsername = bytesToBase64(new TextEncoder().encode(username));
+      const encodedPassword = bytesToBase64(new TextEncoder().encode(password));
+
+      const headersRequest = {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${encodedUsername}:${encodedPassword}`,
+      };
+
+      const flask_response = await firstValueFrom(
+        this.httpService
+          .post(apiUrl, body, { headers: headersRequest })
+          .pipe(map((res) => res))
+          .pipe(
+            catchError((error: AxiosError) => {
+              this.logger.error('Axios Error::', error);
+              throw 'Flask Server 에러 발생!';
+            }),
+          ),
+      );
+      // 분석된 결과를 DTO에 추가
+      this.logger.verbose(
+        `분석을 통해 position 결정: ${flask_response.data.position}`,
+      );
+      createCommentDto.position = flask_response.data.position;
+    } catch (err) {
+      // 모델을 이용한 API 확정 전까지 임시로 position 설정
+      const position = randomPosition();
+      this.logger.verbose(`랜덤으로 position 결정: ${position}`);
+      createCommentDto.position = position;
+
+      this.logger.warn(`Flask 서버를 확인해주세요!`);
+      // throw new ServiceUnavailableException(
+      //   `서버의 문제로 댓글을 생성할 수 없습니다.`,
+      // );
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -244,7 +265,7 @@ export class CommentsService {
             queryRunner,
           );
         if (existingAnonymousNumber) {
-          createCommentDto.anonymous_number = parseInt(existingAnonymousNumber);
+          createCommentDto.anonymous_number = existingAnonymousNumber;
           this.logger.verbose(
             `기존의 익명 번호가 존재함 : ${existingAnonymousNumber}`,
           );
@@ -255,8 +276,7 @@ export class CommentsService {
               createCommentDto,
               queryRunner,
             );
-          createCommentDto.anonymous_number =
-            parseInt(new_anonymous_number) + 1;
+          createCommentDto.anonymous_number = new_anonymous_number + 1;
           this.logger.verbose(
             `새로 익명 번호가 부여됨 : ${new_anonymous_number}`,
           );
@@ -397,8 +417,12 @@ export class CommentsService {
         CommentStatus.DELETED,
       );
 
-      // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생 추가예정
-      console.log('result: ', result);
+      // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생
+      if (result.affected === 0) {
+        throw new ServiceUnavailableException(
+          '알 수 없는 이유로 요청을 완료하지 못했습니다.',
+        );
+      }
 
       await queryRunner.commitTransaction();
     } catch (err) {
@@ -409,6 +433,8 @@ export class CommentsService {
         throw new ConflictException(err.message);
       } else if (err instanceof ForbiddenException) {
         throw new ForbiddenException(err.message);
+      } else if (err instanceof ServiceUnavailableException) {
+        throw new ServiceUnavailableException(err.message);
       } else {
         throw new InternalServerErrorException(err.message);
       }
