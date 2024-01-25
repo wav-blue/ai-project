@@ -57,8 +57,6 @@ export class CommentRepository {
     );
 
     const result = await queryRunner.manager.save(newCommentPositionCount);
-
-    console.log('createCommentCount 결과 확인>> ', result);
     return result;
   }
 
@@ -73,7 +71,6 @@ export class CommentRepository {
       .set(foundCountPosition)
       .where(`board_id = :boardId`, { boardId })
       .execute();
-    console.log('updateCommentCount result 확인: ', result);
     return result;
   }
 

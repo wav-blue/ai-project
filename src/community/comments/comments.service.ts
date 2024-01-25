@@ -18,13 +18,8 @@ import { CommentStatus } from './enum/CommentStatus.enum';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
 import { Comment } from './entity/comments.entity';
-import {
-  countPositionOfComment,
-  parseDeletedComment,
-  randomPosition,
-} from 'src/utils/comment.util';
+import { parseDeletedComment, randomPosition } from 'src/utils/comment.util';
 import { bytesToBase64 } from 'src/utils/base64Function';
-import { CommentPositionCount } from './entity/count-comments.entity';
 import { CommentPosition } from './enum/CommentPosition.enum';
 
 const flaskConfig = config.get('flask');
@@ -223,6 +218,7 @@ export class CommentsService {
           ),
       );
       // 분석된 결과를 DTO에 추가
+      this.logger.verbose(`Flask 서버로의 요청 성공!`);
       this.logger.verbose(
         `분석을 통해 position 결정: ${flask_response.data.position}`,
       );
@@ -230,10 +226,10 @@ export class CommentsService {
     } catch (err) {
       // 모델을 이용한 API 확정 전까지 임시로 position 설정
       const position = randomPosition();
-      this.logger.verbose(`랜덤으로 position 결정: ${position}`);
+      this.logger.warn(`분석 요청이 실패했습니다. Falsk 서버를 확인해주세요!`);
+      this.logger.verbose(`랜덤으로 position을 결정합니다... ${position}`);
       createCommentDto.position = position;
 
-      this.logger.warn(`분석 요청이 실패했습니다.\nFalsk 서버를 확인해주세요!`);
       // throw new ServiceUnavailableException(
       //   `서버의 문제로 댓글을 생성할 수 없습니다.`,
       // );
@@ -362,18 +358,20 @@ export class CommentsService {
       const { commentId } = createCommentReportDto;
 
       // 신고된 Comment의 정보 조회
-      const found = await this.commentRepository.checkComment(commentId);
-      if (!found) {
+      const foundComment = await this.commentRepository.checkComment(commentId);
+      if (!foundComment) {
         this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
-      if (found.status !== CommentStatus.NOT_DELETED) {
-        this.logger.error(`댓글의 상태가 ${found.status}이므로 신고할 수 없음`);
+      if (foundComment.status !== CommentStatus.NOT_DELETED) {
+        this.logger.error(
+          `댓글의 상태가 ${foundComment.status}이므로 신고할 수 없음`,
+        );
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
 
       // 작성자의 id 저장
-      const target_user_id = found.userId;
+      const target_user_id = foundComment.userId;
 
       // 해당 댓글을 report한 User들의 기록을 조회
       const checkResult = await this.commentRepository.checkReportUser(
@@ -411,6 +409,33 @@ export class CommentsService {
           commentId,
           commentStatus,
         );
+
+        // 긍부정 댓글 카운팅 -1
+        const { boardId, position } = foundComment;
+
+        const foundCountPosition =
+          await this.commentRepository.checkCommentCount(boardId, queryRunner);
+
+        if (position === CommentPosition.POSITIVE)
+          foundCountPosition.positiveCount -= 1;
+        if (position === CommentPosition.NEGATIVE)
+          foundCountPosition.negativeCount -= 1;
+        const updateCountResult =
+          await this.commentRepository.updateCommentCount(
+            boardId,
+            foundCountPosition,
+            queryRunner,
+          );
+
+        // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생
+        if (updateCountResult.affected === 0) {
+          this.logger.error(
+            'COMMENT_POSITION_COUNT 테이블을 업데이트 하지 못했습니다.',
+          );
+          throw new ServiceUnavailableException(
+            '알 수 없는 이유로 요청을 완료하지 못했습니다.',
+          );
+        }
       }
 
       await queryRunner.commitTransaction();
@@ -436,15 +461,15 @@ export class CommentsService {
 
     await queryRunner.startTransaction();
     try {
-      const found = await this.commentRepository.checkComment(commentId);
-      if (!found || found.status != CommentStatus.NOT_DELETED) {
+      const foundComment = await this.commentRepository.checkComment(commentId);
+      if (!foundComment || foundComment.status != CommentStatus.NOT_DELETED) {
         // 이미 삭제됐거나 데이터베이스에서 찾을 수 없는 댓글
         throw new NotFoundException('댓글이 존재하지 않습니다.');
       }
-      if (found.userId !== reqUserId) {
+      if (foundComment.userId !== reqUserId) {
         this.logger.error(`삭제 권한이 없는 유저의 요청`);
         this.logger.verbose(
-          `요청 유저 아이디: ${reqUserId}\n작성자의 유저 아이디: ${found.userId}`,
+          `요청 유저 아이디: ${reqUserId}\n작성자의 유저 아이디: ${foundComment.userId}`,
         );
         throw new ForbiddenException('삭제 권한이 없습니다.');
       }
@@ -463,7 +488,7 @@ export class CommentsService {
       }
 
       // 긍부정 댓글 카운팅 -1
-      const { boardId, position } = found;
+      const { boardId, position } = foundComment;
 
       const foundCountPosition = await this.commentRepository.checkCommentCount(
         boardId,
@@ -479,7 +504,6 @@ export class CommentsService {
         foundCountPosition,
         queryRunner,
       );
-      console.log(updateCountResult);
 
       // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생
       if (updateCountResult.affected === 0) {
