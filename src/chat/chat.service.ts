@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Chat } from './chat.schema';
 import { CreateFreeChatDto } from './chat.dto';
+import { ChatCompletionMessageParam } from 'openai/resources';
 
 @Injectable()
 export class ChatService {
@@ -44,23 +45,6 @@ export class ChatService {
   // 자네 혹시 교제 중인 이성이 있는가?
   // >예
   // 1-예
-  prompt = `
-  -질문의 카테고리: {questionType}
-  -이전 대화: {lastChat}
-  -질문이 연애와 관련이 없을 경우 "장난칠거면 가라."라고 짧게 대답할 것.
- 
-  ''{question}''
-
-  질문에 대한 추가 정보:
-  "{additional_info}"
-
-  참고사항과 추가정보를 참고해서 ""로 감싸진 질문에 대해 답변해줘.
-  아래 답변 포맷을 지켜서 그대로 답변해.
-    
-  <답변 포맷>
-  [주제]: "질문을 한 문장 이내로 요약" \n 
-  [상담]: \n  "질문에 대한 답변."
-  `;
 
   formatPreInfo(testResult: {
     classification: string;
@@ -69,7 +53,7 @@ export class ChatService {
     const result = `
     "main question" 에 대한 상담을 할 때 아래 추가정보도 참고해줘.
     -질문의 카테고리: ${testResult.classification}
-    -질문에 대한 추가 정보: ${testResult.situation}
+    -질문자의 연애 상황: ${testResult.situation}
     `;
     console.log('사전질문 포맷팅', result);
     return result;
@@ -89,78 +73,150 @@ export class ChatService {
     console.log('ocr 포맷팅', result);
     return result;
   }
+  formatPersona(testResult: { classification: string; situation?: string[] }) {
+    if (testResult) {
+      // 사전질문 답안 정리해서 프롬프트에 넣기
+      const preInfo = this.formatPreInfo(testResult);
+      prePrompt.preInfo = preInfo;
+    }
+    const result = `너는 연애의 달인으로, 너의 역할은 사람들의 고민에 공감하고 해결책을 제시하는거야. 공자, 맹자의 말투, 반말을 사용해서 대답해야해. 너의 역할에 대해서는 언급하지마.`;
 
-  formatMainQuestion(prePrompt: {
-    preInfo: string;
-    tikitaka: string;
-    question: string;
-  }): string {
+    return result;
+  }
+
+  formatMainQuestion(question: string, imageUrl: string): string {
+    if (imageUrl) {
+      // s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 따와서 프롬프트로 정리.
+      const ocrText = await this.getImageText(imageUrl);
+      const tikitaka = this.formatTikitaka(ocrText);
+      prePrompt.tikitaka = tikitaka;
+    }
     const result = `
   main question: "${prePrompt.question}"
 
   "main question" 이 연애와 전혀 관련이 없을 경우 "장난칠거면 가라."라고 짧게 대답해.
-  "main question" 이 연애와 관련된 고민이라면 지혜를 발휘해서 상담해줘.
+  "main question" 이 연애와 관련된 고민이라면 지혜를 발휘해서 자세히 상담해줘.
   ${prePrompt.preInfo}
   ${prePrompt.tikitaka}
 
   아래 답변 포맷을 지켜서 그대로 답변해.
     
-  <답변 포맷>
-  [주제]: "질문을 한 문장 이내로 요약" \n 
-  [상담]: \n  "질문에 대한 답변."
+  <답변 포맷: JSON>
+  {title: "main question"을 최대 세 단어로 요약, 
+  answer: "main question"에 대한 자세한 상담}
   `;
     return result;
   }
 
-  async startFisrtChat(chatDto: CreateFreeChatDto): Promise<void> {
-    const { question, testResult, imageUrl } = chatDto;
-    const prePrompt = { preInfo: '', tikitaka: '', question };
+  async startFisrtChat(chatDto: CreateFreeChatDto): Promise<string> {
+    const { userId, question, testResult, imageUrl } = chatDto;
     try {
-      if (testResult) {
-        // 사전질문 답안 정리해서 프롬프트에 넣기
-        const preInfo = this.formatPreInfo(testResult);
-        console.log('사전질문', testResult);
-        prePrompt.preInfo = preInfo;
-      }
-      if (imageUrl) {
-        // s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 따와서 프롬프트로 정리.
-        const ocrText = await this.getImageText(imageUrl);
-        console.log('대화캡쳐', ocrText);
-        const tikitaka = this.formatTikitaka(ocrText);
-        prePrompt.tikitaka = tikitaka;
-      }
+      //사전질문과 페르소나로 시스템 메시지 포맷팅
+      const persona = this.formatPersona(testResult);
+
       //사전질문과 대화방캡쳐를 포함해서 프롬프트 포맷팅
-      const prompt = this.formatMainQuestion(prePrompt);
+      const prompt = this.formatMainQuestion(question, imageUrl);
+
+      const gptResponse = await initiateChat(question, testResult, imageUrl);
+      //이니챗:{페르소나, 프롬프트 가공, 질문쏘기}
+      const newChatDoc = await creteNewChatDoc(gptResponse) 
+      //클라이언트에 답변 쏘기
+      //[["chatId-string", "title-string"] , [question-string, answer-string]]
+      //const result = [[chatId, title], [question, answer]]
+
+      //채팅 객체
+      //데이터
+      // 페르소나, 그리팅, 프롬프트
+      //메소드
+      //페르소나, 그리팅, 프롬프트를 사용해서 메타데이터raw와 답변 받음
+
+      //레포지토리
+      //데이터
+      //페르소나, 그리팅, 프롬프트, 메타데이터raw, 답변
+      //메소드
+      //메타데이터raw 가공해서 DB 저장
+
+
+      
+      console.log(prompt);
 
       //완성된 프롬프트를 open ai에 쏴주기
-      const result = await this.getCompletion(prompt);
-      console.log(result);
+      const response = await this.getCompletion(persona, prompt);
 
-      //답변 가공
-      //DB 저장 and 프론트에 보내주기
+      //구루 답변 가공
+
+      const responseJSON = response.choices[0].message.content; //구루 답변: json string
+      const responseOBJ = JSON.parse(responseJSON); //js obj 파싱
+      const { title, answer } = responseOBJ;
+      console.log('타이틀:', title);
+      console.log('토큰 사용량:', usage);
+      console.log(
+        '컴플아이디:',
+        id,
+        ', 날짜: ',
+        new Date(created * 1000).toISOString(),
+        ', 핑거프린트: ',
+        system_fingerprint,
+      );
+      };
+      //DB 저장
+      this.chatRepository.create();
+
+      
+
+      return answer;
     } catch (err) {
       throw err;
     }
   }
+  const messages:ChatCompletionMessageParam[]=[
+    {
+        role: 'system',
+        content: '너는 연애의 달인으로, 너의 역할은 사람들의 고민에 공감하고 해결책을 제시하는거야. 공자, 맹자의 말투, 반말을 사용해서 대답해야해. 너의 역할에 대해서는 언급하지마.'
+    },
+    {
+        role: 'user',
+        content: '어쩌고저쩌고'
+    },
+  ],
 
-  async getCompletion(prompt: string) {
+  async getCompletion(persona: string, prompt: string) {
     try {
-      const result = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+      console.log('질문시작');
+      const response = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo-1106',
         temperature: 0.7,
-        messages: [
+        response_format: { type: 'json_object' },
+        messages: messages,
+      });
+      const { id, created, usage, system_fingerprint, choices } = response;
+      const resOBJ = JSON.parse(choices[0].message.content);
+      const { title, answer } = resOBJ;
+      return {
+        title: title,
+        dialogue: [
+          [
+            { role: 'system', content: persona },
+            { role: 'assistant', content: greeting, name: '구루' },
+          ],
+          [{ role: 'user', content: prompt }, choices[0].message],
+        ],
+        nextPromptToken: usage.total_tokens,
+        sessions: 1,
+        log: [
           {
-            role: 'system',
-            content:
-              '너는 연애의 달인으로, 너의 역할은 사람들의 고민에 공감하고 해결책을 제시하는거야. 공자, 맹자의 말투, 반말을 사용해서 대답해야해. 너의 역할에 대해서는 언급하지마.',
-          },
-          {
-            role: 'user',
-            content: prompt,
+            no: 1,
+            completionId: id,
+            token: usage,
+            fingerPrint: system_fingerprint,
+            date: new Date(created * 1000).toISOString(),
           },
         ],
-      });
-      return result;
+        imageLog: [],
+        tokenUsageRecords: usage.total_tokens,
+        cretedAt: new Date(),
+        updatedAt: new Date(),
+      };
     } catch (err) {
       console.error(err);
       throw err;

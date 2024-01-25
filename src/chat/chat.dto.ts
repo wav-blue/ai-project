@@ -1,16 +1,70 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 // import { Chat } from 'src/chat/chat.schema';
 
-export class CreateFreeChatDto {
+class TestResultType {
   @IsString()
-  userId?: string;
+  @IsNotEmpty()
+  classification: string;
+
+  @IsOptional()
+  @IsArray()
+  situation?: string[];
+}
+
+export class CreateFreeChatDto {
+  @IsOptional()
+  @IsString()
+  userId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  question: string;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => TestResultType)
+  testResult?: TestResultType;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+}
+
+class ChatInfoType {
+  @IsNotEmpty()
+  @IsString()
+  chatId: string;
 
   @IsNotEmpty()
   @IsString()
-  question: string;
+  title: string;
+}
 
-  testResult?: { classification: string; situation?: string[] };
-
+class ChatHistoryType {
   @IsString()
-  imageUrl?: string;
+  @IsNotEmpty()
+  chatHistory: string;
+}
+
+export class response1stChatDto {
+  @IsArray()
+  @ValidateNested()
+  @Type(() => ChatInfoType)
+  chatInfo: ChatInfoType;
+
+  @IsArray()
+  @IsNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => ChatHistoryType)
+  chatHistory: ChatHistoryType;
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   UseGuards,
   UsePipes,
@@ -10,6 +11,7 @@ import { ChatService } from './chat.service';
 import { CreateFreeChatDto } from './chat.dto';
 import { LocalAuthGuard } from '../user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
+
 //리턴타입 만들기?
 
 @Controller('chat')
@@ -22,11 +24,12 @@ export class ChatController {
   async createFirstChat(
     @GetUser() userId: string,
     @Body() chatDto: CreateFreeChatDto,
-  ): Promise<void> {
+  ): Promise<string> {
     chatDto.userId = userId;
     try {
       const result = await this.chatService.startFisrtChat(chatDto);
-      console.log(result);
+      console.log('free chat 답변: ', result);
+      return result;
     } catch (err) {
       console.error(err);
       throw err;

@@ -5,29 +5,39 @@ export type ChatDocument = HydratedDocument<Chat>;
 
 @Schema({ collection: 'chat' })
 export class Chat {
-  // @Prop({ type: Types.ObjectId })
-  // _id: Types.ObjectId;
-
   @Prop({ required: true })
   userId: string;
 
-  @Prop()
-  subject: string;
+  @Prop({ required: true })
+  title: string;
 
   @Prop({ required: true })
-  dialogue: Array<{ role: string; content: string }>;
+  dialogue: Array<{ role: string; content: string; no: number }>;
 
-  @Prop()
-  log: Array<{ no: number; act: string; token: number; date: Date }>;
+  @Prop({ required: true })
+  nextPromptToken: number;
 
-  @Prop()
-  token: number;
+  @Prop({ required: true })
+  sessions: number;
 
-  @Prop()
-  session: number;
+  @Prop({ required: true })
+  log: Array<{
+    no: number;
+    completionId: string;
+    token: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    };
+    fingerPrint: string;
+    date: Date;
+  }>;
 
-  @Prop()
+  @Prop({ required: true })
   imageLog: Array<{ count: number; uploadedAt: Date }>;
+
+  @Prop({ required: true })
+  tokenUsageRecords: number;
 
   @Prop({ required: true })
   createdAt: Date;
