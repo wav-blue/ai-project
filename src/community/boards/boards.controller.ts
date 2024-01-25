@@ -108,7 +108,7 @@ export class BoardsController {
   }
 
   //게시글 이미지 업로드용 presigned URL 요청
-  @Get('/images')
+  @Put('/images')
   @UseGuards(LocalAuthGuard)
   async getBoardImgsUrl(
     @Request() req: Request,

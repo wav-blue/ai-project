@@ -248,7 +248,12 @@ export class BoardsService {
   async getPreSignedUrl(userId: string, files: string[]) {
     const bucket = 'guruguru-board';
     const keys = files.map(
-      (file) => userId + '_' + new Date().toISOString() + '_' + file,
+      (file) =>
+        userId +
+        '_' +
+        new Date().toISOString().replaceAll('.', '-') +
+        '_' +
+        file,
     );
     try {
       const clientUrls = await this.s3Service.createPresignedUrl({
