@@ -24,6 +24,8 @@ import {
   randomPosition,
 } from 'src/utils/comment.util';
 import { bytesToBase64 } from 'src/utils/base64Function';
+import { CommentPositionCount } from './entity/count-comments.entity';
+import { CommentPosition } from './enum/CommentPosition.enum';
 
 const flaskConfig = config.get('flask');
 
@@ -50,11 +52,15 @@ export class CommentsService {
   ): Promise<{
     count: number;
     list: Comment[];
-    positive_count: number;
-    negative_count: number;
+    positiveCount: number;
+    negativeCount: number;
   }> {
     let results = null;
     let amount = 0;
+    let positionCount = {
+      positiveCount: 0,
+      negativeCount: 0,
+    };
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
@@ -80,6 +86,17 @@ export class CommentsService {
         boardId,
         queryRunner,
       );
+      console.log('11:: ', positionCount);
+      // positive, negative 갯수 카운팅
+      const foundPositionCount =
+        await this.commentRepository.getCommentCountByBoardId(
+          boardId,
+          queryRunner,
+        );
+      console.log('22:: ', foundPositionCount);
+      if (foundPositionCount) {
+        positionCount = foundPositionCount;
+      }
 
       await queryRunner.commitTransaction();
     } catch (err) {
@@ -98,10 +115,6 @@ export class CommentsService {
       // 삭제된 댓글은 자세한 정보 제거
       results = parseDeletedComment(results);
 
-      // positive, negative 갯수 카운팅
-      const { positive_count, negative_count } =
-        countPositionOfComment(results);
-
       // 총 페이지 수 계산
       const maxPage = Math.ceil(amount / pageSize);
       this.logger.verbose(
@@ -110,8 +123,7 @@ export class CommentsService {
       return {
         count: maxPage,
         list: results,
-        positive_count,
-        negative_count,
+        ...positionCount,
       };
     } catch (err) {
       throw new ConflictException();
@@ -184,8 +196,7 @@ export class CommentsService {
       };
 
       this.logger.log(
-        `http://${flaskConfig.url}:${flaskConfig.port}/analysis`,
-        '로 Post 요청!',
+        `http://${apiUrl}:${flaskConfig.port}/analysis로 Post 요청!`,
       );
 
       //const username = 'asdsadsadas' || flaskConfig.username;
@@ -222,7 +233,7 @@ export class CommentsService {
       this.logger.verbose(`랜덤으로 position 결정: ${position}`);
       createCommentDto.position = position;
 
-      this.logger.warn(`Flask 서버를 확인해주세요!`);
+      this.logger.warn(`분석 요청이 실패했습니다.\nFalsk 서버를 확인해주세요!`);
       // throw new ServiceUnavailableException(
       //   `서버의 문제로 댓글을 생성할 수 없습니다.`,
       // );
@@ -233,11 +244,12 @@ export class CommentsService {
 
     // 생성된 댓글의 정보를 저장
     let createResult: Comment;
-
+    const { boardId, position } = createCommentDto;
     await queryRunner.startTransaction();
     try {
+      // boardId로 게시글 정보 조회
       const foundBoard = await this.commentRepository.checkBoard(
-        createCommentDto.boardId,
+        boardId,
         queryRunner,
       );
       const boardStatus = foundBoard?.status;
@@ -247,13 +259,38 @@ export class CommentsService {
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
+      // 긍부정 댓글 갯수를 update
+      // comment_position_count에서 해당 테이블의 데이터 확인 및 조회
+      let foundCountPosition = await this.commentRepository.checkCommentCount(
+        boardId,
+        queryRunner,
+      );
+      if (!foundCountPosition) {
+        // 없으면 생성(첫번째 댓글)
+        foundCountPosition = await this.commentRepository.createCommentCount(
+          boardId,
+          position,
+          queryRunner,
+        );
+      } else {
+        if (position === CommentPosition.POSITIVE)
+          foundCountPosition.positiveCount += 1;
+        if (position === CommentPosition.NEGATIVE)
+          foundCountPosition.negativeCount += 1;
+        await this.commentRepository.updateCommentCount(
+          boardId,
+          foundCountPosition,
+          queryRunner,
+        );
+      }
+
       // 익명 번호를 부여
       // 게시글 작성자는 특수 익명 번호 부여(0)
       const boardWriter = foundBoard.userId;
       if (user === boardWriter) {
         createCommentDto.anonymous_number = AnonymousNumberType.WRITER;
         this.logger.verbose(
-          `게시글 작성자가 댓글 작성함 : ${AnonymousNumberType.WRITER}`,
+          `게시글 작성자가 댓글 작성함 : 익명번호 ${AnonymousNumberType.WRITER}`,
         );
       } else {
         // 일반 작성자
@@ -278,11 +315,12 @@ export class CommentsService {
             );
           createCommentDto.anonymous_number = new_anonymous_number + 1;
           this.logger.verbose(
-            `새로 익명 번호가 부여됨 : ${new_anonymous_number}`,
+            `새로 익명 번호가 부여됨 : ${new_anonymous_number + 1}`,
           );
         }
       }
 
+      // 댓글 테이블에 데이터 생성
       createResult = await this.commentRepository.createComment(
         user,
         createCommentDto,
@@ -395,7 +433,6 @@ export class CommentsService {
   async deleteComment(reqUserId: string, commentId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    console.log(reqUserId);
 
     await queryRunner.startTransaction();
     try {
@@ -411,14 +448,44 @@ export class CommentsService {
         );
         throw new ForbiddenException('삭제 권한이 없습니다.');
       }
-      const result = await this.commentRepository.deleteComment(
+      const deleteCommentResult = await this.commentRepository.deleteComment(
         reqUserId,
         commentId,
         CommentStatus.DELETED,
       );
 
       // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생
-      if (result.affected === 0) {
+      if (deleteCommentResult.affected === 0) {
+        this.logger.error('COMMENT 테이블을 업데이트 하지 못했습니다.');
+        throw new ServiceUnavailableException(
+          '알 수 없는 이유로 요청을 완료하지 못했습니다.',
+        );
+      }
+
+      // 긍부정 댓글 카운팅 -1
+      const { boardId, position } = found;
+
+      const foundCountPosition = await this.commentRepository.checkCommentCount(
+        boardId,
+        queryRunner,
+      );
+
+      if (position === CommentPosition.POSITIVE)
+        foundCountPosition.positiveCount -= 1;
+      if (position === CommentPosition.NEGATIVE)
+        foundCountPosition.negativeCount -= 1;
+      const updateCountResult = await this.commentRepository.updateCommentCount(
+        boardId,
+        foundCountPosition,
+        queryRunner,
+      );
+      console.log(updateCountResult);
+
+      // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생
+      if (updateCountResult.affected === 0) {
+        this.logger.error(
+          'COMMENT_POSITION_COUNT 테이블을 업데이트 하지 못했습니다.',
+        );
         throw new ServiceUnavailableException(
           '알 수 없는 이유로 요청을 완료하지 못했습니다.',
         );

@@ -7,6 +7,8 @@ import { CommentStatus } from './enum/CommentStatus.enum';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { CommentReport } from './entity/report-comment.entity';
 import { Comment } from './entity/comments.entity';
+import { CommentPositionCount } from './entity/count-comments.entity';
+import { CommentPosition } from './enum/CommentPosition.enum';
 
 @Injectable()
 export class CommentRepository {
@@ -15,6 +17,79 @@ export class CommentRepository {
 
   constructor(private readonly dataSource: DataSource) {
     this.commentRepository = this.dataSource.getRepository(Comment);
+  }
+
+  async checkCommentCount(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<CommentPositionCount> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select(
+        'count.positiveCount AS positiveCount, count.negativeCount AS negativeCount',
+      )
+      .from(CommentPositionCount, 'count')
+      .where(`count.board_id = :boardId`, { boardId })
+      .getRawOne();
+
+    return result;
+  }
+
+  async createCommentCount(
+    boardId: number,
+    position: CommentPosition,
+    queryRunner: QueryRunner,
+  ): Promise<CommentPositionCount> {
+    let positiveCount = 0;
+    let negativeCount = 0;
+    if (position == CommentPosition.POSITIVE) {
+      positiveCount = 1;
+    } else {
+      negativeCount = 1;
+    }
+    const newCommentPositionCount = queryRunner.manager.create(
+      CommentPositionCount,
+      {
+        boardId,
+        positiveCount,
+        negativeCount,
+      },
+    );
+
+    const result = await queryRunner.manager.save(newCommentPositionCount);
+
+    console.log('createCommentCount 결과 확인>> ', result);
+    return result;
+  }
+
+  async updateCommentCount(
+    boardId: number,
+    foundCountPosition: { positiveCount: number; negativeCount: number },
+    queryRunner: QueryRunner,
+  ) {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .update(CommentPositionCount)
+      .set(foundCountPosition)
+      .where(`board_id = :boardId`, { boardId })
+      .execute();
+    console.log('updateCommentCount result 확인: ', result);
+    return result;
+  }
+
+  async getCommentCountByBoardId(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<{ positiveCount: number; negativeCount: number }> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select(
+        'count.positiveCount AS positiveCount, count.negativeCount AS negativeCount',
+      )
+      .from(CommentPositionCount, 'count')
+      .where('board_id = :boardId', { boardId })
+      .getRawOne();
+    return result;
   }
 
   async getAllComments(): Promise<Comment[]> {

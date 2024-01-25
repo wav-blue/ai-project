@@ -1,12 +1,13 @@
 import { Comment } from 'src/community/comments/entity/comments.entity';
 import { AnonymousNumberType } from 'src/community/comments/enum/AnonymousNumberType.enum';
+import { CommentPosition } from 'src/community/comments/enum/CommentPosition.enum';
 import { CommentStatus } from 'src/community/comments/enum/CommentStatus.enum';
 
-function randomPosition(): string {
-  let position = 'positive';
+function randomPosition(): CommentPosition {
+  let position = CommentPosition.POSITIVE;
   const random_number = Math.random();
   if (random_number < 0.5) {
-    position = 'negative';
+    position = CommentPosition.NEGATIVE;
   }
   return position;
 }
@@ -29,20 +30,20 @@ function parseDeletedComment(comments: Comment[]): Comment[] {
 
 // 긍정, 부정 포지션의 댓글 수 반환
 function countPositionOfComment(comments: Comment[]): {
-  positive_count: number;
-  negative_count: number;
+  positiveCount: number;
+  negativeCount: number;
 } {
-  let positive_count = 0;
-  let negative_count = 0;
+  let positiveCount = 0;
+  let negativeCount = 0;
   for (let i = 0; i < comments.length; i++) {
     if (comments[i].position === 'positive') {
-      positive_count += 1;
+      positiveCount += 1;
     }
     if (comments[i].position === 'negative') {
-      negative_count += 1;
+      negativeCount += 1;
     }
   }
-  return { positive_count, negative_count };
+  return { positiveCount, negativeCount };
 }
 
 export { randomPosition, parseDeletedComment, countPositionOfComment };

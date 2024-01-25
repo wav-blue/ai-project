@@ -67,8 +67,8 @@ export class CommentsController {
   ): Promise<{
     count: number;
     list: Comment[];
-    positive_count: number;
-    negative_count: number;
+    positiveCount: number;
+    negativeCount: number;
   }> {
     // query 값 없을 시 기본 값
     if (!limit) limit = 15;
