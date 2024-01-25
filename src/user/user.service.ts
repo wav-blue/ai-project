@@ -27,10 +27,8 @@ dotenv.config();
 export class UserService {
   constructor(
     private dataSource: DataSource,
-    // @InjectRepository(User)
     private userRepository: UserRepository,
 
-    // @InjectRepository(RefreshToken)
     private refreshTokenRepository: RefreshTokenRepository,
     private jwt: JwtService,
   ) {}
@@ -118,7 +116,6 @@ export class UserService {
         loginUser.email,
         queryRunner,
       );
-
       // 없는 유저면 DB에 유저정보 저장
       if (!found) {
         if (loginUser.logintype != 'EMAIL') {
@@ -136,7 +133,7 @@ export class UserService {
       return { user: found, accessToken, refreshToken };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -157,7 +154,7 @@ export class UserService {
       return userRefreshToken; // 비동기 작업 앞에 await 추가
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -203,7 +200,7 @@ export class UserService {
       return { accessToken, refreshToken };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+      throw error;
     } finally {
       await queryRunner.release();
     }
