@@ -254,8 +254,6 @@ export class CommentRepository {
       ...createCommentDto,
       userId: user,
       status: CommentStatus.NOT_DELETED,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       deletedAt: null,
     });
 
@@ -284,9 +282,6 @@ export class CommentRepository {
   ): Promise<CommentReport> {
     const newReport = queryRunner.manager.create(CommentReport, {
       ...createCommentReportDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
     });
 
     const result = await queryRunner.manager.save(newReport);
@@ -309,7 +304,6 @@ export class CommentRepository {
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
-      console.log('delete시 쿼리문 실행 결과 확인 : ', result);
       const { affected } = result;
       return { affected };
     } catch (error) {

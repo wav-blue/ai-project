@@ -20,11 +20,14 @@ import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { Comment } from './entity/comments.entity';
 
+import * as dayjs from 'dayjs';
+
 @Controller('comments')
 export class CommentsController {
   private logger = new Mylogger(CommentsController.name);
   constructor(private commentsService: CommentsService) {}
 
+  // 테스트용 API
   @Get('logger')
   getLogger(): string {
     this.logger.error('this is error');
@@ -32,13 +35,12 @@ export class CommentsController {
     this.logger.log('this is log');
     this.logger.verbose('this is verbose');
     this.logger.debug('this is debug');
+    const d = dayjs();
+    this.logger.verbose(`현재 설정된 시간 : ${d.format()}`);
+    this.logger.verbose(
+      `현재 설정된 시간 : ${d.format('YYYY-MM-DD HH:mm:ss')}`,
+    );
     return 'success!';
-  }
-
-  @Get('now')
-  testDate(): string {
-    const date = new Date();
-    return date.toString();
   }
 
   // 자신이 작성한 댓글 목록 조회
@@ -101,7 +103,7 @@ export class CommentsController {
   ) {
     this.logger.log(`댓글 작성 요청!\n현재 설정된 userId: ${userId}`);
     const result = this.commentsService.createComment(userId, createCommentDto);
-    // result : 작성 완료
+
     return result;
   }
 

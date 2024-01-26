@@ -1,8 +1,22 @@
 import { Comment } from 'src/community/comments/entity/comments.entity';
-import { AnonymousNumberType } from 'src/community/comments/enum/AnonymousNumberType.enum';
 import { CommentPosition } from 'src/community/comments/enum/CommentPosition.enum';
+import * as dayjs from 'dayjs';
 import { CommentStatus } from 'src/community/comments/enum/CommentStatus.enum';
+import { AnonymousNumberType } from 'src/community/comments/enum/AnonymousNumberType.enum';
 
+// Input: createdAt, updatedAt, deletedAt 컬럼이 존재하는 DTO 객체
+// Output: createdAt, updatedAt, deletedAt이 설정된 DTO 객체
+function setTimeOfCreateDto(dto: any) {
+  const day = dayjs();
+
+  dto.createdAt = day.format();
+  dto.updatedAt = day.format();
+  dto.deletedAt = null;
+
+  return dto;
+}
+
+// 랜덤으로 Position 결정
 function randomPosition(): CommentPosition {
   let position = CommentPosition.POSITIVE;
   const random_number = Math.random();
@@ -46,4 +60,9 @@ function countPositionOfComment(comments: Comment[]): {
   return { positiveCount, negativeCount };
 }
 
-export { randomPosition, parseDeletedComment, countPositionOfComment };
+export {
+  randomPosition,
+  countPositionOfComment,
+  setTimeOfCreateDto,
+  parseDeletedComment,
+};

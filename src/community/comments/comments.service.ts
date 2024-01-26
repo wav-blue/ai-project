@@ -18,7 +18,11 @@ import { CommentStatus } from './enum/CommentStatus.enum';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
 import { Comment } from './entity/comments.entity';
-import { parseDeletedComment, randomPosition } from 'src/utils/comment.util';
+import {
+  parseDeletedComment,
+  randomPosition,
+  setTimeOfCreateDto,
+} from 'src/utils/comment.util';
 import { bytesToBase64 } from 'src/utils/base64Function';
 import { CommentPosition } from './enum/CommentPosition.enum';
 
@@ -81,14 +85,12 @@ export class CommentsService {
         boardId,
         queryRunner,
       );
-      console.log('11:: ', positionCount);
       // positive, negative 갯수 카운팅
       const foundPositionCount =
         await this.commentRepository.getCommentCountByBoardId(
           boardId,
           queryRunner,
         );
-      console.log('22:: ', foundPositionCount);
       if (foundPositionCount) {
         positionCount = foundPositionCount;
       }
@@ -182,17 +184,19 @@ export class CommentsService {
     user: string,
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
+    // DTO의 createdAt, updatedAt, deletedAt 설정
+    createCommentDto = setTimeOfCreateDto(createCommentDto);
+
     // Flask 서버로 요청하여 position 설정
     try {
       // flask 서버로 요청 보낼 body 내용
-      const apiUrl = `${flaskConfig.url}:${flaskConfig.port}/analysis`;
+      const apiUrl =
+        `http://${flaskConfig.url}` + ':' + `${flaskConfig.port}/analysis`;
       const body = {
         content: createCommentDto.content,
       };
 
-      this.logger.log(
-        `http://${apiUrl}:${flaskConfig.port}/analysis로 Post 요청!`,
-      );
+      this.logger.log(`http://${apiUrl}로 Post 요청!`);
 
       //const username = 'asdsadsadas' || flaskConfig.username;
       const username = process.env.FLASK_USER_NAME || flaskConfig.username;
@@ -205,6 +209,9 @@ export class CommentsService {
         'Content-Type': 'application/json',
         Authorization: `Basic ${encodedUsername}:${encodedPassword}`,
       };
+      this.logger.verbose(
+        `인증 헤더의 내용: Basic ${encodedUsername}:${encodedPassword}`,
+      );
 
       const flask_response = await firstValueFrom(
         this.httpService
@@ -224,7 +231,6 @@ export class CommentsService {
       );
       createCommentDto.position = flask_response.data.position;
     } catch (err) {
-      // 모델을 이용한 API 확정 전까지 임시로 position 설정
       const position = randomPosition();
       this.logger.warn(`분석 요청이 실패했습니다. Falsk 서버를 확인해주세요!`);
       this.logger.verbose(`랜덤으로 position을 결정합니다... ${position}`);
@@ -348,8 +354,12 @@ export class CommentsService {
     createCommentReportDto: CreateCommentReportDto,
     userId: string,
   ) {
-    // 응답으로 보내줄 댓글의 상태 저장
+    // DTO의 createdAt, updatedAt, deletedAt 설정
+    createCommentReportDto = setTimeOfCreateDto(createCommentReportDto);
+
+    // 응답으로 사용할 변수 선언
     let commentStatus = CommentStatus.NOT_DELETED;
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
@@ -370,10 +380,12 @@ export class CommentsService {
         );
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
-      // if (foundComment.userId === reportUserId) {
-      //   this.logger.error(`자신의 댓글은 신고할 수 없습니다.`);
-      //   throw new ConflictException('잘못된 신고 요청입니다.');
-      // }
+      if (foundComment.userId === reportUserId) {
+        this.logger.warn(
+          `자신의 댓글은 신고할 수 없습니다! 개발 편의를 위해 에러를 주석 처리`,
+        );
+        //   throw new ConflictException('잘못된 신고 요청입니다.');
+      }
 
       // 댓글 작성자의 id 저장
       const target_user_id = foundComment.userId;
