@@ -13,12 +13,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
-import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Comment } from './entity/comments.entity';
 
 @Controller('comments')
 export class CommentsController {
@@ -35,6 +35,12 @@ export class CommentsController {
     return 'success!';
   }
 
+  @Get('now')
+  testDate(): string {
+    const date = new Date();
+    return date.toString();
+  }
+
   // 자신이 작성한 댓글 목록 조회
   @Get('/my')
   @UseGuards(LocalAuthGuard)
@@ -47,11 +53,6 @@ export class CommentsController {
     if (!limit) limit = 15;
     if (!page) page = 1;
 
-    // this.logger.log('/my 요청 받아짐!');
-    // if (!userId) {
-    //   this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
-    //   userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
-    // }
     this.logger.verbose(`현재 설정된 userId: ${userId}`);
     const comments = this.commentsService.getMyComments(userId, page, limit);
     return comments;
@@ -63,7 +64,12 @@ export class CommentsController {
     @Param('boardId', ParseIntPipe) boardId: number,
     @Query('page') page: number,
     @Query('limit') limit: number,
-  ): Promise<{ count: number; list: Comment[] }> {
+  ): Promise<{
+    count: number;
+    list: Comment[];
+    positiveCount: number;
+    negativeCount: number;
+  }> {
     // query 값 없을 시 기본 값
     if (!limit) limit = 15;
     if (!page) page = 1;
@@ -116,6 +122,26 @@ export class CommentsController {
   @Post('/report')
   @UseGuards(LocalAuthGuard)
   createCommentReport(
+    @GetUser() userId: string,
+    @Body() createCommentReportDto: CreateCommentReportDto,
+  ): Promise<{ status: string }> {
+    this.logger.log(
+      `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
+    );
+
+    createCommentReportDto.reportUserId = userId;
+
+    const result = this.commentsService.createCommentReport(
+      createCommentReportDto,
+      userId,
+    );
+    return result;
+  }
+
+  // 댓글 좋아요 기능
+  @Post('/:commentId/like')
+  @UseGuards(LocalAuthGuard)
+  updateCommentLike(
     @GetUser() userId: string,
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {
