@@ -370,10 +370,10 @@ export class CommentsService {
         );
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
-      if (foundComment.userId === reportUserId) {
-        this.logger.error(`자신의 댓글은 신고할 수 없습니다.`);
-        throw new ConflictException('잘못된 신고 요청입니다.');
-      }
+      // if (foundComment.userId === reportUserId) {
+      //   this.logger.error(`자신의 댓글은 신고할 수 없습니다.`);
+      //   throw new ConflictException('잘못된 신고 요청입니다.');
+      // }
 
       // 댓글 작성자의 id 저장
       const target_user_id = foundComment.userId;
