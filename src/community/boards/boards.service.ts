@@ -1,3 +1,4 @@
+import * as dayjs from 'dayjs';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BoardsRepository } from './boards.repository';
@@ -248,7 +249,8 @@ export class BoardsService {
   async getPreSignedUrl(userId: string, files: string[]) {
     const bucket = 'guruguru-board';
     const keys = files.map(
-      (file) => userId + '_' + new Date().toISOString() + '_' + file,
+      (file) =>
+        userId + '_' + dayjs().format('YYYY-MM-DDTHH:mm:ss') + '_' + file,
     );
     try {
       const clientUrls = await this.s3Service.createPresignedUrl({

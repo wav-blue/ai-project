@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Get,
   Post,
   UseGuards,
   UsePipes,
@@ -11,6 +10,7 @@ import { ChatService } from './chat.service';
 import { CreateFreeChatDto } from './chat.dto';
 import { LocalAuthGuard } from '../user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
+import * as dayjs from 'dayjs';
 
 //리턴타입 만들기?
 
@@ -21,17 +21,29 @@ export class ChatController {
   @Post('/free')
   @UseGuards(LocalAuthGuard)
   @UsePipes(ValidationPipe)
-  async createFirstChat(
+  async create1stChat(
     @GetUser() userId: string,
     @Body() chatDto: CreateFreeChatDto,
-  ): Promise<string> {
+  ): Promise<any> {
     chatDto.userId = userId;
     try {
-      const result = await this.chatService.startFisrtChat(chatDto);
-      console.log('free chat 답변: ', result);
+      const result = await this.chatService.start1stChat(chatDto);
+      console.log('클라에 갈 결과: ', result);
       return result;
     } catch (err) {
       console.error(err);
+      throw err;
+    }
+  }
+
+  @Post('/nametest')
+  @UseGuards(LocalAuthGuard)
+  @UsePipes(ValidationPipe)
+  async nametest() {
+    try {
+      const dayday = dayjs();
+      console.log(dayday);
+    } catch (err) {
       throw err;
     }
   }

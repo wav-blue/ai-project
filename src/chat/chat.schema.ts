@@ -1,9 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { ChatLogType, ImageLogType } from './chat.dto';
+import { ChatCompletionMessageParam } from 'openai/resources';
+import { Dayjs } from 'dayjs';
 
 export type ChatDocument = HydratedDocument<Chat>;
 
-@Schema({ collection: 'chat' })
+@Schema({ collection: 'chat', timestamps: true })
 export class Chat {
   @Prop({ required: true })
   userId: string;
@@ -12,7 +15,7 @@ export class Chat {
   title: string;
 
   @Prop({ required: true })
-  dialogue: Array<{ role: string; content: string; no: number }>;
+  dialogue: ChatCompletionMessageParam[]; //클라이언트 에 표시, GPT에게 전달할 대화맥락(가공됨)
 
   @Prop({ required: true })
   nextPromptToken: number;
@@ -21,32 +24,22 @@ export class Chat {
   sessions: number;
 
   @Prop({ required: true })
-  log: Array<{
-    no: number;
-    completionId: string;
-    token: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
-    };
-    fingerPrint: string;
-    date: Date;
-  }>;
+  log: ChatLogType[]; //로그기록 분석용
 
   @Prop({ required: true })
-  imageLog: Array<{ count: number; uploadedAt: Date }>;
+  imageLog?: ImageLogType[];
 
   @Prop({ required: true })
   tokenUsageRecords: number;
 
-  @Prop({ required: true })
-  createdAt: Date;
+  // @Prop()
+  // createdAt?: Dayjs;
 
-  @Prop()
-  updatedAt: Date;
+  // @Prop()
+  // updatedAt?: Dayjs;
 
-  @Prop()
-  lodedSession: number;
+  // @Prop()
+  // deletedAt?: Dayjs;
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

@@ -8,6 +8,11 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { Dayjs } from 'dayjs';
+import {
+  ChatCompletionAssistantMessageParam,
+  ChatCompletionMessageParam,
+} from 'openai/resources';
 // import { Chat } from 'src/chat/chat.schema';
 
 class TestResultType {
@@ -40,31 +45,62 @@ export class CreateFreeChatDto {
   imageUrl?: string;
 }
 
-class ChatInfoType {
-  @IsNotEmpty()
-  @IsString()
-  chatId: string;
+class TokenLogType {
+  @IsNumber()
+  prompt_tokens: number;
 
-  @IsNotEmpty()
-  @IsString()
-  title: string;
+  @IsNumber()
+  completion_tokens: number;
+
+  @IsNumber()
+  total_tokens: number;
 }
 
-class ChatHistoryType {
+export class ChatLogType {
+  @IsNumber()
+  @IsNotEmpty()
+  no: number;
+
   @IsString()
   @IsNotEmpty()
-  chatHistory: string;
-}
+  completionId: string;
 
-export class response1stChatDto {
-  @IsArray()
   @ValidateNested()
-  @Type(() => ChatInfoType)
-  chatInfo: ChatInfoType;
+  @Type(() => TokenLogType)
+  token: TokenLogType;
 
-  @IsArray()
+  @IsString()
   @IsNotEmpty()
+  fingerPrint: string;
+
+  @IsNotEmpty()
+  date: Dayjs;
+
+  message: ChatCompletionMessageParam[];
+}
+
+export class Return1stCompletionDTO {
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  answer: ChatCompletionAssistantMessageParam;
+
+  @IsNumber()
+  @IsNotEmpty()
+  nextPromptToken: number;
+
   @ValidateNested({ each: true })
-  @Type(() => ChatHistoryType)
-  chatHistory: ChatHistoryType;
+  @Type(() => ChatLogType)
+  log: ChatLogType;
+
+  @IsNumber()
+  @IsNotEmpty()
+  tokenUsageRecords: number;
+}
+
+export class ImageLogType {
+  count: number;
+
+  uploadedAt: Date;
 }
