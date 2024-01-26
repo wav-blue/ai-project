@@ -129,6 +129,8 @@ export class CommentsController {
       `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
     );
 
+    createCommentReportDto.reportUserId = userId;
+
     const result = this.commentsService.createCommentReport(
       createCommentReportDto,
       userId,

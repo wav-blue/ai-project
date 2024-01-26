@@ -355,7 +355,7 @@ export class CommentsService {
 
     await queryRunner.startTransaction();
     try {
-      const { commentId } = createCommentReportDto;
+      const { commentId, reportUserId } = createCommentReportDto;
 
       // 신고된 Comment의 정보 조회
       const foundComment = await this.commentRepository.checkComment(commentId);
@@ -363,22 +363,28 @@ export class CommentsService {
         this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
+
       if (foundComment.status !== CommentStatus.NOT_DELETED) {
         this.logger.error(
           `댓글의 상태가 ${foundComment.status}이므로 신고할 수 없음`,
         );
         throw new NotFoundException('이미 삭제된 댓글입니다.');
       }
+      if (foundComment.userId === reportUserId) {
+        this.logger.error(`자신의 댓글은 신고할 수 없습니다.`);
+        throw new ConflictException('잘못된 신고 요청입니다.');
+      }
 
-      // 작성자의 id 저장
+      // 댓글 작성자의 id 저장
       const target_user_id = foundComment.userId;
+      createCommentReportDto.targetUserId = target_user_id;
 
       // 해당 댓글을 report한 User들의 기록을 조회
       const checkResult = await this.commentRepository.checkReportUser(
         commentId,
         queryRunner,
       );
-      console.log('checkResult: ', checkResult);
+
       // 동일 인물이 하나의 댓글에 대해 중복 신고
       const reportUserList = [];
       for (let i = 0; i < checkResult.length; i++) {
@@ -391,9 +397,6 @@ export class CommentsService {
       }
 
       reportUserList.push(userId);
-
-      createCommentReportDto.reportUserId = userId;
-      createCommentReportDto.targetUserId = target_user_id;
 
       await this.commentRepository.createCommentReport(
         createCommentReportDto,
