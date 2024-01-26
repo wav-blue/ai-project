@@ -43,26 +43,21 @@ function parseDeletedComment(comments: Comment[]): Comment[] {
 }
 
 // 긍정, 부정 포지션의 댓글 수 반환
-function countPositionOfComment(comments: Comment[]): {
-  positiveCount: number;
-  negativeCount: number;
-} {
-  let positiveCount = 0;
-  let negativeCount = 0;
-  for (let i = 0; i < comments.length; i++) {
-    if (comments[i].position === 'positive') {
-      positiveCount += 1;
-    }
-    if (comments[i].position === 'negative') {
-      negativeCount += 1;
-    }
-  }
-  return { positiveCount, negativeCount };
-}
+// function countPositionOfComment(comments: Comment[]): {
+//   positiveCount: number;
+//   negativeCount: number;
+// } {
+//   let positiveCount = 0;
+//   let negativeCount = 0;
+//   for (let i = 0; i < comments.length; i++) {
+//     if (comments[i].position === 'positive') {
+//       positiveCount += 1;
+//     }
+//     if (comments[i].position === 'negative') {
+//       negativeCount += 1;
+//     }
+//   }
+//   return { positiveCount, negativeCount };
+// }
 
-export {
-  randomPosition,
-  countPositionOfComment,
-  setTimeOfCreateDto,
-  parseDeletedComment,
-};
+export { randomPosition, setTimeOfCreateDto, parseDeletedComment };

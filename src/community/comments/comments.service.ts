@@ -22,7 +22,7 @@ import {
   parseDeletedComment,
   randomPosition,
   setTimeOfCreateDto,
-} from 'src/utils/comment.util';
+} from 'src/community/comments/comment.util';
 import { bytesToBase64 } from 'src/utils/base64Function';
 import { CommentPosition } from './enum/CommentPosition.enum';
 
@@ -275,6 +275,7 @@ export class CommentsService {
           queryRunner,
         );
       } else {
+        this.logger.debug(`댓글이 생성되어 ${position}Count 증가`);
         if (position === CommentPosition.POSITIVE)
           foundCountPosition.positiveCount += 1;
         if (position === CommentPosition.NEGATIVE)
@@ -352,9 +353,10 @@ export class CommentsService {
   // 신고 내역 작성 && 신고 누적 시 삭제
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
-    userId: string,
+    reportUserId: string,
   ) {
-    // DTO의 createdAt, updatedAt, deletedAt 설정
+    // DTO 설정
+    createCommentReportDto.reportUserId = reportUserId;
     createCommentReportDto = setTimeOfCreateDto(createCommentReportDto);
 
     // 응답으로 사용할 변수 선언
@@ -400,7 +402,7 @@ export class CommentsService {
       // 동일 인물이 하나의 댓글에 대해 중복 신고
       const reportUserList = [];
       for (let i = 0; i < checkResult.length; i++) {
-        if (checkResult[i].report_user_id !== userId) {
+        if (checkResult[i].report_user_id !== reportUserId) {
           reportUserList.push(checkResult[i].report_user_id);
         } else {
           this.logger.error(`한 유저가 같은 댓글을 두번 신고할 수 없음`);
@@ -408,7 +410,7 @@ export class CommentsService {
         }
       }
 
-      reportUserList.push(userId);
+      reportUserList.push(reportUserId);
 
       await this.commentRepository.createCommentReport(
         createCommentReportDto,
@@ -431,6 +433,7 @@ export class CommentsService {
         const foundCountPosition =
           await this.commentRepository.checkCommentCount(boardId, queryRunner);
 
+        this.logger.debug(`댓글이 신고되어 ${position}Count 감소`);
         if (position === CommentPosition.POSITIVE)
           foundCountPosition.positiveCount -= 1;
         if (position === CommentPosition.NEGATIVE)
@@ -510,6 +513,7 @@ export class CommentsService {
         queryRunner,
       );
 
+      this.logger.debug(`댓글이 삭제되어 ${position}Count 감소`);
       if (position === CommentPosition.POSITIVE)
         foundCountPosition.positiveCount -= 1;
       if (position === CommentPosition.NEGATIVE)
