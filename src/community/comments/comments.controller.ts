@@ -7,7 +7,6 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -16,18 +15,19 @@ import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
-import { GetUser } from 'src/common/decorator/get-user.decorator';
+import { GetUser } from 'src/community/comments/decorator/get-user.decorator';
 import { Mylogger } from 'src/common/logger/mylogger.service';
 import { Comment } from './entity/comments.entity';
 
 import * as dayjs from 'dayjs';
+import { QuerySetPage } from './decorator/query-param.decorator';
 
 @Controller('comments')
 export class CommentsController {
   private logger = new Mylogger(CommentsController.name);
   constructor(private commentsService: CommentsService) {}
 
-  // 테스트용 API
+  // 출력 확인용 API
   @Get('logger')
   getLogger(): string {
     this.logger.error('this is error');
@@ -48,12 +48,9 @@ export class CommentsController {
   @UseGuards(LocalAuthGuard)
   getMyComments(
     @GetUser() userId: string,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @QuerySetPage() querySetPage: { page: number; limit: number },
   ): Promise<{ count: number; list: Comment[] }> {
-    // query 값 없을 시 기본 값
-    if (!limit) limit = 15;
-    if (!page) page = 1;
+    const { page, limit } = querySetPage;
 
     this.logger.verbose(`현재 설정된 userId: ${userId}`);
     const comments = this.commentsService.getMyComments(userId, page, limit);
@@ -64,17 +61,14 @@ export class CommentsController {
   @Get('/:boardId')
   async getBoardComments(
     @Param('boardId', ParseIntPipe) boardId: number,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @QuerySetPage() querySetPage: { page: number; limit: number },
   ): Promise<{
     count: number;
     list: Comment[];
     positiveCount: number;
     negativeCount: number;
   }> {
-    // query 값 없을 시 기본 값
-    if (!limit) limit = 15;
-    if (!page) page = 1;
+    const { page, limit } = querySetPage;
 
     this.logger.verbose(`${boardId}번 게시글의 댓글 조회!`);
 
@@ -124,23 +118,20 @@ export class CommentsController {
   @Post('/report')
   @UseGuards(LocalAuthGuard)
   createCommentReport(
-    @GetUser() userId: string,
+    @GetUser() reportUserId: string,
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {
     this.logger.log(
       `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
     );
-
-    createCommentReportDto.reportUserId = userId;
-
     const result = this.commentsService.createCommentReport(
       createCommentReportDto,
-      userId,
+      reportUserId,
     );
     return result;
   }
 
-  // 댓글 좋아요 기능
+  // 댓글 좋아요 기능 예정
   @Post('/:commentId/like')
   @UseGuards(LocalAuthGuard)
   updateCommentLike(
@@ -148,7 +139,7 @@ export class CommentsController {
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {
     this.logger.log(
-      `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
+      `${createCommentReportDto.commentId}번 댓글에 대한 좋아요 접수!`,
     );
 
     const result = this.commentsService.createCommentReport(
