@@ -12,20 +12,24 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
+import { CommentsReadService } from './comments-read.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
-import { GetUser } from 'src/community/comments/decorator/get-user.decorator';
-import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Mylogger } from './logger/mylogger.service';
 import { Comment } from './entity/comments.entity';
 
 import * as dayjs from 'dayjs';
 import { QuerySetPage } from './decorator/query-param.decorator';
+import { GetUser } from './decorator/get-user.decorator';
 
 @Controller('comments')
 export class CommentsController {
   private logger = new Mylogger(CommentsController.name);
-  constructor(private commentsService: CommentsService) {}
+  constructor(
+    private commentsService: CommentsService,
+    private commentsReadService: CommentsReadService,
+  ) {}
 
   // 출력 확인용 API
   @Get('logger')
@@ -53,7 +57,11 @@ export class CommentsController {
     const { page, limit } = querySetPage;
 
     this.logger.verbose(`현재 설정된 userId: ${userId}`);
-    const comments = this.commentsService.getMyComments(userId, page, limit);
+    const comments = this.commentsReadService.getMyComments(
+      userId,
+      page,
+      limit,
+    );
     return comments;
   }
 
@@ -72,7 +80,7 @@ export class CommentsController {
 
     this.logger.verbose(`${boardId}번 게시글의 댓글 조회!`);
 
-    const comments = await this.commentsService.getBoardComments(
+    const comments = await this.commentsReadService.getBoardComments(
       boardId,
       page,
       limit,
@@ -84,7 +92,7 @@ export class CommentsController {
   @Get('/')
   getAllComments(): Promise<Comment[]> {
     this.logger.log(`get 요청 받아짐`);
-    return this.commentsService.getAllComments();
+    return this.commentsReadService.getAllComments();
   }
 
   //댓글 작성

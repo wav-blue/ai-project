@@ -4,7 +4,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { CommentStatus } from './enum/CommentStatus.enum';
-import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Mylogger } from './logger/mylogger.service';
 import { CommentReport } from './entity/report-comment.entity';
 import { Comment } from './entity/comments.entity';
 import { CommentPositionCount } from './entity/count-comments.entity';

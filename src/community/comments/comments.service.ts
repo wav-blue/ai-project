@@ -15,16 +15,12 @@ import { AxiosError } from 'axios';
 import { catchError, firstValueFrom, map } from 'rxjs';
 import * as config from 'config';
 import { CommentStatus } from './enum/CommentStatus.enum';
-import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Mylogger } from './logger/mylogger.service';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
 import { Comment } from './entity/comments.entity';
-import {
-  parseDeletedComment,
-  randomPosition,
-  setTimeOfCreateDto,
-} from 'src/community/comments/comment.util';
-import { bytesToBase64 } from 'src/utils/base64Function';
+import { randomPosition, bytesToBase64 } from './comment.util';
 import { CommentPosition } from './enum/CommentPosition.enum';
+import * as dayjs from 'dayjs';
 
 const flaskConfig = config.get('flask');
 
@@ -32,152 +28,21 @@ const flaskConfig = config.get('flask');
 export class CommentsService {
   private readonly logger = new Mylogger(CommentsService.name);
 
+  private setTimeOfCreateDto(dto: any) {
+    const day = dayjs();
+
+    dto.createdAt = day.format();
+    dto.updatedAt = day.format();
+    dto.deletedAt = null;
+
+    return dto;
+  }
+
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private readonly httpService: HttpService,
   ) {}
-
-  async getAllComments(): Promise<Comment[]> {
-    const found = this.commentRepository.getAllComments();
-    return found;
-  }
-
-  // 해당 Board의 Comment 조회
-  async getBoardComments(
-    boardId: number,
-    page: number,
-    pageSize: number,
-  ): Promise<{
-    count: number;
-    list: Comment[];
-    positiveCount: number;
-    negativeCount: number;
-  }> {
-    let results = null;
-    let amount = 0;
-    let positionCount = {
-      positiveCount: 0,
-      negativeCount: 0,
-    };
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-
-    await queryRunner.startTransaction();
-    try {
-      const found = await this.commentRepository.checkBoard(
-        boardId,
-        queryRunner,
-      );
-      if (!found) {
-        this.logger.error('해당하는 게시글을 찾을 수 없음');
-        throw new NotFoundException('해당하는 게시글이 없습니다.');
-      }
-
-      results = await this.commentRepository.getBoardComments(
-        boardId,
-        page,
-        pageSize,
-        queryRunner,
-      );
-
-      amount = await this.commentRepository.countCommentsByBoard(
-        boardId,
-        queryRunner,
-      );
-      // positive, negative 갯수 카운팅
-      const foundPositionCount =
-        await this.commentRepository.getCommentCountByBoardId(
-          boardId,
-          queryRunner,
-        );
-      if (foundPositionCount) {
-        positionCount = foundPositionCount;
-      }
-
-      await queryRunner.commitTransaction();
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      if (err instanceof NotFoundException) {
-        throw new NotFoundException(err.message);
-      } else if (err instanceof ConflictException) {
-        throw new ConflictException(err.message);
-      } else {
-        throw new InternalServerErrorException(err.message);
-      }
-    } finally {
-      await queryRunner.release();
-    }
-    try {
-      // 삭제된 댓글은 자세한 정보 제거
-      results = parseDeletedComment(results);
-
-      // 총 페이지 수 계산
-      const maxPage = Math.ceil(amount / pageSize);
-      this.logger.verbose(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
-      );
-      return {
-        count: maxPage,
-        list: results,
-        ...positionCount,
-      };
-    } catch (err) {
-      throw new ConflictException();
-    }
-  }
-
-  // 로그인한 유저가 작성한 Comment 조회
-  async getMyComments(
-    userId: string,
-    page: number,
-    pageSize: number,
-  ): Promise<{ count: number; list: Comment[] }> {
-    let results = null;
-    let amount = 0;
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-
-    await queryRunner.startTransaction();
-    try {
-      results = await this.commentRepository.getMyComments(
-        userId,
-        page,
-        pageSize,
-        queryRunner,
-      );
-
-      amount = await this.commentRepository.countCommentsByUser(
-        userId,
-        queryRunner,
-      );
-
-      await queryRunner.commitTransaction();
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      if (err instanceof NotFoundException) {
-        throw new NotFoundException(err.message);
-      } else if (err instanceof ConflictException) {
-        throw new ConflictException(err.message);
-      } else {
-        throw new InternalServerErrorException(err.message);
-      }
-    } finally {
-      await queryRunner.release();
-    }
-    try {
-      // 삭제된 댓글은 자세한 정보 제거
-      results = parseDeletedComment(results);
-
-      const maxPage = Math.ceil(amount / pageSize);
-      this.logger.log(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
-      );
-      return { count: maxPage, list: results };
-    } catch (err) {
-      throw new ConflictException();
-    }
-  }
 
   // Comment 작성
   async createComment(
@@ -185,7 +50,7 @@ export class CommentsService {
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
     // DTO의 createdAt, updatedAt, deletedAt 설정
-    createCommentDto = setTimeOfCreateDto(createCommentDto);
+    createCommentDto = this.setTimeOfCreateDto(createCommentDto);
 
     // Flask 서버로 요청하여 position 설정
     try {
@@ -357,7 +222,7 @@ export class CommentsService {
   ) {
     // DTO 설정
     createCommentReportDto.reportUserId = reportUserId;
-    createCommentReportDto = setTimeOfCreateDto(createCommentReportDto);
+    createCommentReportDto = this.setTimeOfCreateDto(createCommentReportDto);
 
     // 응답으로 사용할 변수 선언
     let commentStatus = CommentStatus.NOT_DELETED;
