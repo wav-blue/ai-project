@@ -2,17 +2,12 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsNotEmpty,
-  IsNumber,
   IsObject,
   IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { Dayjs } from 'dayjs';
-import {
-  ChatCompletionAssistantMessageParam,
-  ChatCompletionMessageParam,
-} from 'openai/resources';
+import { ChatCompletionMessageParam, CompletionUsage } from 'openai/resources';
 // import { Chat } from 'src/chat/chat.schema';
 
 class TestResultType {
@@ -28,7 +23,11 @@ class TestResultType {
 export class CreateFreeChatDto {
   @IsOptional()
   @IsString()
-  userId: string;
+  guestId?: string;
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -45,62 +44,47 @@ export class CreateFreeChatDto {
   imageUrl?: string;
 }
 
-class TokenLogType {
-  @IsNumber()
-  prompt_tokens: number;
-
-  @IsNumber()
-  completion_tokens: number;
-
-  @IsNumber()
-  total_tokens: number;
-}
-
 export class ChatLogType {
-  @IsNumber()
-  @IsNotEmpty()
-  no: number;
-
   @IsString()
   @IsNotEmpty()
   completionId: string;
 
-  @ValidateNested()
-  @Type(() => TokenLogType)
-  token: TokenLogType;
+  token: CompletionUsage;
 
   @IsString()
   @IsNotEmpty()
   fingerPrint: string;
 
   @IsNotEmpty()
-  date: Dayjs;
+  date: Date;
 
   message: ChatCompletionMessageParam[];
-}
-
-export class Return1stCompletionDTO {
-  @IsString()
-  @IsNotEmpty()
-  title: string;
-
-  answer: ChatCompletionAssistantMessageParam;
-
-  @IsNumber()
-  @IsNotEmpty()
-  nextPromptToken: number;
-
-  @ValidateNested({ each: true })
-  @Type(() => ChatLogType)
-  log: ChatLogType;
-
-  @IsNumber()
-  @IsNotEmpty()
-  tokenUsageRecords: number;
 }
 
 export class ImageLogType {
   count: number;
 
   uploadedAt: Date;
+}
+
+export class UpdateChatDto {
+  @IsOptional()
+  @IsString()
+  guestId?: string;
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
+  @IsOptional()
+  @IsString()
+  chatId?: string; //history 배열 빼고 chatId만 꺼냄, API 명세서에서 고쳐줘야 함..
+
+  @IsNotEmpty()
+  @IsString()
+  question: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }
