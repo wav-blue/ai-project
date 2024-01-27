@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
-import { Comment } from './comments.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { CommentStatus } from './enum/CommentStatus.enum';
-import { CommentReport } from './report-comment.entity';
-import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Mylogger } from './logger/mylogger.service';
+import { CommentReport } from './entity/report-comment.entity';
+import { Comment } from './entity/comments.entity';
+import { CommentPositionCount } from './entity/count-comments.entity';
+import { CommentPosition } from './enum/CommentPosition.enum';
 
 @Injectable()
 export class CommentRepository {
@@ -15,6 +17,76 @@ export class CommentRepository {
 
   constructor(private readonly dataSource: DataSource) {
     this.commentRepository = this.dataSource.getRepository(Comment);
+  }
+
+  async checkCommentCount(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<CommentPositionCount> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select(
+        'count.positiveCount AS positiveCount, count.negativeCount AS negativeCount',
+      )
+      .from(CommentPositionCount, 'count')
+      .where(`count.board_id = :boardId`, { boardId })
+      .getRawOne();
+
+    return result;
+  }
+
+  async createCommentCount(
+    boardId: number,
+    position: CommentPosition,
+    queryRunner: QueryRunner,
+  ): Promise<CommentPositionCount> {
+    let positiveCount = 0;
+    let negativeCount = 0;
+    if (position == CommentPosition.POSITIVE) {
+      positiveCount = 1;
+    } else {
+      negativeCount = 1;
+    }
+    const newCommentPositionCount = queryRunner.manager.create(
+      CommentPositionCount,
+      {
+        boardId,
+        positiveCount,
+        negativeCount,
+      },
+    );
+
+    const result = await queryRunner.manager.save(newCommentPositionCount);
+    return result;
+  }
+
+  async updateCommentCount(
+    boardId: number,
+    foundCountPosition: { positiveCount: number; negativeCount: number },
+    queryRunner: QueryRunner,
+  ) {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .update(CommentPositionCount)
+      .set(foundCountPosition)
+      .where(`board_id = :boardId`, { boardId })
+      .execute();
+    return result;
+  }
+
+  async getCommentCountByBoardId(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<{ positiveCount: number; negativeCount: number }> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select(
+        'count.positiveCount AS positiveCount, count.negativeCount AS negativeCount',
+      )
+      .from(CommentPositionCount, 'count')
+      .where('board_id = :boardId', { boardId })
+      .getRawOne();
+    return result;
   }
 
   async getAllComments(): Promise<Comment[]> {
@@ -32,7 +104,7 @@ export class CommentRepository {
     user: string,
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
-  ) {
+  ): Promise<number> {
     const { boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
@@ -45,13 +117,13 @@ export class CommentRepository {
       return null;
     }
     const { anonymous_number } = result[0];
-    return anonymous_number;
+    return parseInt(anonymous_number);
   }
 
   async getNewAnonymousNumber(
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
-  ) {
+  ): Promise<number> {
     const { boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
@@ -62,10 +134,8 @@ export class CommentRepository {
       })
       .getRawMany();
     const { count } = result[0];
-    return count;
+    return parseInt(count);
   }
-  // 필요한 것만 가져오도록 수정
-  // status 필요
   async checkComment(commentId: number) {
     const found = this.commentRepository
       .createQueryBuilder()
@@ -179,19 +249,11 @@ export class CommentRepository {
     user: string,
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
-  ) {
-    const { boardId, content, anonymous_number, position } = createCommentDto;
-    this.logger.log(`${user}가 ${boardId}번 게시글 댓글 작성`);
-
+  ): Promise<Comment> {
     const newComment = queryRunner.manager.create(Comment, {
-      boardId,
+      ...createCommentDto,
       userId: user,
-      content,
-      anonymous_number,
-      position,
       status: CommentStatus.NOT_DELETED,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       deletedAt: null,
     });
 
@@ -199,7 +261,10 @@ export class CommentRepository {
     return result;
   }
 
-  async checkReportUser(commentId: number, queryRunner: QueryRunner) {
+  async checkReportUser(
+    commentId: number,
+    queryRunner: QueryRunner,
+  ): Promise<{ report_user_id: string }[]> {
     return await queryRunner.manager
       .createQueryBuilder()
       .select('report.report_user_id')
@@ -208,26 +273,26 @@ export class CommentRepository {
         commentId,
       })
       .getRawMany();
-    // 원하는 형태: [{report_user_id: 'abc'}, {report_user_id: 'def'}]
   }
 
   // 신고 내역 업로드
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
     queryRunner: QueryRunner,
-  ) {
+  ): Promise<CommentReport> {
     const newReport = queryRunner.manager.create(CommentReport, {
       ...createCommentReportDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
     });
 
     const result = await queryRunner.manager.save(newReport);
     return result;
   }
 
-  async deleteComment(userId: string, commentId: number, deleteType: string) {
+  async deleteComment(
+    userId: string,
+    commentId: number,
+    deleteType: string,
+  ): Promise<{ affected: number }> {
     try {
       const result = await this.commentRepository
         .createQueryBuilder()
@@ -239,7 +304,8 @@ export class CommentRepository {
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
-      return result;
+      const { affected } = result;
+      return { affected };
     } catch (error) {
       return error;
     }

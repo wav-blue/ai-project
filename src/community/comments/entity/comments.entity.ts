@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { CommentPosition } from './enum/CommentPosition.enum';
-import { CommentStatus } from './enum/CommentStatus.enum';
+import { CommentPosition } from '../enum/CommentPosition.enum';
+import { CommentStatus } from '../enum/CommentStatus.enum';
 
 @Entity('COMMENT')
 export class Comment extends BaseEntity {
