@@ -11,3 +11,5 @@ jwt:
 
 flask:
   port: 5000
+  username: 'guru_back_server'
+  password: 'back!Password123!'

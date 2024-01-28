@@ -1,5 +1,4 @@
 import { IsNotEmpty } from 'class-validator';
-import { parseDateTimeToString } from 'src/utils/dateFunction';
 
 export class ReadCommentDto {
   constructor(data: any) {

@@ -27,5 +27,7 @@ export class Mylogger extends ConsoleLogger {
     this.saveLog();
   }
 
-  private saveLog() {}
+  private saveLog() {
+    // winston을 추가하고 싶은 공간..
+  }
 }

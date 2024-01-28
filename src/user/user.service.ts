@@ -18,6 +18,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
 import { LoginUserDto } from './dtos/login-user.dto';
+import * as dayjs from 'dayjs';
 
 dotenv.config();
 //const jwtConfig = config.get('jwt');
@@ -200,6 +201,78 @@ export class UserService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  //채팅용 멤버십 확인, 횟수 차감 비지니스로직
+  async checkAndDeductMembership(userId: string): Promise<boolean> {
+    const now = dayjs();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const status = await this.userRepository.findMembershipById(
+        userId,
+        queryRunner,
+      );
+      const expiryDate = dayjs(status.endAt);
+
+      if (expiryDate >= now) {
+        if (status.usingService == 'premium') {
+          //잔여기간이 남은 프리미엄: 바로 true
+          await queryRunner.commitTransaction();
+          return true;
+        } else if (
+          status.usingService != 'non-member' &&
+          status.remainChances > 0
+        ) {
+          //잔여기간이 남고 프리미엄이나 비구독이 아님: 즉 체험이나 베이직이면서 횟수가 남은 경우,
+          await this.userRepository.deductBalance(userId, queryRunner); //횟수 차감후 커밋
+          await queryRunner.commitTransaction();
+          return true;
+        }
+      }
+
+      //non-member 이거나,
+      //프리미엄인데 잔여기간이 끝났거나,
+      //체험|베이직인데 잔여기간이 끝났거나,
+      //체험|베이직이고 잔여기간이 남았지만 횟수가 부족
+      await queryRunner.commitTransaction();
+      return false;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  //채팅용 차감된 잔여횟수 다시 돌려주는 비즈니스 로직
+  async restoreMembershipBalance(userId: string): Promise<void> {
+    const now = dayjs();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      // 돈이 달린 영역이기 때문에 1회 돌려주기 전에 다시 한번 확인..
+      const status = await this.userRepository.findMembershipById(
+        userId,
+        queryRunner,
+      );
+      const expiryDate = dayjs(status.endAt);
+
+      if (
+        expiryDate >= now &&
+        (status.usingService == 'trail' || status.usingService == 'basic')
+      ) {
+        await this.userRepository.restoreBalance(userId, queryRunner);
+      }
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
     } finally {
       await queryRunner.release();
     }

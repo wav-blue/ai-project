@@ -7,24 +7,31 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
-import { Comment } from './comments.entity';
+import { CommentsReadService } from './comments-read.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
-import { GetUser } from 'src/common/decorator/get-user.decorator';
-import { Mylogger } from 'src/common/logger/mylogger.service';
+import { Mylogger } from './logger/mylogger.service';
+import { Comment } from './entity/comments.entity';
+
+import * as dayjs from 'dayjs';
+import { QuerySetPage } from './decorator/query-param.decorator';
+import { GetUser } from './decorator/get-user.decorator';
 
 @Controller('comments')
 export class CommentsController {
   private logger = new Mylogger(CommentsController.name);
-  constructor(private commentsService: CommentsService) {}
+  constructor(
+    private commentsService: CommentsService,
+    private commentsReadService: CommentsReadService,
+  ) {}
 
+  // 출력 확인용 API
   @Get('logger')
   getLogger(): string {
     this.logger.error('this is error');
@@ -32,6 +39,11 @@ export class CommentsController {
     this.logger.log('this is log');
     this.logger.verbose('this is verbose');
     this.logger.debug('this is debug');
+    const d = dayjs();
+    this.logger.verbose(`현재 설정된 시간 : ${d.format()}`);
+    this.logger.verbose(
+      `현재 설정된 시간 : ${d.format('YYYY-MM-DD HH:mm:ss')}`,
+    );
     return 'success!';
   }
 
@@ -40,20 +52,16 @@ export class CommentsController {
   @UseGuards(LocalAuthGuard)
   getMyComments(
     @GetUser() userId: string,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @QuerySetPage() querySetPage: { page: number; limit: number },
   ): Promise<{ count: number; list: Comment[] }> {
-    // query 값 없을 시 기본 값
-    if (!limit) limit = 15;
-    if (!page) page = 1;
+    const { page, limit } = querySetPage;
 
-    // this.logger.log('/my 요청 받아짐!');
-    // if (!userId) {
-    //   this.logger.log('토큰이 존재하지 않아 임시로 유저아이디 설정!');
-    //   userId = '7bc1d0d8-3127-4781-9154-35fef0402e51';
-    // }
     this.logger.verbose(`현재 설정된 userId: ${userId}`);
-    const comments = this.commentsService.getMyComments(userId, page, limit);
+    const comments = this.commentsReadService.getMyComments(
+      userId,
+      page,
+      limit,
+    );
     return comments;
   }
 
@@ -61,16 +69,18 @@ export class CommentsController {
   @Get('/:boardId')
   async getBoardComments(
     @Param('boardId', ParseIntPipe) boardId: number,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
-  ): Promise<{ count: number; list: Comment[] }> {
-    // query 값 없을 시 기본 값
-    if (!limit) limit = 15;
-    if (!page) page = 1;
+    @QuerySetPage() querySetPage: { page: number; limit: number },
+  ): Promise<{
+    count: number;
+    list: Comment[];
+    positiveCount: number;
+    negativeCount: number;
+  }> {
+    const { page, limit } = querySetPage;
 
     this.logger.verbose(`${boardId}번 게시글의 댓글 조회!`);
 
-    const comments = await this.commentsService.getBoardComments(
+    const comments = await this.commentsReadService.getBoardComments(
       boardId,
       page,
       limit,
@@ -82,7 +92,7 @@ export class CommentsController {
   @Get('/')
   getAllComments(): Promise<Comment[]> {
     this.logger.log(`get 요청 받아짐`);
-    return this.commentsService.getAllComments();
+    return this.commentsReadService.getAllComments();
   }
 
   //댓글 작성
@@ -95,7 +105,7 @@ export class CommentsController {
   ) {
     this.logger.log(`댓글 작성 요청!\n현재 설정된 userId: ${userId}`);
     const result = this.commentsService.createComment(userId, createCommentDto);
-    // result : 작성 완료
+
     return result;
   }
 
@@ -116,11 +126,28 @@ export class CommentsController {
   @Post('/report')
   @UseGuards(LocalAuthGuard)
   createCommentReport(
-    @GetUser() userId: string,
+    @GetUser() reportUserId: string,
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {
     this.logger.log(
       `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
+    );
+    const result = this.commentsService.createCommentReport(
+      createCommentReportDto,
+      reportUserId,
+    );
+    return result;
+  }
+
+  // 댓글 좋아요 기능 예정
+  @Post('/:commentId/like')
+  @UseGuards(LocalAuthGuard)
+  updateCommentLike(
+    @GetUser() userId: string,
+    @Body() createCommentReportDto: CreateCommentReportDto,
+  ): Promise<{ status: string }> {
+    this.logger.log(
+      `${createCommentReportDto.commentId}번 댓글에 대한 좋아요 접수!`,
     );
 
     const result = this.commentsService.createCommentReport(

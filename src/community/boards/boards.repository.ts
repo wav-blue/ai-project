@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { Board } from './boards.entity';
-import { CreateBoardDto, UpdateBoardDto } from './boards.dto';
+import {
+  BoardSearchAndListDto,
+  CreateBoardDto,
+  UpdateBoardDto,
+} from './boards.dto';
 
 @Injectable()
 export class BoardsRepository {
@@ -23,10 +27,10 @@ export class BoardsRepository {
   }
   // //게시판 목록 페이지네이션
   async selectAllBoards(
+    boardsDto: BoardSearchAndListDto,
     offset: number,
-    limit: number,
-    queryRunner: QueryRunner,
   ): Promise<Board[]> {
+    const { limit, queryRunner } = boardsDto;
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
@@ -70,11 +74,10 @@ export class BoardsRepository {
   }
   // //태그별 목록 페이지네이션
   async selectBoardsByTag(
-    tag: string,
+    boardsDto: BoardSearchAndListDto,
     offset: number,
-    limit: number,
-    queryRunner: QueryRunner,
   ): Promise<Board[]> {
+    const { tag, limit, queryRunner } = boardsDto;
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
@@ -122,12 +125,10 @@ export class BoardsRepository {
   }
   // // 태그별 검색 페이지네이션
   async selectBoardsByTagAndSearch(
-    tag: string,
-    keyword: string,
+    boardsDto: BoardSearchAndListDto,
     offset: number,
-    limit: number,
-    queryRunner: QueryRunner,
   ): Promise<Board[]> {
+    const { tag, keyword, limit, queryRunner } = boardsDto;
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')
@@ -176,11 +177,10 @@ export class BoardsRepository {
   }
   // //일반 검색 페이지네이션
   async selectBoardsBySearch(
-    keyword: string,
+    boardsDto: BoardSearchAndListDto,
     offset: number,
-    limit: number,
-    queryRunner: QueryRunner,
   ): Promise<Board[]> {
+    const { keyword, limit, queryRunner } = boardsDto;
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(Board, 'B')

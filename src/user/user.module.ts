@@ -36,5 +36,6 @@ const jwtConfig = config.get('jwt');
     RefreshStrategy,
     KakaoStrategy,
   ],
+  exports: [UserService],
 })
 export class UserModule {}

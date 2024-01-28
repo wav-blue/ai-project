@@ -11,9 +11,9 @@ import { User } from './user.entity';
 @Entity({ name: 'MEMBERSHIP' })
 export class MemberShip extends BaseEntity {
   @OneToOne(() => User)
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'user_id' })
   @PrimaryGeneratedColumn('uuid')
-  user_id: string;
+  userId: string;
 
   @Column({ type: 'datetime', nullable: true })
   start_at: Date;
@@ -31,8 +31,8 @@ export class MemberShip extends BaseEntity {
   created_at: Date;
 
   @Column({ type: 'datetime', nullable: true })
-  updated_at: Date;
+  updatedAt: Date;
 
   @Column({ type: 'datetime', nullable: true })
-  deleted_at: Date;
+  deletedAt: Date;
 }

@@ -1,9 +1,15 @@
+import * as dayjs from 'dayjs';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BoardsRepository } from './boards.repository';
 import { S3Service } from '../../common/s3.presigned';
 import { Board } from './boards.entity';
-import { CreateBoardDto, UpdateBoardDto } from './boards.dto';
+import {
+  BoardSearchAndListDto,
+  BoardsListQueryDto,
+  CreateBoardDto,
+  UpdateBoardDto,
+} from './boards.dto';
 
 @Injectable()
 export class BoardsService {
@@ -13,27 +19,77 @@ export class BoardsService {
     private s3Service: S3Service,
   ) {}
 
+  private countPages(count: number, page: number, limit: number): number {
+    console.log(count);
+    if (count > 0 && Math.ceil(count / limit) < page) {
+      throw new Error('너무 큰 페이지 요청');
+    }
+    const offset = (page - 1) * limit;
+    return offset;
+  }
+
   //게시판 목록 읽기
   async listBoards(
-    page: number,
-    limit: number,
+    query: BoardsListQueryDto,
   ): Promise<{ count: number; list: Board[] } | { count: number }> {
+    const { keyword, tag, page, limit } = query;
     const queryRunner = this.dataSource.createQueryRunner();
+    const boardSearchAndListDto: BoardSearchAndListDto = {
+      keyword,
+      tag,
+      limit,
+      queryRunner,
+    };
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      if (keyword && tag) {
+        //태그별 검색결과 목록
+        const count = await this.boardsRepository.countBoardsByTagAndSearch(
+          tag,
+          keyword,
+          queryRunner,
+        );
+        const offset = this.countPages(count, page, limit);
+        const result = await this.boardsRepository.selectBoardsByTagAndSearch(
+          boardSearchAndListDto,
+          offset,
+        );
+        await queryRunner.commitTransaction();
+        return { count, list: result };
+      } else if (tag) {
+        //태그별 게시글 목록
+        const count = await this.boardsRepository.countBoardsByTag(
+          tag,
+          queryRunner,
+        );
+        const offset = this.countPages(count, page, limit);
+        const result = await this.boardsRepository.selectBoardsByTag(
+          boardSearchAndListDto,
+          offset,
+        );
+        await queryRunner.commitTransaction();
+        return { count, list: result };
+      } else if (keyword) {
+        //전체검색
+        const count = await this.boardsRepository.countBoardsBySearch(
+          keyword,
+          queryRunner,
+        );
+        const offset = this.countPages(count, page, limit);
+        const result = await this.boardsRepository.selectBoardsBySearch(
+          boardSearchAndListDto,
+          offset,
+        );
+        await queryRunner.commitTransaction();
+        return { count, list: result };
+      }
+      //전체게시글
       const count = await this.boardsRepository.countAllBoards(queryRunner);
-      console.log(count);
-      if (count === 0) {
-        return { count };
-      } else if (Math.ceil(count / limit) < page) {
-        throw new Error('너무 큰 페이지 요청');
-      }
-      const offset = (page - 1) * limit;
+      const offset = this.countPages(count, page, limit);
       const result = await this.boardsRepository.selectAllBoards(
+        boardSearchAndListDto,
         offset,
-        limit,
-        queryRunner,
       );
       await queryRunner.commitTransaction();
       return { count, list: result };
@@ -44,118 +100,6 @@ export class BoardsService {
       await queryRunner.release();
     }
   }
-
-  //태그별 게시글 목록
-  async tagBoards(
-    tag: string,
-    page: number,
-    limit: number,
-  ): Promise<{ count: number; list: Board[] } | { count: number }> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const count = await this.boardsRepository.countBoardsByTag(
-        tag,
-        queryRunner,
-      );
-      if (count === 0) {
-        return { count };
-      } else if (Math.ceil(count / limit) < page) {
-        throw new Error('너무 큰 페이지 요청');
-      }
-      const offset = (page - 1) * limit;
-      const result = await this.boardsRepository.selectBoardsByTag(
-        tag,
-        offset,
-        limit,
-        queryRunner,
-      );
-      await queryRunner.commitTransaction();
-      return { count, list: result };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  //일반 전체 검색
-  async searchBoards(
-    keyword: string,
-    page: number,
-    limit: number,
-  ): Promise<{ count: number; list: Board[] } | { count: number }> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const count = await this.boardsRepository.countBoardsBySearch(
-        keyword,
-        queryRunner,
-      );
-      if (count === 0) {
-        return { count };
-      } else if (Math.ceil(count / limit) < page) {
-        throw new Error('너무 큰 페이지 요청');
-      }
-      const offset = (page - 1) * limit;
-      const result = await this.boardsRepository.selectBoardsBySearch(
-        keyword,
-        offset,
-        limit,
-        queryRunner,
-      );
-      await queryRunner.commitTransaction();
-      return { count, list: result };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  //태그별 목록에서 검색
-  async tagAndSearchBoards(
-    tag: string,
-    keyword: string,
-    page: number,
-    limit: number,
-  ): Promise<{ count: number; list: Board[] } | { count: number }> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const count = await this.boardsRepository.countBoardsByTagAndSearch(
-        tag,
-        keyword,
-        queryRunner,
-      );
-      if (count === 0) {
-        return { count };
-      } else if (Math.ceil(count / limit) < page) {
-        throw new Error('너무 큰 페이지 요청');
-      }
-      const offset = (page - 1) * limit;
-      const result = await this.boardsRepository.selectBoardsByTagAndSearch(
-        tag,
-        keyword,
-        offset,
-        limit,
-        queryRunner,
-      );
-      await queryRunner.commitTransaction();
-      return { count, list: result };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
   //유저 작성글 목록
   async listUserBoards(
     userId: string,
@@ -248,7 +192,8 @@ export class BoardsService {
   async getPreSignedUrl(userId: string, files: string[]) {
     const bucket = 'guruguru-board';
     const keys = files.map(
-      (file) => userId + '_' + new Date().toISOString() + '_' + file,
+      (file) =>
+        userId + '_' + dayjs().format('YYYY-MM-DDTHH:mm:ss') + '_' + file,
     );
     try {
       const clientUrls = await this.s3Service.createPresignedUrl({

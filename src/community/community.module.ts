@@ -9,14 +9,15 @@ import { BoardsRepository } from './boards/boards.repository';
 import { CommentRepository } from './comments/comments.repository';
 import { S3Service } from '../common/s3.presigned';
 import { HttpModule } from '@nestjs/axios';
+import { CommentsReadService } from './comments/comments-read.service';
 
 @Module({
-  // HttpModule을 추가했습니다!
   imports: [HttpModule, TypeOrmModule.forFeature([Board])],
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,
     CommentsService,
+    CommentsReadService,
     BoardsRepository,
     CommentRepository,
     S3Service,
