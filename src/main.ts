@@ -11,7 +11,12 @@ async function bootstrap() {
   mongoose.set('debug', true);
   app.setGlobalPrefix('/api');
   app.enableCors({
-    origin: ['http://localhost:3000', 'kdt-ai-9-team01.elicecoding.com'],
+    origin: [
+      'http://localhost:3000',
+      'kdt-ai-9-team01.elicecoding.com',
+      'https://developers.tosspayments.com',
+      'https://api.tosspayments.com',
+    ],
     credentials: true,
   });
   app.use(cookieParser());

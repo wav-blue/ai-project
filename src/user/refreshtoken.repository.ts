@@ -1,66 +1,88 @@
-import { DataSource, Repository } from 'typeorm';
+import { QueryRunner } from 'typeorm';
 import { RefreshToken } from './refreshtoken.entity';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class RefreshTokenRepository {
-  private refreshRepository: Repository<RefreshToken>;
+  async getRefreshTokenbyUserId(
+    userId: string,
+    queryRunner: QueryRunner,
+  ): Promise<RefreshToken> {
+    try {
+      const found = await queryRunner.manager
+        .createQueryBuilder()
+        .select('refreshtoken')
+        .from(RefreshToken, 'refreshtoken')
+        .where('refreshtoken.user_id = :userId', { userId })
+        .getOne();
 
-  constructor(private readonly dataSource: DataSource) {
-    this.refreshRepository = this.dataSource.getRepository(RefreshToken);
+      return found;
+    } catch (err) {
+      console.error('getuserbyid error', err.message);
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
-  async getRefreshTokenbyUserId(userId: string): Promise<RefreshToken> {
-    const found = await this.refreshRepository
-      .createQueryBuilder()
-      .select('refreshtoken')
-      .from(RefreshToken, 'refreshtoken')
-      .where('refreshtoken.user_id = :userId', { userId })
-      .getOne();
+  async getRefreshTokenbyTokenId(
+    tokenId: string,
+    queryRunner: QueryRunner,
+  ): Promise<RefreshToken> {
+    try {
+      const found = await queryRunner.manager
+        .createQueryBuilder()
+        .select('refreshtoken')
+        .from(RefreshToken, 'refreshtoken')
+        .where('refreshtoken.token_id = :tokenId', { tokenId })
+        .getOne();
 
-    return found;
-  }
-
-  async getRefreshTokenbyTokenId(tokenId: string): Promise<RefreshToken> {
-    const found = await this.refreshRepository
-      .createQueryBuilder()
-      .select('refreshtoken')
-      .from(RefreshToken, 'refreshtoken')
-      .where('refreshtoken.token_id = :tokenId', { tokenId })
-      .getOne();
-
-    console.log(found);
-    return found;
+      console.log(found);
+      return found;
+    } catch (err) {
+      console.error('getuserbyid error', err.message);
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
   async createRefreshToken(
     userId: string,
     refreshToken: string,
+    queryRunner: QueryRunner,
   ): Promise<void> {
-    await this.refreshRepository
-      .createQueryBuilder()
-      .insert()
-      .into(RefreshToken)
-      .values({
-        user_id: userId,
-        token: refreshToken,
-      })
-      .execute();
-    return;
+    try {
+      await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into(RefreshToken)
+        .values({
+          user_id: userId,
+          token: refreshToken,
+        })
+        .execute();
+      return;
+    } catch (err) {
+      console.error('getuserbyid error', err.message);
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
   async updateRefreshToken(
     userId: string,
     refreshToken: string,
+    queryRunner: QueryRunner,
   ): Promise<void> {
-    await this.refreshRepository
-      .createQueryBuilder()
-      .update(RefreshToken)
-      .set({
-        token: refreshToken,
-      })
-      .where('user_id = :userId', { userId })
-      .execute();
-    return;
+    try {
+      await queryRunner.manager
+        .createQueryBuilder()
+        .update(RefreshToken)
+        .set({
+          token: refreshToken,
+        })
+        .where('user_id = :userId', { userId })
+        .execute();
+      return;
+    } catch (err) {
+      console.error('getuserbyid error', err.message);
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 }

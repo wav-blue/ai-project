@@ -1,75 +1,94 @@
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { QueryRunner } from 'typeorm';
 import { User } from './user.entity';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { MemberShip } from './membership.entity';
 
 @Injectable()
 export class UserRepository {
-  private userRepository: Repository<User>;
+  async getUserbyId(userId: string, queryRunner: QueryRunner): Promise<User> {
+    try {
+      const found = await queryRunner.manager
+        .createQueryBuilder()
+        .select('user')
+        .from(User, 'user')
+        .where('user.user_id = :userId', { userId })
+        .getOne();
 
-  constructor(private readonly dataSource: DataSource) {
-    this.userRepository = this.dataSource.getRepository(User);
+      return found;
+    } catch (err) {
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
-  async getUserbyId(userId: string): Promise<User> {
-    const found = await this.userRepository
-      .createQueryBuilder()
-      .select('user')
-      .from(User, 'user')
-      .where('user.user_id = :userId', { userId })
-      .getOne();
+  async getUserbyEmail(email: string, queryRunner: QueryRunner): Promise<User> {
+    try {
+      const found = await queryRunner.manager
+        .createQueryBuilder()
+        .select('user')
+        .from(User, 'user')
+        .where('user.email = :email', { email })
+        .getOne();
 
-    return found;
+      return found;
+    } catch (err) {
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
-  async getUserbyEmail(email: string): Promise<User> {
-    const found = await this.userRepository
-      .createQueryBuilder()
-      .select('user')
-      .from(User, 'user')
-      .where('user.email = :email', { email })
-      .getOne();
+  async createUser(
+    createUserDto: CreateUserDto,
+    queryRunner: QueryRunner,
+  ): Promise<User> {
+    try {
+      const { email, logintype, password } = createUserDto;
 
-    return found;
+      const newUserResults = await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          email: email,
+          logintype: logintype,
+          password: password,
+        })
+        .execute();
+
+      const newUser = await this.getUserbyId(
+        newUserResults.identifiers[0].user_id,
+        queryRunner,
+      );
+      return newUser;
+    } catch (err) {
+      console.error('createuser error', err.message);
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const { email, logintype, password } = createUserDto;
+  async updateUser(
+    updateUserDto: UpdateUserDto,
+    queryRunner: QueryRunner,
+  ): Promise<User> {
+    try {
+      const { userId, password } = updateUserDto;
 
-    const newUserResults = await this.userRepository
-      .createQueryBuilder()
-      .insert()
-      .into(User)
-      .values({
-        email: email,
-        logintype: logintype,
-        password: password,
-      })
-      .execute();
+      await queryRunner.manager
+        .createQueryBuilder()
+        .update(User)
+        .set({
+          password: password,
+        })
+        .where('user_id = :userId', { userId })
+        .execute();
 
-    const newUser = await this.getUserbyId(
-      newUserResults.identifiers[0].user_id,
-    );
-    return newUser;
-  }
+      const found = await this.getUserbyId(userId, queryRunner);
 
-  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
-    const { userId, password } = updateUserDto;
-
-    await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        password: password,
-      })
-      .where('user_id = :userId', { userId })
-      .execute();
-
-    const found = await this.getUserbyId(userId);
-
-    return found;
+      return found;
+    } catch (err) {
+      console.error('updateuser error', err.message);
+      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    }
   }
 
   //채팅용 멤버십 확인 쿼리

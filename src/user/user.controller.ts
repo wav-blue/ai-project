@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Logger,
   Post,
   Put,
   UsePipes,
@@ -13,7 +12,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './user.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { LoginRequestType } from './dtos/loginrequesttype .dto';
@@ -26,12 +24,10 @@ import { Response } from 'express';
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
-  private logger = new Logger('userController');
 
   @Post('/register')
   @UsePipes(ValidationPipe)
   async createUser(@Body() createUserDto: CreateUserDto) {
-    this.logger.log(' user create 요청 실행 !');
     const newUser = (
       await this.userService.createUser(createUserDto)
     ).readonlyData();
@@ -40,13 +36,20 @@ export class UserController {
 
   @Post('/resign')
   @UsePipes(ValidationPipe)
-  @UseGuards()
-  async deleteUser(): Promise<boolean> {
-    this.logger.log(' user create 요청 실행 !');
-
+  @UseGuards(LocalAuthGuard)
+  async deleteUser(@Res() res: Response): Promise<boolean> {
     // 유저 탈퇴 처리
-    // 유저 쿠키 삭제
+    this.clearTokens(res);
+
     return true;
+  }
+
+  @Get('/logout')
+  @UseGuards(LocalAuthGuard)
+  async logout(@Res() res: Response) {
+    this.clearTokens(res);
+
+    res.send({ ok: true });
   }
 
   @Get('/me')
@@ -63,7 +66,6 @@ export class UserController {
   @UsePipes(ValidationPipe)
   @UseGuards(LocalAuthGuard)
   async updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
-    this.logger.log(' user put 요청 실행 !');
     console.log(req['user']);
     const userId = req['user'];
 
@@ -76,6 +78,7 @@ export class UserController {
   }
 
   @Post('/login/email')
+  @UsePipes(ValidationPipe)
   async userLoginbyEmail(
     @Body() loginRequest: LoginRequestType,
     @Res() res: Response,
@@ -106,7 +109,7 @@ export class UserController {
     const { user, accessToken, refreshToken } =
       await this.userService.userLogin(userDto);
 
-    this.setTokens(res, accessToken, refreshToken);
+    await this.setTokens(res, accessToken, refreshToken);
     res.redirect('http://localhost:3000');
   }
 
@@ -124,7 +127,7 @@ export class UserController {
     const { user, accessToken, refreshToken } =
       await this.userService.userLogin(userDto);
 
-    this.setTokens(res, accessToken, refreshToken);
+    await this.setTokens(res, accessToken, refreshToken);
     res.redirect('http://localhost:3000');
   }
 
@@ -144,6 +147,11 @@ export class UserController {
       path: '/',
     });
 
+    return;
+  }
+  clearTokens(@Res() res: Response): void {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
     return;
   }
 }

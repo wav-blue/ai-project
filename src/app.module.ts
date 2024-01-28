@@ -11,6 +11,7 @@ import { UserModule } from './user/user.module';
 import { OrderModule } from './order/order.module';
 import { ExceptionToHttpExceptionFilter } from './common/exception-filter';
 import { ChatModule } from './chat/chat.module';
+import { PurchaseModule } from './purchase/purchase.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ChatModule } from './chat/chat.module';
     ChatModule,
     OrderModule,
     ItemModule,
+    PurchaseModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ExceptionToHttpExceptionFilter },
