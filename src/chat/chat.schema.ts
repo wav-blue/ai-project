@@ -1,42 +1,28 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { ChatCompletionMessageParam } from 'openai/resources';
 
 export type ChatDocument = HydratedDocument<Chat>;
 
-@Schema({ collection: 'chat' })
+@Schema({ collection: 'chat', timestamps: true })
 export class Chat {
-  // @Prop({ type: Types.ObjectId })
-  // _id: Types.ObjectId;
-
-  @Prop({ required: true })
+  @Prop()
   userId: string;
 
   @Prop()
-  subject: string;
+  guestId: string;
 
   @Prop({ required: true })
-  dialogue: Array<{ role: string; content: string }>;
-
-  @Prop()
-  log: Array<{ no: number; act: string; token: number; date: Date }>;
-
-  @Prop()
-  token: number;
-
-  @Prop()
-  session: number;
-
-  @Prop()
-  imageLog: Array<{ count: number; uploadedAt: Date }>;
+  title: string;
 
   @Prop({ required: true })
-  createdAt: Date;
+  dialogue: ChatCompletionMessageParam[]; //클라이언트 표시, GPT에게 전달할 대화맥락(가공됨)
 
-  @Prop()
-  updatedAt: Date;
+  @Prop({ required: true })
+  nextPromptToken: number;
 
-  @Prop()
-  lodedSession: number;
+  @Prop({ required: true })
+  tokenUsageRecords: number;
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);
