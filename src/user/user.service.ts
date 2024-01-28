@@ -6,8 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { DataSource, QueryRunner } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { RefreshTokenRepository } from './refreshtoken.repository';
 import { User } from './user.entity';

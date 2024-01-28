@@ -4,7 +4,7 @@ import { UserController } from './user.controller';
 import { UserRepository } from './user.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user.entity';
-import { MemberShip } from '../purchase/membership.entity';
+import { MemberShip } from './membership.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokenRepository } from './refreshtoken.repository';
 import { RefreshToken } from './refreshtoken.entity';

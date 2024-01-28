@@ -12,7 +12,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './user.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { LoginRequestType } from './dtos/loginrequesttype .dto';
@@ -40,7 +39,6 @@ export class UserController {
   @UseGuards(LocalAuthGuard)
   async deleteUser(@Res() res: Response): Promise<boolean> {
     // 유저 탈퇴 처리
-    // 유저 쿠키 삭제
     this.clearTokens(res);
 
     return true;

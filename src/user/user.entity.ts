@@ -7,7 +7,7 @@ import {
   JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { MemberShip } from '../purchase/membership.entity';
+import { MemberShip } from './membership.entity';
 import { RefreshToken } from './refreshtoken.entity';
 import { v4 as uuidv4 } from 'uuid';
 @Entity({ name: 'USER' })
