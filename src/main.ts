@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { setSwagger } from './common/swagger.setting';
 import * as config from 'config';
 import * as cookieParser from 'cookie-parser';
 import * as mongoose from 'mongoose';
@@ -27,6 +28,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  setSwagger(app);
 
   await app.listen(serverConfig.port);
   Logger.log(`Application running on port ${serverConfig.port}`);
