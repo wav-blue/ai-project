@@ -16,19 +16,19 @@ export class MemberShip extends BaseEntity {
   userId: string;
 
   @Column({ type: 'datetime', nullable: true })
-  start_at: Date;
+  startAt: Date;
 
   @Column({ type: 'datetime', nullable: true })
-  end_at: Date;
+  endAt: Date;
 
   @Column({ type: 'enum', enum: ['non-member', 'trail', 'basic', 'premium'] })
-  using_service: string;
+  usingService: string;
 
   @Column({ type: 'int' })
-  remain_chances: number;
+  remainChances: number;
 
   @Column({ type: 'datetime', nullable: true })
-  created_at: Date;
+  createdAt: Date;
 
   @Column({ type: 'datetime', nullable: true })
   updatedAt: Date;
