@@ -86,4 +86,14 @@ export class MembershipService {
       await queryRunner.release();
     }
   }
+
+  async useMembership(userId: string, queryRunner) {
+    try {
+      console.log('member service', queryRunner.isReleased);
+
+      this.membershipRepository.useRemain(userId, queryRunner);
+    } catch (error) {
+      throw error;
+    }
+  }
 }

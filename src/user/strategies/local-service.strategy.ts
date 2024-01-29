@@ -23,7 +23,7 @@ export class AccessStrategy extends PassportStrategy(Strategy, 'access') {
   }
 
   async validate(payload: any) {
-    const userId = payload.user_id;
+    const userId = payload.userId;
 
     return userId;
   }
@@ -47,7 +47,7 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
   }
 
   async validate(req: Request, payload: any) {
-    const userId = payload.user_id;
+    const userId = payload.userId;
 
     // foundRefreshToken이 존재하는지 확인하고 속성에 접근하기 전에 확인
     const foundRefreshToken =

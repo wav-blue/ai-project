@@ -8,9 +8,10 @@ import { MemberShip } from 'src/user/membership.entity';
 import { MembershipService } from 'src/user/membership.service';
 import { MembershipRepository } from 'src/user/membership.repository';
 import { ProductRepository } from './product.repository';
+import { Product } from './product.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Purchase, MemberShip])],
+  imports: [TypeOrmModule.forFeature([Purchase, MemberShip, Product])],
   controllers: [PurchaseController],
   providers: [
     PurchaseService,

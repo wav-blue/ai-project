@@ -14,7 +14,7 @@ export class PurchaseRepository {
         .createQueryBuilder()
         .select('purchase')
         .from(Purchase, 'purchase')
-        .where('purchase.user_id = :userId', { userId })
+        .where('purchase.userId = :userId', { userId })
         .getMany();
       return found;
     } catch (err) {
@@ -51,11 +51,11 @@ export class PurchaseRepository {
         .insert()
         .into(Purchase)
         .values({
-          user_id: userId,
+          userId: userId,
           price: amount,
-          product_id: productId,
-          paymentKey,
-          orderId,
+          productId: productId,
+          paymentKey: paymentKey,
+          orderId: orderId,
         })
         .execute();
 

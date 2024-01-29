@@ -5,34 +5,39 @@ import {
   OneToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
+  DeleteDateColumn,
+  UpdateDateColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({ name: 'MEMBERSHIP' })
 export class MemberShip extends BaseEntity {
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'userId', referencedColumnName: 'user_id' })
-  @PrimaryGeneratedColumn('uuid')
+  @OneToOne(() => User, (user) => user.membership)
+  @PrimaryColumn('uuid')
   userId: string;
 
-  @Column({ type: 'datetime', nullable: true })
-  start_at: Date;
+  @CreateDateColumn()
+  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  startAt: Date;
 
   @Column({ type: 'datetime', nullable: true })
-  end_at: Date;
+  endAt: Date;
 
-  @Column({ type: 'enum', enum: ['non-member', 'trail', 'basic', 'premium'] })
-  using_service: string;
+  @Column({ type: 'enum', enum: ['normal', 'basic', 'premium'] })
+  usingService: string;
 
   @Column({ type: 'int' })
-  remain_chances: number;
+  remainChances: number;
 
-  @Column({ type: 'datetime', nullable: true })
-  created_at: Date;
-
-  @Column({ type: 'datetime', nullable: true })
-  updatedAt: Date;
-
-  @Column({ type: 'datetime', nullable: true })
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
   deletedAt: Date;
+
+  readonlyData() {
+    return {
+      usingService: this.usingService,
+      remainChances: this.remainChances,
+    };
+  }
 }

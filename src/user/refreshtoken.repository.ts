@@ -10,10 +10,9 @@ export class RefreshTokenRepository {
   ): Promise<RefreshToken> {
     try {
       const found = await queryRunner.manager
-        .createQueryBuilder()
+        .createQueryBuilder(RefreshToken, 'refreshtoken')
         .select('refreshtoken')
-        .from(RefreshToken, 'refreshtoken')
-        .where('refreshtoken.user_id = :userId', { userId })
+        .where('refreshtoken.userId = :userId', { userId })
         .getOne();
 
       return found;
@@ -29,10 +28,9 @@ export class RefreshTokenRepository {
   ): Promise<RefreshToken> {
     try {
       const found = await queryRunner.manager
-        .createQueryBuilder()
+        .createQueryBuilder(RefreshToken, 'refreshtoken')
         .select('refreshtoken')
-        .from(RefreshToken, 'refreshtoken')
-        .where('refreshtoken.token_id = :tokenId', { tokenId })
+        .where('refreshtoken.tokenId = :tokenId', { tokenId })
         .getOne();
 
       console.log(found);
@@ -49,15 +47,18 @@ export class RefreshTokenRepository {
     queryRunner: QueryRunner,
   ): Promise<void> {
     try {
+      console.log(userId, refreshToken);
+
       await queryRunner.manager
         .createQueryBuilder()
         .insert()
         .into(RefreshToken)
         .values({
-          user_id: userId,
+          userId: userId,
           token: refreshToken,
         })
         .execute();
+
       return;
     } catch (err) {
       console.error('getuserbyid error', err.message);
@@ -77,7 +78,7 @@ export class RefreshTokenRepository {
         .set({
           token: refreshToken,
         })
-        .where('user_id = :userId', { userId })
+        .where('userId = :userId', { userId })
         .execute();
       return;
     } catch (err) {

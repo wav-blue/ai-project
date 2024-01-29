@@ -141,11 +141,11 @@ export class ChatService {
       history.userId = history.userId ?? userId;
 
       //1. 멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
-      const checkMembership =
-        await this.userService.checkAndDeductMembership(userId);
-      if (!checkMembership) {
-        throw new Error('멤버십 ㄴㄴ');
-      }
+      // const checkMembership =
+      //   await this.userService.checkAndDeductMembership(userId);
+      // if (!checkMembership) {
+      //   throw new Error('멤버십 ㄴㄴ');
+      // }
 
       //2. 카톡캡쳐 이미지 있는 경우 OCR 거침(실패시 멤버십 차감횟수 다시 돌려줌)
       if (imageUrl) {
