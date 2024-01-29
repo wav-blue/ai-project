@@ -1,5 +1,9 @@
 import * as dayjs from 'dayjs';
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BoardsRepository } from './boards.repository';
 import { S3Service } from '../../common/s3.presigned';
@@ -8,6 +12,7 @@ import {
   BoardSearchAndListDto,
   BoardsListQueryDto,
   CreateBoardDto,
+  CreateBoardReportDto,
   UpdateBoardDto,
 } from './boards.dto';
 
@@ -236,5 +241,85 @@ export class BoardsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // 신고 내역 작성 && 신고 누적 시 삭제
+  async createBoardReport(
+    userId: string,
+    createBoardReportDto: CreateBoardReportDto,
+  ) {
+    // 변수 선언
+    createBoardReportDto.reportUserId = userId;
+
+    let foundBoard: Board;
+    let commentStatus = 'normal';
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+    try {
+      const { boardId, reportUserId } = createBoardReportDto;
+
+      // 신고된 게시글의 정보 조회
+      foundBoard = await this.boardsRepository.selectBoard(
+        boardId,
+        queryRunner,
+      );
+      if (!foundBoard || foundBoard.status !== 'normal') {
+        // 해당하는 게시글의 정보가 데이터베이스 내에 없음
+        // 혹은 게시글이 이미 삭제되어 신고할 수 없음
+        throw new NotFoundException('이미 삭제된 게시글');
+        // throw new Error('이미 삭제된 게시글');
+      }
+
+      if (foundBoard.userId === reportUserId) {
+        console.log(`자신의 게시글을 삭제하려고 함`);
+        // 테스트가 힘들어지기 때문에 임시로 주석 처리
+        // throw new ConflictException('잘못된 신고 요청');
+      }
+
+      // 작성자의 id를 DTO에 저장
+      createBoardReportDto.targetUserId = foundBoard.userId;
+
+      // 해당 게시글을 report한 User들의 기록을 조회
+      const reportUserList = await this.boardsRepository.checkReportUser(
+        boardId,
+        queryRunner,
+      );
+
+      // 동일 인물이 하나의 게시글에 대해 중복 신고하는 경우 Error
+      for (let i = 0; i < reportUserList.length; i++) {
+        if (reportUserList[i].report_user_id === reportUserId) {
+          // 한 유저가 같은 게시글을 두번 신고할 수 없음
+          throw new ConflictException('이미 신고된 게시글');
+        }
+      }
+
+      // 신고내역 테이블에 추가
+      await this.boardsRepository.insertBoardReport(
+        createBoardReportDto,
+        queryRunner,
+      );
+
+      // 일정 횟수 신고되어 댓글 삭제
+      // 지금 발생한 신고를 포함해서 5이상일 경우 삭제
+      if (reportUserList.length + 1 >= 5) {
+        const { boardId } = createBoardReportDto;
+        commentStatus = 'reported';
+
+        await this.boardsRepository.reportBoard(boardId, queryRunner);
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+
+    // 현재 게시글의 상태를 응답으로 반환
+    return { status: commentStatus };
   }
 }

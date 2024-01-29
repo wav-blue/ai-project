@@ -17,6 +17,7 @@ import { Board } from './boards.entity';
 import {
   BoardsListQueryDto,
   CreateBoardDto,
+  CreateBoardReportDto,
   UpdateBoardDto,
 } from './boards.dto';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
@@ -141,6 +142,24 @@ export class BoardsController {
     try {
       await this.boardsService.eraseBoard(userId, boardId);
       return { message: '삭제 성공' };
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  // 신고 내역 추가 (신고 누적 상황에 따라 해당 댓글 삭제)
+  @Post('/report')
+  @UseGuards(LocalAuthGuard)
+  createBoardReport(
+    @GetUser() userId: string,
+    @Body() createBoardReportDto: CreateBoardReportDto,
+  ): Promise<{ status: string }> {
+    try {
+      const result = this.boardsService.createBoardReport(
+        userId,
+        createBoardReportDto,
+      );
+      return result;
     } catch (err) {
       throw err;
     }
