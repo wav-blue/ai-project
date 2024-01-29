@@ -18,7 +18,7 @@ export class MembershipRepository {
         .createQueryBuilder()
         .select('membership')
         .from(MemberShip, 'membership')
-        .where('membership.user_id = :userId', { userId })
+        .where('membership.userId = :userId', { userId })
         .getOne();
       return found;
     } catch (err) {
@@ -33,22 +33,22 @@ export class MembershipRepository {
   ): Promise<MemberShip> {
     try {
       const membershipvalues = new MemberShip();
-      membershipvalues.user_id = userId;
+      membershipvalues.userId = userId;
       //시작날짜 추가필요
       //membershipvalues.start_at
 
       switch (membershipType) {
         case 'basic':
-          membershipvalues.using_service = 'basic';
-          membershipvalues.remain_chances = 50;
+          membershipvalues.usingService = 'basic';
+          membershipvalues.remainChances = 50;
           break;
         case 'premium':
-          membershipvalues.using_service = 'premium';
-          membershipvalues.remain_chances = 5000;
+          membershipvalues.usingService = 'premium';
+          membershipvalues.remainChances = 5000;
           break;
         default:
-          membershipvalues.using_service = 'normal';
-          membershipvalues.remain_chances = 5;
+          membershipvalues.usingService = 'normal';
+          membershipvalues.remainChances = 5;
           break;
       }
       console.log(membershipvalues);
@@ -81,22 +81,22 @@ export class MembershipRepository {
   ): Promise<MemberShip> {
     try {
       const membershipvalues = new MemberShip();
-      membershipvalues.user_id = userId;
+      membershipvalues.userId = userId;
       //시작날짜 추가필요
       //membershipvalues.start_at
 
       switch (membershipType) {
         case 'basic':
-          membershipvalues.using_service = 'basic';
-          membershipvalues.remain_chances = 50;
+          membershipvalues.usingService = 'basic';
+          membershipvalues.remainChances = 50;
           break;
         case 'premium':
-          membershipvalues.using_service = 'premium';
-          membershipvalues.remain_chances = 5000;
+          membershipvalues.usingService = 'premium';
+          membershipvalues.remainChances = 5000;
           break;
         default:
-          membershipvalues.using_service = 'normal';
-          membershipvalues.remain_chances = 5;
+          membershipvalues.usingService = 'normal';
+          membershipvalues.remainChances = 5;
           break;
       }
 
@@ -127,13 +127,13 @@ export class MembershipRepository {
       const found = await this.getMembershipbyuserId(userId, queryRunner);
 
       // 멤버십 기간에 대한 검증도 추가필요함
-      if (found.remain_chances <= 0) {
+      if (found.remainChances <= 0) {
         throw new UnauthorizedException('질문 횟수가 부족합니다.');
       }
       await queryRunner.manager
         .createQueryBuilder()
         .update(MemberShip)
-        .set({ remainChances: found.remain_chances - 1 })
+        .set({ remainChances: found.remainChances - 1 })
         .where('membership.user_id = :userId', { userId })
         .execute();
 

@@ -12,7 +12,11 @@ export class ChatOpenAi {
       console.log('질문시작');
       const response = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo-1106',
-        temperature: 0.7,
+        temperature: 0.75,
+        max_tokens: 500,
+        top_p: 0.98,
+        frequency_penalty: 0.2,
+        presence_penalty: 0.4,
         response_format: { type: 'json_object' },
         messages: prompt,
       });
