@@ -11,7 +11,7 @@ import {
 import { ChatService } from './chat.service';
 import { CreateFreeChatDto, UpdateChatDto } from './chat.dto';
 import { LocalAuthGuard } from '../user/guards/local-service.guard';
-import { GetUser } from '../community/comments/decorator/get-user.decorator';
+import { GetUser } from 'src/common/decorator/get-user.decorator';
 import * as uuid from 'uuid';
 import { Chat } from './chat.schema';
 

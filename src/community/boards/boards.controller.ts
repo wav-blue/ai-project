@@ -19,7 +19,7 @@ import {
   CreateBoardDto,
   UpdateBoardDto,
 } from './boards.dto';
-import { GetUser } from '../comments/decorator/get-user.decorator';
+import { GetUser } from 'src/common/decorator/get-user.decorator';
 
 @Controller('boards')
 export class BoardsController {
