@@ -253,7 +253,6 @@ export class BoardsService {
 
     let foundBoard: Board;
     let commentStatus = 'normal';
-    const reportUserList = []; // 이 게시글을 신고했던 사람을 조회해서 저장할 배열
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
