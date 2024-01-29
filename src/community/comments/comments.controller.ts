@@ -21,7 +21,7 @@ import { Comment } from './entity/comments.entity';
 
 import * as dayjs from 'dayjs';
 import { QuerySetPage } from './decorator/query-param.decorator';
-import { GetUser } from './decorator/get-user.decorator';
+import { GetUser } from 'src/common/decorator/get-user.decorator';
 
 @Controller('comments')
 export class CommentsController {
