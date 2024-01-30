@@ -11,6 +11,7 @@ import { HttpModule } from '@nestjs/axios';
 import { CommentsReadService } from './comments/service/comments-read.service';
 import { CommentsReportService } from './comments/service/comments-report.service';
 import { CommentsService } from './comments/service/comments.service';
+import { AxiosRequest } from './comments/util/axiosRequest.util';
 
 @Module({
   imports: [HttpModule, TypeOrmModule.forFeature([Board])],
@@ -23,6 +24,7 @@ import { CommentsService } from './comments/service/comments.service';
     BoardsRepository,
     CommentRepository,
     S3Service,
+    AxiosRequest,
   ],
 })
 export class CommunityModule {}

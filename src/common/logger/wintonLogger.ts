@@ -10,7 +10,7 @@ const logDir = `${process.cwd()}/logs`;
 
 //* log 출력 포맷 정의 함수
 const logFormat = printf(({ level, message, label, timestamp }) => {
-  return `${timestamp} [${label}] ${level}: ${message}`; // 날짜 [시스템이름] 로그레벨 메세지
+  return `${timestamp} [${label}] ${level}: ${message}`;
 });
 
 /*
@@ -22,14 +22,12 @@ const logger = winston.createLogger({
   format: combine(
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     label({ label: 'GuruBack' }), // 어플리케이션 이름
-    logFormat, // log 출력 포맷
+    logFormat,
   ),
   //* 실제 로그를 어떻게 기록을 한 것인가 정의
   transports: [
-    //* info 레벨 로그를 저장할 파일 설정 (info: 2 보다 높은 error: 0 와 warn: 1 로그들도 자동 포함해서 저장)
     new winstonDaily({
-      // level: 'info', // info 이상의 레벨
-      level: 'debug', // debug 이상의 레벨
+      level: 'debug', // debug 이상의 레벨 저장
       datePattern: 'YYYY-MM-DD', // 파일 날짜 형식
       dirname: logDir, // 파일 경로
       filename: `%DATE%.log`, // 파일 이름
@@ -40,8 +38,8 @@ const logger = winston.createLogger({
     new winstonDaily({
       level: 'error', // error 레벨에선
       datePattern: 'YYYY-MM-DD',
-      dirname: logDir + '/error', // /logs/error 하위에 저장
-      filename: `%DATE%.error.log`, // 에러 로그는 2020-05-28.error.log 형식으로 저장
+      dirname: logDir + '/error',
+      filename: `%DATE%.error.log`,
       maxFiles: 30,
       zippedArchive: true,
     }),

@@ -1,4 +1,4 @@
-import { CommentPosition } from './enum/CommentPosition.enum';
+import { CommentPosition } from '../enum/CommentPosition.enum';
 
 // 랜덤으로 Position 결정
 function randomPosition(): CommentPosition {
