@@ -72,3 +72,16 @@ export class BoardSearchAndListDto {
   @IsNotEmpty()
   queryRunner: QueryRunner;
 }
+
+//게시물 신고 작성
+export class CreateBoardReportDto {
+  @IsNotEmpty()
+  boardId: number;
+
+  reportUserId: string;
+
+  targetUserId: string;
+
+  @IsString()
+  reportType: string;
+}

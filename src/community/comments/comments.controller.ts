@@ -132,9 +132,11 @@ export class CommentsController {
     this.logger.log(
       `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
     );
+
+    createCommentReportDto.reportUserId = reportUserId;
+
     const result = this.commentsService.createCommentReport(
       createCommentReportDto,
-      reportUserId,
     );
     return result;
   }
@@ -152,7 +154,6 @@ export class CommentsController {
 
     const result = this.commentsService.createCommentReport(
       createCommentReportDto,
-      userId,
     );
     return result;
   }

@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
-import { Board } from './boards.entity';
+import { Board, BoardReport } from './boards.entity';
 import {
   BoardSearchAndListDto,
   CreateBoardDto,
+  CreateBoardReportDto,
   UpdateBoardDto,
 } from './boards.dto';
 
@@ -344,6 +345,66 @@ export class BoardsRepository {
     } catch (err) {
       console.error('게시물 삭제 중 뭔가 잘못됨:', err.message);
       throw new Error('게시물 삭제 실패');
+    }
+  }
+
+  // 게시글 상태 갱신
+  // 게시글 신고 누적으로 인한 삭제
+  async reportBoard(boardId: number, queryRunner: QueryRunner): Promise<void> {
+    try {
+      await queryRunner.manager
+        .createQueryBuilder(Board, 'B')
+        .update()
+        .set({ status: 'reported', deletedAt: () => 'CURRENT_TIMESTAMP' })
+        .where('boardId = :boardId', { boardId })
+        .execute();
+    } catch (err) {
+      console.error('게시물 상태 갱신 중 뭔가 잘못됨:', err.message);
+      throw new Error('게시물 상태 갱신 실패');
+    }
+  }
+
+  // 해당 게시물을 신고한 사람들 조회
+  async checkReportUser(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<{ report_user_id: string }[]> {
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder()
+        .select('BR.report_user_id')
+        .from(BoardReport, 'BR')
+        .where('BR.boardId = :boardId', {
+          boardId,
+        })
+        .getRawMany();
+
+      return result;
+    } catch (err) {
+      console.error(
+        '게시판 신고 유저의 목록을 확인하던 중 뭔가 잘못됨:',
+        err.message,
+      );
+      throw new Error('신고 유저 목록 확인 실패');
+    }
+  }
+
+  async insertBoardReport(
+    createBoardReportDto: CreateBoardReportDto,
+    queryRunner: QueryRunner,
+  ) {
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into(BoardReport)
+        .values(createBoardReportDto)
+        .execute();
+
+      return result.identifiers[0] as BoardReport;
+    } catch (err) {
+      console.error('게시물 신고 내역 저장 중 뭔가 잘못됨:', err.message);
+      throw new Error('게시물 신고 내역 저장 실패');
     }
   }
 

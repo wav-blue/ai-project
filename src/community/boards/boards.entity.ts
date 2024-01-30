@@ -46,3 +46,30 @@ export class Board extends BaseEntity {
   @DeleteDateColumn({ type: 'datetime', nullable: true })
   deletedAt: Date;
 }
+
+@Entity({ name: 'REPORT_BOARD' })
+export class BoardReport extends BaseEntity {
+  @PrimaryGeneratedColumn()
+  reportBoardId: number;
+
+  @Column({ type: 'int' })
+  boardId: number;
+
+  @Column({ type: 'varchar', length: 50 })
+  reportUserId: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  targetUserId: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  reportType: string;
+
+  @CreateDateColumn({ type: 'datetime' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deletedAt: Date;
+}
