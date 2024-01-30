@@ -66,6 +66,7 @@ export class UserController {
   @UsePipes(ValidationPipe)
   @UseGuards(LocalAuthGuard)
   async updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
+    console.log(req['user']);
     const userId = req['user'];
 
     if (updateUserDto.userId != userId) {
@@ -86,7 +87,7 @@ export class UserController {
     const loginUser = { email, logintype: 'EMAIL', password };
 
     const { user, accessToken, refreshToken } =
-      await this.userService.userLoginEmail(loginUser);
+      await this.userService.userLogin(loginUser);
 
     this.setTokens(res, accessToken, refreshToken);
     res.send(user.readonlyData());
@@ -102,9 +103,11 @@ export class UserController {
     @Req() req: GoogleRequest,
     @Res() res: Response, // : Promise<GoogleLoginAuthOutputDto>
   ) {
+    console.log('callback tests, google');
     const userDto = req.user;
+
     const { user, accessToken, refreshToken } =
-      await this.userService.userLoginSocial(userDto);
+      await this.userService.userLogin(userDto);
 
     await this.setTokens(res, accessToken, refreshToken);
     res.redirect('http://localhost:3000');
@@ -119,8 +122,10 @@ export class UserController {
   async kakaoAuthCallback(@Req() req: Request, @Res() res: Response) {
     const userDto = req['user'];
 
+    console.log(userDto);
+
     const { user, accessToken, refreshToken } =
-      await this.userService.userLoginSocial(userDto);
+      await this.userService.userLogin(userDto);
 
     await this.setTokens(res, accessToken, refreshToken);
     res.redirect('http://localhost:3000');

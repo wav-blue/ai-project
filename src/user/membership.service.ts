@@ -1,8 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
-import { DataSource, QueryRunner } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { MembershipRepository } from './membership.repository';
 import { MemberShip } from './membership.entity';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class MembershipService {
@@ -12,7 +13,7 @@ export class MembershipService {
   ) {}
 
   async getMembershipById(userId: string): Promise<MemberShip> {
-    const queryRunner = await this.dataSource.createQueryRunner();
+    const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
@@ -117,6 +118,76 @@ export class MembershipService {
     } catch (e) {
       await queryRunner.rollbackTransaction();
       throw e;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // !!! 원민님 아직 작업중이신 것 같아서 채팅 테스트 용으로 아래에 임시 코드를 작성했습니다~
+  // 멤버십 완성하시면 develop 에 merge 하실때 지워주시고 말씀해주세요! - (hy)
+
+  //채팅용 멤버십 확인, 횟수 차감 비지니스로직
+  // 사용기간 만료된 것들은 soft-delete 되어있는 상태라고 가정,
+  // 사용기간 만료되었는데 soft-delete 안되어있는 게 만약에 걸리면 여기서 soft-delete 처리
+  // normal (이게 체험판이죠?) 은 expire 따로 없고 횟수만 따진다고 가정
+  async checkAndDeductMembership(userId: string): Promise<boolean> {
+    const now = dayjs();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const status = await this.membershipRepository.getMembershipbyuserId(
+        userId,
+        queryRunner,
+      );
+      const expiryDate = dayjs(status.endAt);
+      const remainChances = status.remainChances;
+
+      // 사용기간 만료되었는데 soft-delete 안되어있는 게 만약에 걸리면 여기서 soft-delete 처리
+      if (expiryDate < now) {
+        await this.membershipRepository.expireMembership(userId, queryRunner);
+        return false;
+      }
+
+      //사용기간 남은것 중에서만 switch
+      switch (status.usingService) {
+        case 'premium': {
+          return true;
+        }
+        case 'basic': {
+          if (remainChances > 0) {
+            return true;
+          }
+          return false;
+        }
+        case 'normal': {
+          if (remainChances > 0) {
+            return true;
+          }
+          return false;
+        }
+        default: {
+          return false;
+        }
+      }
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async restoreMembershipBalance(userId: string): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      await this.membershipRepository.restoreBalance(userId, queryRunner);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
     } finally {
       await queryRunner.release();
     }

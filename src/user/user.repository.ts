@@ -3,7 +3,6 @@ import { User } from './user.entity';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { MemberShip } from './membership.entity';
 
 @Injectable()
 export class UserRepository {

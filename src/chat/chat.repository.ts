@@ -21,7 +21,16 @@ export class ChatRepository {
   async findChatList(userId: string, session: ClientSession): Promise<Chat[]> {
     try {
       return this.chatModel
-        .find({ userId }, { title: 1, _id: 1 })
+        .aggregate([
+          { $match: { userId } },
+          {
+            $project: {
+              chatId: '$_id',
+              title: 1,
+              _id: 0,
+            },
+          },
+        ])
         .session(session)
         .exec();
     } catch (err) {

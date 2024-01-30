@@ -10,10 +10,10 @@ import { ChatPromptService } from './chat.prompt.service';
 import { ChatOpenAi } from './chat.openai.service';
 import { ChatRepository } from './chat.repository';
 import { ChatImageService } from './chat.image.service';
-import { UserService } from 'src/user/user.service';
 import { ChatDataManageService } from './chat.datamanage.service';
 import { Chat } from './chat.schema';
 import { InjectConnection } from '@nestjs/mongoose';
+import { MembershipService } from 'src/user/membership.service';
 
 @Injectable()
 export class ChatService {
@@ -23,7 +23,7 @@ export class ChatService {
     private chatImageService: ChatImageService,
     private chatRepository: ChatRepository,
     private chatDataManageService: ChatDataManageService,
-    private readonly userService: UserService,
+    private readonly membershipService: MembershipService,
     @InjectConnection() private connection: Connection,
   ) {}
 
@@ -44,7 +44,7 @@ export class ChatService {
   }
 
   //채팅내역중 하나 선택해서 읽기
-  //커서기반 페이지네이션 필요
+  //커서기반 페이지네이션
   async readChat(
     userId: string,
     chatId: string,
@@ -147,7 +147,7 @@ export class ChatService {
       //0. 프리 ->유료인 경우 멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
       if (history) {
         const checkMembership =
-          await this.userService.checkAndDeductMembership(userId);
+          await this.membershipService.checkAndDeductMembership(userId);
         if (!checkMembership) {
           throw new Error('멤버십 ㄴㄴ');
         }
@@ -228,11 +228,11 @@ export class ChatService {
       );
 
       //1. 멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
-      // const checkMembership =
-      //   await this.userService.checkAndDeductMembership(userId);
-      // if (!checkMembership) {
-      //   throw new Error('멤버십 ㄴㄴ');
-      // }
+      const checkMembership =
+        await this.membershipService.checkAndDeductMembership(userId);
+      if (!checkMembership) {
+        throw new Error('멤버십 ㄴㄴ');
+      }
 
       //2. 카톡캡쳐 이미지 있는 경우 OCR 거침(실패시 멤버십 차감횟수 다시 돌려줌)
       const imageOCR = imageUrl
