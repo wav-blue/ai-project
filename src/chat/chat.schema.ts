@@ -6,11 +6,8 @@ export type ChatDocument = HydratedDocument<Chat>;
 
 @Schema({ collection: 'chat', timestamps: true })
 export class Chat {
-  @Prop()
+  @Prop({ required: true })
   userId: string;
-
-  @Prop()
-  guestId: string;
 
   @Prop({ required: true })
   title: string;

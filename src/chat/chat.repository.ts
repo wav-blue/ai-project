@@ -4,12 +4,14 @@ import { Model, ClientSession } from 'mongoose';
 import { Chat } from './chat.schema';
 import { ChatLog } from './chatlog.schema';
 import { ChatLogType } from './chat.dto';
+import { FreeChatLog } from './freechatLog.schema';
 
 @Injectable()
 export class ChatRepository {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<Chat>,
     @InjectModel(ChatLog.name) private chatLogModel: Model<ChatLog>,
+    @InjectModel(FreeChatLog.name) private FreeChatLogModel: Model<FreeChatLog>,
   ) {}
 
   //채팅내역 목록
@@ -63,6 +65,19 @@ export class ChatRepository {
     try {
       const newChatLog = new this.chatLogModel(chatLogDoc);
       await newChatLog.save({ session });
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  //free챗 로그 생성
+  async createFreeChatLog(
+    freeChatLogDoc: FreeChatLog,
+    session: ClientSession,
+  ): Promise<void> {
+    try {
+      const newFreeChatLog = new this.FreeChatLogModel(freeChatLogDoc);
+      await newFreeChatLog.save({ session });
     } catch (err) {
       throw err;
     }

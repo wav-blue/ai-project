@@ -9,7 +9,7 @@ import {
 @Injectable()
 export class ChatPromptService {
   //구루의 페르소나 수정은 이곳에서
-  persona: ChatCompletionSystemMessageParam = {
+  private persona: ChatCompletionSystemMessageParam = {
     role: 'system',
     content: `your name is 구루(Guru).
     Guidelines: Think, speak according to 구루's persona. write in Korean language.
@@ -26,7 +26,7 @@ export class ChatPromptService {
   };
 
   //유저가 말을 시작하기 전 구루가 하는 인삿말, 페르소나 설정용이고 유저의 메시지 창에 나타나지 않습니다.
-  greeting: ChatCompletionAssistantMessageParam = {
+  private greeting: ChatCompletionAssistantMessageParam = {
     role: 'assistant',
     content: `구루 sits peacefully in thought in his Athenian Platonic hall of LOVE.
     People come to him all the time for advice on love matters. and today is no different.
@@ -37,52 +37,111 @@ export class ChatPromptService {
     name: 'Guru',
   };
 
-  //답변 양식
-  prompt: ChatCompletionUserMessageParam = {
+  //질문 양식
+  private prompt: ChatCompletionUserMessageParam = {
     role: 'user',
     content: '',
   };
 
+  //구루 답변 양식
+  private completion: ChatCompletionAssistantMessageParam = {
+    role: 'assistant',
+    content: '',
+    name: 'Guru',
+  };
+
+  private answerFomatWithTitle: string = `
+  Follow the format below for your answers
+  <Format: JSON(json)>
+  {title: Use up to five Korean words to summarize "the question" with previous context, 
+  answer: a thoughtful consultation on "the question", considering the previous context.}`;
+
+  private answerFomatOnlyAnswer: string = `
+  Follow the format below for your answers
+  <Format: JSON(json)>
+  {answer: a thoughtful consultation on "the question", considering the previous context.}`;
+
+  private formatQuestion(
+    question: string,
+    format: string,
+  ): ChatCompletionUserMessageParam {
+    const result = this.prompt;
+    result.content = `"the question": ` + question + format;
+    return result;
+  }
+
+  private addTestResulInGreeting(testResult: {
+    classification: string;
+    situation?: string[];
+  }): ChatCompletionAssistantMessageParam {
+    const result = this.greeting;
+    result.content += `
+      <When answering the user's question, please also consider the additional information below. This is a questionnaire filled out by a user to consult 구루.>
+        -Category of question: ${testResult.classification}
+        `;
+    if (testResult.situation) {
+      result.content += `-user's romantic relationship situation: ${testResult.situation}`;
+    }
+    return result;
+  }
+
+  private addImageOCRInQuestion(question: string, imageOCR: string): string {
+    question += `
+    <Regarding "the question", user had the following conversation with a person of romantic interest:
+    ${imageOCR}>`;
+
+    return question;
+  }
+
+  //로그인유저 첫질문
   format1stPrompt(
     question: string,
     testResult?: { classification: string; situation?: string[] },
     imageOCR?: string,
+    free?: boolean,
   ): ChatCompletionMessageParam[] {
-    const persona = this.persona;
-    const greeting = this.greeting;
-    const prompt = this.prompt;
+    question = imageOCR
+      ? this.addImageOCRInQuestion(question, imageOCR) //캡쳐를 새로 넣었다면, 질문에 끼워넣기
+      : question;
 
-    //사전 질문지 답변이 있다면 system message 에 정보 포함
-    if (testResult) {
-      greeting.content += `
-      <When answering the user's question, please also consider the additional information below. This is a questionnaire filled out by a user to consult 구루.>
-        -Category of question: ${testResult.classification}
-        `;
-      if (testResult.situation) {
-        greeting.content += `-user's romantic relationship situation: ${testResult.situation}`;
-      }
-    }
-
-    //카톡캡쳐 첨부를 했다면 greeting 메세지에 첨부
-    if (imageOCR) {
-      greeting.content += `<user had below conversation with the person of interest:
-      ${imageOCR}>
-      
-      이건 또 흥미로운 대화를 했구만, 그래 어쩌다가 이런 대화를 하게 됐나?`;
-    }
+    const persona = this.persona; //페르소나
+    const greeting = testResult
+      ? this.addTestResulInGreeting(testResult) //사전 질문지 답변이 있다면 greeting에 정보 포함
+      : this.greeting; //사전 질문지 없다면 기본 greeting
 
     //유저 입력 질문을 프롬프트에 삽입
-    prompt.content =
-      `"main question": ` +
-      question +
-      `
-      Follow the format below for your answers
-    <Format: JSON(json)>
-    {title: Summarize "main question" in up to five Korean words, 
-    answer: a thoughtful consultation on "main question"}`;
-
+    const prompt = free
+      ? this.formatQuestion(question, this.answerFomatOnlyAnswer) //free 챗일경우 title 없이
+      : this.formatQuestion(question, this.answerFomatWithTitle); //로그인 첫질문일 경우 타이틀생성
     //페르소나, 그리팅, 유저프롬프트 묶어서 결과 리턴
     const result = [persona, greeting, prompt];
+    return result;
+  }
+
+  //무료->유료질문(2번째)
+  format2ndPrompt(
+    question: string,
+    history: string[],
+    imageOCR?: string,
+    testResult?: { classification: string; situation?: string[] },
+  ): ChatCompletionMessageParam[] {
+    //첫프롬프트의 system message, greeting 복원, 새 질문 형식 작성(imageOCR 끼우기, json 형식 지시)
+    const result = this.format1stPrompt(question, testResult, imageOCR);
+
+    //새 질문 분리
+    const newQuestion = result.pop();
+
+    //첫 질문과 첫 답변 형식 작성
+    const firstQuestion = this.prompt;
+    firstQuestion.content = history[0];
+    const firstAnswer = this.completion;
+    firstAnswer.content = history[1];
+
+    //첫 질문, 첫 답변, 새 질문 순서대로 끼우기
+    result.push(firstQuestion);
+    result.push(firstAnswer);
+    result.push(newQuestion);
+
     return result;
   }
 
@@ -91,42 +150,20 @@ export class ChatPromptService {
     question: string,
     imageOCR: string,
   ): ChatCompletionMessageParam[] {
-    const prompt = [...dialogue];
+    //캡쳐를 새로 넣었다면, 질문에 끼워넣기
+    question = imageOCR
+      ? this.addImageOCRInQuestion(question, imageOCR)
+      : question;
 
+    // 새 질문 끼워서 다이알로그 생성
     //만약 다이알로그 배열 길이가 일정 이상이면(대화를 오래 했으면) 타이틀을 바꿔 달아줌
     //22개에 한 번씩 바꾼다고 가정..(약 10번씩 티키타카.. )
-
-    if (prompt.length % 22 === 0) {
-      const newProm = this.prompt;
-      newProm.content =
-        question +
-        `
-        <Guidelines: Follow the format below for your answers.>
-        <Format: JSON(json)>
-        {title: summarize the guru and user's recent conversation in up to five Korean words,
-        answer: a thoughtful consultation on user's question}`;
-      prompt.push(newProm);
-    } else {
-      const newProm = this.prompt;
-      newProm.content =
-        question +
-        `
-        
-        <Guidelines: Follow the format below for your answers.>
-        <Format: JSON(json)>
-        {answer: a thoughtful consultation on user's question}`;
-      prompt.push(newProm);
-    }
-
-    if (imageOCR) {
-      const newProm = prompt.pop();
-      newProm.content =
-        `
-        <user had below conversation with the person of interest:
-        ${imageOCR}>
-        ` + newProm;
-      prompt.push(newProm);
-    }
+    const prompt = [...dialogue];
+    const newProm =
+      prompt.length % 22 === 0
+        ? this.formatQuestion(question, this.answerFomatWithTitle)
+        : this.formatQuestion(question, this.answerFomatOnlyAnswer);
+    prompt.push(newProm);
 
     return prompt;
   }

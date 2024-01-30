@@ -19,16 +19,31 @@ class TestResultType {
   @IsArray()
   situation?: string[];
 }
-
-export class CreateFreeChatDto {
-  @IsOptional()
-  @IsString()
-  guestId?: string;
-
+export class Create1stChatDto {
   @IsOptional()
   @IsString()
   userId?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  question: string;
+
+  @IsOptional()
+  @IsArray()
+  history?: string[];
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => TestResultType)
+  testResult?: TestResultType;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+}
+
+export class CreateFreeChatDto {
   @IsString()
   @IsNotEmpty()
   question: string;
@@ -68,10 +83,6 @@ export class ImageLogType {
 }
 
 export class UpdateChatDto {
-  @IsOptional()
-  @IsString()
-  guestId?: string;
-
   @IsOptional()
   @IsString()
   userId?: string;

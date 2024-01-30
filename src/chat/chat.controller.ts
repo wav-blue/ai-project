@@ -9,10 +9,9 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { CreateFreeChatDto, UpdateChatDto } from './chat.dto';
+import { Create1stChatDto, CreateFreeChatDto, UpdateChatDto } from './chat.dto';
 import { LocalAuthGuard } from '../user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
-import * as uuid from 'uuid';
 import { Chat } from './chat.schema';
 
 @Controller('chat')
@@ -55,18 +54,18 @@ export class ChatController {
     }
   }
 
-  //첫 채팅 생성
-  //로그인 되어있으면 userId, 안되어있으면 Geust 생성하고 싶은데 어케하지?(현재 일단 모두 게스트아이디 처리)
-  //게스트가 첫 챗 후 로그인했때는 어떻게 하지? GUEST id 처리해서 쿠키에 붙여줬다가 받기? (어케 붙여줌..?)
-  //타입 관리하기
-  @Post('/free')
+  //로그인 유저 첫채팅생성 or free챗을 로그인 챗으로 저장
+  //freeChat -> 로그인 챗 일경우 프론트 로컬스토리지에 저장했던 history 가 requestBody 에 포함.
+  @Post()
+  @UseGuards(LocalAuthGuard)
   @UsePipes(ValidationPipe)
-  async create1stChat(@Body() chatDto: CreateFreeChatDto): Promise<any> {
-    const guestId = `GUSET_` + uuid.v4();
-    chatDto.guestId = guestId;
-    console.log('게스트아이디:', guestId);
+  async create1stChat(
+    @GetUser() userId: string,
+    @Body() chatDto: Create1stChatDto,
+  ): Promise<any> {
+    chatDto.userId = userId;
     try {
-      const result = await this.chatService.start1stChat(chatDto);
+      const result = await this.chatService.startChat(chatDto);
       console.log('클라에 갈 결과: ', result);
       return result;
     } catch (err) {
@@ -74,13 +73,20 @@ export class ChatController {
     }
   }
 
-  //채팅 이어서 하기
-  // !! 아직 멤버십 차감 관련 에러 예외처리 안해줬음!
-  //첫채팅 생성할 때 guest_id 를 모두 생성해서 쿠키에 넣어준다고 했을 때(게스트-유사로그인)
-  //같은 Route 에서
-  //guest_id 가 쿠키에 담겨있을 경우 guest_id를 기반으로 문서 찾아서 user_id 넣는 작업을 먼저 거치고
-  //아니면 이미 userId 저장된거니까 userId 사용,
-  //마지막으로 Guest_id 를 삭제한 쿠키를 다시 발급해줌?(게스트-유사 로그아웃)
+  //무료 채팅 1회, DB 저장 X (로그만 저장)
+  @Post('/free')
+  @UsePipes(ValidationPipe)
+  async createFreeChat(@Body() chatDto: CreateFreeChatDto): Promise<string[]> {
+    try {
+      const result = await this.chatService.startFreeChat(chatDto);
+      console.log('클라에 갈 결과: ', result);
+      return result;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  //로그인 유저의 특정 챗에서 이어지는 챗
   @Post('/:chatId')
   @UseGuards(LocalAuthGuard)
   @UsePipes(ValidationPipe)
@@ -88,8 +94,7 @@ export class ChatController {
     @GetUser() userId: string,
     @Body() chatDto: UpdateChatDto,
     @Param('chatId') chatId: string,
-  ): Promise<string[][]> {
-    //일단 body 로 guestId 들어온다고 가정, 생성할 때 쿠키에 넣는 법을 차후에 생각해본다..
+  ): Promise<string[]> {
     chatDto.userId = userId;
     chatDto.chatId = chatId;
     try {
@@ -100,16 +105,4 @@ export class ChatController {
       throw err;
     }
   }
-
-  //채팅목록 보여주기
-  //주제, 날짜
-  // 1. 클 -> 서
-
-  //목록중 하나를 클릭하면...이전 채팅이 인피니티 스크롤로 마지막 3세션만 불러와짐!
-  //log 배열의 마지막에서 6개까지만, 커서 저장
-  //커서 이전 자료 요청할 경우: 커서에서 앞으로 6개 까지만 전달...
-
-  //이전대화 유지.. 채팅을 날리면...
-  //log 전체를 가져다 붙이고, + 새 질문을 붙여서 채팅 날리기
-  // + 카톡대화내역 OCR
 }

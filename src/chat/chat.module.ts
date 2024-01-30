@@ -10,12 +10,14 @@ import { ChatRepository } from './chat.repository';
 import { UserModule } from 'src/user/user.module';
 import { ChatDataManageService } from './chat.datamanage.service';
 import { ChatLog, ChatLogSchema } from './chatlog.schema';
+import { FreeChatLog, FreeChatLogSchema } from './freechatLog.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Chat.name, schema: ChatSchema },
       { name: ChatLog.name, schema: ChatLogSchema },
+      { name: FreeChatLog.name, schema: FreeChatLogSchema },
     ]),
     UserModule,
   ],
