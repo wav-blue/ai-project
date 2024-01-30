@@ -8,9 +8,7 @@ import * as mongoose from 'mongoose';
 import { MyLogger } from './common/logger/logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: new MyLogger(),
-  });
+  const app = await NestFactory.create(AppModule);
   const serverConfig = config.get('server');
   const logger = new MyLogger();
 

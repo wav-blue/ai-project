@@ -11,8 +11,6 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { CommentsService } from './comments.service';
-import { CommentsReadService } from './comments-read.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
@@ -22,6 +20,9 @@ import * as dayjs from 'dayjs';
 import { QuerySetPage } from './decorator/query-param.decorator';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { MyLogger } from 'src/common/logger/logger.service';
+import { CommentsService } from './service/comments.service';
+import { CommentsReadService } from './service/comments-read.service';
+import { CommentsReportService } from './service/comments-report.service';
 
 @Controller('comments')
 export class CommentsController {
@@ -30,6 +31,7 @@ export class CommentsController {
   constructor(
     private commentsService: CommentsService,
     private commentsReadService: CommentsReadService,
+    private commentsReportService: CommentsReportService,
   ) {}
 
   // 출력 확인용 API
@@ -136,7 +138,7 @@ export class CommentsController {
 
     createCommentReportDto.reportUserId = reportUserId;
 
-    const result = this.commentsService.createCommentReport(
+    const result = this.commentsReportService.createCommentReport(
       createCommentReportDto,
     );
     return result;
