@@ -28,11 +28,12 @@ export class PurchaseController {
     return this.purchaseService.successPay(userId, purchaseDto);
   }
 
-  @Get('/usememebership')
-  @UseGuards(LocalAuthGuard)
-  usemembership(@Req() req: Request) {
-    const userId = req['user'];
+  // 멤버십 사용 테스트용
+  // @Get('/usememebership')
+  // @UseGuards(LocalAuthGuard)
+  // usemembership(@Req() req: Request) {
+  //   const userId = req['user'];
 
-    return this.purchaseService.useMembershipRemain(userId);
-  }
+  //   return this.purchaseService.useMembershipRemain(userId);
+  // }
 }

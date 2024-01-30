@@ -110,21 +110,6 @@ export class PurchaseService {
     }
   }
   async useMembershipRemain(userId) {
-    const queryRunner = await this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const remained = await this.membershipService.useMembership(
-        userId,
-        queryRunner,
-      );
-
-      return remained;
-    } catch (e) {
-      await queryRunner.rollbackTransaction();
-      throw e;
-    } finally {
-      await queryRunner.release();
-    }
+    return await this.membershipService.useMembership(userId);
   }
 }

@@ -13,14 +13,12 @@ export class MembershipRepository {
     queryRunner: QueryRunner,
   ): Promise<MemberShip> {
     try {
-      console.log('memrepo get1', queryRunner.isReleased);
       const found = await queryRunner.manager
         .createQueryBuilder()
         .select('membership')
         .from(MemberShip, 'membership')
         .where('membership.userId = :userId', { userId })
         .getOne();
-      console.log('memrepo get2', queryRunner.isReleased);
 
       return found;
     } catch (err) {
@@ -111,25 +109,18 @@ export class MembershipRepository {
 
   async useRemain(
     userId: string,
+    remain: number,
     queryRunner: QueryRunner,
   ): Promise<MemberShip> {
     try {
-      let found = await this.getMembershipbyuserId(userId, queryRunner);
+      await queryRunner.manager
+        .createQueryBuilder()
+        .update(MemberShip)
+        .set({ remainChances: remain })
+        .where('userId = :userId', { userId })
+        .execute();
 
-      if (!found) {
-        found = await this.createMembership(userId, queryRunner, 'normal');
-      }
-
-      if (this.validateRemain(found)) {
-        await queryRunner.manager
-          .createQueryBuilder()
-          .update(MemberShip)
-          .set({ remainChances: 49 })
-          .where('userId = :userId', { userId })
-          .execute();
-
-        return await this.getMembershipbyuserId(userId, queryRunner);
-      }
+      return await this.getMembershipbyuserId(userId, queryRunner);
     } catch (err) {
       throw err;
     }

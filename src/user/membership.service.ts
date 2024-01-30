@@ -59,7 +59,6 @@ export class MembershipService {
         userId,
         queryRunner,
       );
-      console.log('membership확인', found);
 
       if (found) {
         await this.membershipRepository.updateMembership(
@@ -87,13 +86,39 @@ export class MembershipService {
     }
   }
 
-  async useMembership(userId: string, queryRunner) {
+  async useMembership(userId: string) {
+    const queryRunner = await this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      console.log('member service', queryRunner.isReleased);
+      let found = await this.membershipRepository.getMembershipbyuserId(
+        userId,
+        queryRunner,
+      );
 
-      this.membershipRepository.useRemain(userId, queryRunner);
-    } catch (error) {
-      throw error;
+      if (!found) {
+        found = await this.membershipRepository.createMembership(
+          userId,
+          queryRunner,
+          'normal',
+        );
+      }
+      if (this.membershipRepository.validateRemain(found)) {
+        await this.membershipRepository.useRemain(
+          userId,
+          found.remainChances - 1,
+          queryRunner,
+        );
+      }
+      return await this.membershipRepository.getMembershipbyuserId(
+        userId,
+        queryRunner,
+      );
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw e;
+    } finally {
+      await queryRunner.release();
     }
   }
 }
