@@ -6,14 +6,16 @@ import {
   BeforeInsert,
   JoinColumn,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { MemberShip } from './membership.entity';
-import { RefreshToken } from './refreshtoken.entity';
 import { v4 as uuidv4 } from 'uuid';
 @Entity({ name: 'USER' })
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  user_id: string;
+  userId: string;
 
   @Column({ type: 'varchar', length: 100 })
   email: string;
@@ -24,35 +26,30 @@ export class User extends BaseEntity {
   @Column({ type: 'enum', enum: ['EMAIL', 'GOOGLE', 'KAKAO'] })
   logintype: string;
 
-  @Column({ type: 'datetime' })
-  created_at: Date;
+  @CreateDateColumn({ type: 'datetime' })
+  createdAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
-  updated_at: Date;
+  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  updatedAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
-  deleted_at: Date;
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deletedAt: Date;
 
   @OneToOne(() => MemberShip)
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'userId' })
   membership: MemberShip;
-
-  @OneToOne(() => RefreshToken)
-  //@JoinColumn({ name: 'userId', referencedColumnName: 'userId' })
-  RefreshToken: RefreshToken;
 
   @BeforeInsert()
   createUserId() {
-    if (!this.user_id) {
-      this.user_id = uuidv4();
+    if (!this.userId) {
+      this.userId = uuidv4();
     }
   }
 
   readonlyData() {
     return {
-      userId: this.user_id,
+      userId: this.userId,
       logintype: this.logintype,
-      membership: this.membership,
+      membership: this.membership?.readonlyData(),
     };
   }
 }

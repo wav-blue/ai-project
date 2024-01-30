@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PurchaseDto } from './purchase.dto';
 import { DataSource, QueryRunner } from 'typeorm';
 import { MembershipService } from 'src/user/membership.service';
@@ -16,7 +16,7 @@ export class PurchaseService {
     private productRepository: ProductRepository,
   ) {}
 
-  // tossUrl env든 config든 옮기긴 해야함
+  //승인 대기중인 결제가 맞는지 확인
   //tossUrl = 'https://api.tosspayments.com/v1/payments/';
   async successPay(userId: string, purchaseDto: PurchaseDto) {
     const queryRunner = await this.dataSource.createQueryRunner();
@@ -40,6 +40,7 @@ export class PurchaseService {
       );
       const founddata = await found.json();
       const productId = founddata.orderName;
+
       //productId 를 통해 검증, 성공하면 confirm
       const foundproduct = await this.productRepository.getProductbyId(
         productId,
@@ -47,11 +48,9 @@ export class PurchaseService {
       );
 
       // 에러코드 변경해야함, 찾은 상품과 실제 결제 가격 비교도 해야함
-      if (!foundproduct) {
-        throw new Error('잘못된 프로덕트를 결제ㅏ');
+      if (!foundproduct || foundproduct.price != amount) {
+        throw new ForbiddenException('존재하지 않는 상품입니다.');
       }
-
-      //const nesPurchase = await this.purchaseRepository.createPurchase();
 
       // 결제 승인 요청
       const response = await fetch(
@@ -68,36 +67,49 @@ export class PurchaseService {
 
       // 결제 결과
       const data = await response.json();
-      console.log(response);
-      console.log(data, 'df');
 
-      // 멤버십 변경, 결제 내역 저장
-      const updatedMembership = await this.membershipService.updateMembership(
-        userId,
-        foundproduct.name,
-      );
-      //
+      // 멤버십 업데이트
+      await this.membershipService.updateMembership(userId, foundproduct.name);
+
+      //결제 내역 저장
       purchaseDto.productId = foundproduct.productId;
-      const newPurchase = await this.purchaseRepository.createPurchase(
+      await this.purchaseRepository.createPurchase(
         purchaseDto,
         userId,
         queryRunner,
       );
-
       // 트랜젝션 처리
       await queryRunner.commitTransaction();
 
-      // 성공한 결과 알려주기 or redirect
+      // 성공
       return {
-        title: '성공적으로 구매했습니다',
         ok: true,
-        // amount: response.body.totalAmount,
       };
     } catch (e) {
-      console.log('토스 페이먼츠 에러 코드', e);
       await queryRunner.rollbackTransaction();
+      throw e;
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getPurchases(userId) {
+    const queryRunner = await this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      return await this.purchaseRepository.getPurchasesbyuserId(
+        userId,
+        queryRunner,
+      );
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw e;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+  async useMembershipRemain(userId) {
+    return await this.membershipService.useMembership(userId);
   }
 }

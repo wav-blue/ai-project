@@ -59,7 +59,6 @@ export class MembershipService {
         userId,
         queryRunner,
       );
-      console.log('membership확인', found);
 
       if (found) {
         await this.membershipRepository.updateMembership(
@@ -82,6 +81,42 @@ export class MembershipService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async useMembership(userId: string) {
+    const queryRunner = await this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      let found = await this.membershipRepository.getMembershipbyuserId(
+        userId,
+        queryRunner,
+      );
+
+      if (!found) {
+        found = await this.membershipRepository.createMembership(
+          userId,
+          queryRunner,
+          'normal',
+        );
+      }
+      if (this.membershipRepository.validateRemain(found)) {
+        await this.membershipRepository.useRemain(
+          userId,
+          found.remainChances - 1,
+          queryRunner,
+        );
+      }
+      return await this.membershipRepository.getMembershipbyuserId(
+        userId,
+        queryRunner,
+      );
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw e;
     } finally {
       await queryRunner.release();
     }
