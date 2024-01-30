@@ -7,14 +7,14 @@ import {
 import { CommentRepository } from './comments.repository';
 import { DataSource } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
-import { Mylogger } from './logger/mylogger.service';
 import { Comment } from './entity/comments.entity';
 import { CommentStatus } from './enum/CommentStatus.enum';
 import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
+import { MyLogger } from 'src/common/logger/logger.service';
 
 @Injectable()
 export class CommentsReadService {
-  private readonly logger = new Mylogger(CommentsReadService.name);
+  private logger = new MyLogger(CommentsReadService.name);
 
   constructor(
     private readonly commentRepository: CommentRepository,

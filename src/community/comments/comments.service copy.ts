@@ -52,6 +52,11 @@ export class CommentsService {
     private readonly dataSource: DataSource,
     private readonly httpService: HttpService,
   ) {}
+  //하나의 서비스 로직에서 많은 책임을 가지고 있음
+
+  /*
+    createComment , 신고작성/ 댓글삭제
+*/
 
   // Comment 작성
   async createComment(
@@ -67,11 +72,12 @@ export class CommentsService {
       const apiUrl =
         `http://${flaskConfig.url}` + ':' + `${flaskConfig.port}/analysis`;
       const body = {
-        content: createCommentDto.content.substring(0, 36),
+        content: createCommentDto.content,
       };
 
       this.logger.log(`http://${apiUrl}로 Post 요청!`);
 
+      //const username = 'asdsadsadas' || flaskConfig.username;
       const username = process.env.FLASK_USER_NAME || flaskConfig.username;
       const password = process.env.FLASK_PASSWORD || flaskConfig.password;
 
