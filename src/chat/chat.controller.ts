@@ -55,6 +55,7 @@ export class ChatController {
   ): Promise<ReturnReadChatDto> {
     try {
       const result = await this.chatService.readChat(userId, chatId, cursor);
+      console.log(result);
       return result;
     } catch (err) {
       throw err;
@@ -73,7 +74,7 @@ export class ChatController {
     chatDto.userId = userId;
     try {
       const result = await this.chatService.startChat(chatDto);
-      console.log('클라에 갈 결과: ', result);
+      console.log(result);
       return result;
     } catch (err) {
       throw err;
@@ -86,7 +87,7 @@ export class ChatController {
   async createFreeChat(@Body() chatDto: CreateFreeChatDto): Promise<string[]> {
     try {
       const result = await this.chatService.startFreeChat(chatDto);
-      console.log('클라에 갈 결과: ', result);
+      console.log(result);
       return result;
     } catch (err) {
       throw err;
@@ -106,7 +107,7 @@ export class ChatController {
     chatDto.chatId = chatId;
     try {
       const result = await this.chatService.continueChat(chatDto);
-      console.log('클라에 갈 결과: ', result);
+      console.log(result);
       return result;
     } catch (err) {
       throw err;

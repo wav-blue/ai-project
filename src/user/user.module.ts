@@ -17,6 +17,8 @@ import {
 import { KakaoStrategy } from './strategies/kakao.strategy';
 
 import * as config from 'config';
+import { MembershipService } from './membership.service';
+import { MembershipRepository } from './membership.repository';
 const jwtConfig = config.get('jwt');
 @Module({
   imports: [
@@ -35,7 +37,9 @@ const jwtConfig = config.get('jwt');
     AccessStrategy,
     RefreshStrategy,
     KakaoStrategy,
+    MembershipService,
+    MembershipRepository,
   ],
-  exports: [UserService],
+  exports: [MembershipService],
 })
 export class UserModule {}
