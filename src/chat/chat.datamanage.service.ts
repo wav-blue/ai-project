@@ -9,6 +9,7 @@ import {
 import { ChatLog } from './chatlog.schema';
 import { Chat } from './chat.schema';
 import { FreeChatLog } from './freechatLog.schema';
+import { ChatDialogue } from './chatDialogue.schema';
 
 @Injectable()
 export class ChatDataManageService {
@@ -19,7 +20,13 @@ export class ChatDataManageService {
     prompt: ChatCompletionMessageParam[],
     response: ChatCompletion,
     imageOCR?: null | { text: string; log: ImageLogType },
-  ): [Chat, ChatLog, string, string] {
+  ): {
+    chatDoc: Chat;
+    chatLogDoc: ChatLog;
+    chatDialogueDoc: ChatDialogue;
+    title: string;
+    answer: string;
+  } {
     const { id, created, usage, system_fingerprint, choices } = response;
     const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
     const { title, answer } = resOBJ; //고민주제와 답변 분리
@@ -50,6 +57,7 @@ export class ChatDataManageService {
 
     const chatLogDoc = {
       chatId: '',
+      userId: userId,
       log: [
         {
           completionId: id,
@@ -66,7 +74,13 @@ export class ChatDataManageService {
       chatLogDoc.imageLog.push(imageOCR.log); //이미지 로그 있을경우 챗로그에 밀어넣음
     }
 
-    return [chatDoc, chatLogDoc, title, answer];
+    const chatDialogueDoc = {
+      chatId: '',
+      userId: userId,
+      dialogue: dialogue.slice(2).map((log) => log.content),
+    };
+
+    return { chatDoc, chatLogDoc, chatDialogueDoc, title, answer };
   }
 
   formatContinueCompletion(
@@ -74,7 +88,7 @@ export class ChatDataManageService {
     prompt: ChatCompletionMessageParam[],
     response: ChatCompletion,
     history: Chat,
-  ): [Chat, ChatLogType, string, string] {
+  ): { chatDoc: Chat; chatLog: ChatLogType; answer: string } {
     const { id, created, usage, system_fingerprint, choices } = response;
     const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
     const { title, answer } = resOBJ; //고민주제와 답변 분리
@@ -104,14 +118,18 @@ export class ChatDataManageService {
       message: logMessage, //로그는 Raw 형태로 저장, obj[]
     };
 
-    return [history, log, history.title, answer];
+    return {
+      chatDoc: history,
+      chatLog: log,
+      answer: answer,
+    };
   }
 
   formatFreeCompletion(
     prompt: ChatCompletionMessageParam[],
     response: ChatCompletion,
     imageOCR?: null | { text: string; log: ImageLogType },
-  ): [FreeChatLog, string] {
+  ): { freeChatLogDoc: FreeChatLog; answer: string } {
     const { id, created, usage, system_fingerprint, choices } = response;
     const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
     const answer = resOBJ.answer; //답변 텍스트 추출
@@ -137,6 +155,6 @@ export class ChatDataManageService {
       freeChatLogDoc.imageLog.push(imageOCR.log); //이미지 로그 있을경우 챗로그에 밀어넣음
     }
 
-    return [freeChatLogDoc, answer];
+    return { freeChatLogDoc, answer };
   }
 }

@@ -11,6 +11,7 @@ import { UserModule } from 'src/user/user.module';
 import { ChatDataManageService } from './chat.datamanage.service';
 import { ChatLog, ChatLogSchema } from './chatlog.schema';
 import { FreeChatLog, FreeChatLogSchema } from './freechatLog.schema';
+import { ChatDialogue, ChatDialogueSchema } from './chatDialogue.schema';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { FreeChatLog, FreeChatLogSchema } from './freechatLog.schema';
       { name: Chat.name, schema: ChatSchema },
       { name: ChatLog.name, schema: ChatLogSchema },
       { name: FreeChatLog.name, schema: FreeChatLogSchema },
+      { name: ChatDialogue.name, schema: ChatDialogueSchema },
     ]),
     UserModule,
   ],

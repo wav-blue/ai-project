@@ -4,12 +4,18 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { Create1stChatDto, CreateFreeChatDto, UpdateChatDto } from './chat.dto';
+import {
+  Create1stChatDto,
+  CreateFreeChatDto,
+  ReturnReadChatDto,
+  UpdateChatDto,
+} from './chat.dto';
 import { LocalAuthGuard } from '../user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Chat } from './chat.schema';
@@ -38,16 +44,17 @@ export class ChatController {
   }
 
   //챗 내역 중 하나 선택해서 대화기록 조회
-  //커서기반 페이지네이션 필요
+  //커서기반 페이지네이션
   @Get('/:chatId')
   @UseGuards(LocalAuthGuard)
   @UsePipes(ValidationPipe)
   async getChatContents(
     @GetUser() userId: string,
     @Param('chatId') chatId: string,
-  ): Promise<any> {
+    @Query('cursor') cursor: number,
+  ): Promise<ReturnReadChatDto> {
     try {
-      const result = await this.chatService.readChat(userId, chatId);
+      const result = await this.chatService.readChat(userId, chatId, cursor);
       return result;
     } catch (err) {
       throw err;
@@ -62,7 +69,7 @@ export class ChatController {
   async create1stChat(
     @GetUser() userId: string,
     @Body() chatDto: Create1stChatDto,
-  ): Promise<any> {
+  ): Promise<string[][]> {
     chatDto.userId = userId;
     try {
       const result = await this.chatService.startChat(chatDto);

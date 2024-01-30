@@ -88,7 +88,7 @@ export class ChatPromptService {
   private addImageOCRInQuestion(question: string, imageOCR: string): string {
     console.log;
     question += `
-    <Regarding "the question", user had the following conversation with a person of romantic interest:
+    <Regarding "the question", user had the following conversation with a person of interest:
     ${imageOCR}>`;
 
     return question;

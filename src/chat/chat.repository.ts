@@ -5,13 +5,16 @@ import { Chat } from './chat.schema';
 import { ChatLog } from './chatlog.schema';
 import { ChatLogType, ImageLogType } from './chat.dto';
 import { FreeChatLog } from './freechatLog.schema';
+import { ChatDialogue } from './chatDialogue.schema';
 
 @Injectable()
 export class ChatRepository {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<Chat>,
     @InjectModel(ChatLog.name) private chatLogModel: Model<ChatLog>,
-    @InjectModel(FreeChatLog.name) private FreeChatLogModel: Model<FreeChatLog>,
+    @InjectModel(FreeChatLog.name) private freeChatLogModel: Model<FreeChatLog>,
+    @InjectModel(ChatDialogue.name)
+    private chatDialogueModel: Model<ChatDialogue>,
   ) {}
 
   //채팅내역 목록
@@ -26,18 +29,47 @@ export class ChatRepository {
     }
   }
 
-  //채팅 읽기, 페이지네이션 추가해야함..
-  async findChatDialogue(
+  //유저용 다이알로그 길이 계산
+  async countDialogueLength(
     userId: string,
     chatId: string,
     session: ClientSession,
-  ): Promise<Chat> {
+  ): Promise<number> {
     try {
-      const result = await this.chatModel
-        .findOne({ _id: chatId, userId }, { dialogue: 1 })
-        .session(session)
-        .exec();
-      return result;
+      const result = await this.chatDialogueModel
+        .aggregate([
+          { $match: { chatId, userId } },
+          { $project: { _id: 0, length: { $size: '$dialogue' } } },
+        ])
+        .session(session);
+      return result[0].length;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  //채팅 읽기, 페이지네이션
+  async findChatDialogue(
+    userId: string,
+    chatId: string,
+    idx: number,
+    limit: number,
+    session: ClientSession,
+  ): Promise<string[]> {
+    try {
+      const result = await this.chatDialogueModel
+        .aggregate([
+          { $match: { chatId, userId } },
+          {
+            $project: {
+              _id: 0,
+              dialogue: { $slice: ['$dialogue', idx, limit] },
+            },
+          },
+        ])
+        .session(session);
+
+      return result[0].dialogue;
     } catch (err) {
       throw err;
     }
@@ -69,6 +101,18 @@ export class ChatRepository {
       throw err;
     }
   }
+  //유저용 챗다이알로그 생성
+  async createChatDialogue(
+    chatDialogueDoc: ChatDialogue,
+    session: ClientSession,
+  ): Promise<void> {
+    try {
+      const newChatDialogue = new this.chatDialogueModel(chatDialogueDoc);
+      await newChatDialogue.save({ session });
+    } catch (err) {
+      throw err;
+    }
+  }
 
   //free챗 로그 생성
   async createFreeChatLog(
@@ -76,7 +120,7 @@ export class ChatRepository {
     session: ClientSession,
   ): Promise<void> {
     try {
-      const newFreeChatLog = new this.FreeChatLogModel(freeChatLogDoc);
+      const newFreeChatLog = new this.freeChatLogModel(freeChatLogDoc);
       await newFreeChatLog.save({ session });
     } catch (err) {
       throw err;
@@ -136,37 +180,33 @@ export class ChatRepository {
           )
           .session(session)
           .exec();
+      } else {
+        await this.chatLogModel
+          .updateOne({ chatId: chatId }, { $push: { log: chatLog } })
+          .session(session)
+          .exec();
       }
-      await this.chatLogModel
-        .updateOne({ chatId: chatId }, { $push: { log: chatLog } })
-        .session(session)
-        .exec();
     } catch (err) {
       throw new Error('로그 저장 실패');
     }
   }
 
-  //   async findOne(id: string): Promise<Cat | null> {
-  //     return this.catModel.findById(id).exec();
-  //   }
-
-  //   async findAll(): Promise<Cat[]> {
-  //     return this.catModel.find().exec();
-  //   }
-
-  // async findOne(id: string): Promise<Cat | null> {
-  //   return this.catModel.findById(id).exec();
-  // }
-
-  //   async create(cat: Cat): Promise<Cat> {
-  //     const createdCat = new this.catModel(cat);
-  //     return createdCat.save();
-  //   }
-
-  //   async update(id: string, cat: Cat): Promise<Cat | null> {
-  //     return this.catModel.findByIdAndUpdate(id, cat, { new: true }).exec();
-  //   }
-
-  //   async delete(id: string): Promise<Cat | null> {
-  //     return this.catModel.findByIdAndDelete(id).exec();
+  async updateChatDialogue(
+    chatId: string,
+    question: string,
+    answer: string,
+    session: ClientSession,
+  ): Promise<void> {
+    try {
+      await this.chatDialogueModel
+        .updateOne(
+          { chatId: chatId },
+          { $push: { dialogue: { $each: [question, answer] } } },
+        )
+        .session(session)
+        .exec();
+    } catch (err) {
+      throw new Error('유저용 다이알 저장 실패');
+    }
+  }
 }

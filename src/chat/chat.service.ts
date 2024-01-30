@@ -1,6 +1,11 @@
 import { Connection } from 'mongoose';
 import { Injectable } from '@nestjs/common';
-import { Create1stChatDto, CreateFreeChatDto, UpdateChatDto } from './chat.dto';
+import {
+  Create1stChatDto,
+  CreateFreeChatDto,
+  ReturnReadChatDto,
+  UpdateChatDto,
+} from './chat.dto';
 import { ChatPromptService } from './chat.prompt.service';
 import { ChatOpenAi } from './chat.openai.service';
 import { ChatRepository } from './chat.repository';
@@ -40,23 +45,97 @@ export class ChatService {
 
   //채팅내역중 하나 선택해서 읽기
   //커서기반 페이지네이션 필요
-  async readChat(userId: string, chatId: string): Promise<any> {
+  async readChat(
+    userId: string,
+    chatId: string,
+    cursor?: number,
+  ): Promise<ReturnReadChatDto> {
+    const limit = 6;
+    const pointer = cursor ? -cursor - limit : -limit;
     const session = await this.connection.startSession();
     try {
       session.startTransaction();
-      const result = await this.chatRepository.findChatDialogue(
+      const length = await this.chatRepository.countDialogueLength(
         userId,
         chatId,
         session,
       );
+
+      if (length < cursor) {
+        throw new Error('조회할 수 없는 범위');
+      }
+
+      const history = await this.chatRepository.findChatDialogue(
+        userId,
+        chatId,
+        pointer,
+        limit,
+        session,
+      );
       await session.commitTransaction();
-      console.log(result);
+      const result = { cursor: -pointer, history };
+      if (length <= -pointer) {
+        result.cursor = length;
+        result['message'] = '가장 오래된 내역까지 조회 완료';
+      }
+
       return result;
     } catch (err) {
       await session.abortTransaction();
       throw err;
     } finally {
       session.endSession();
+    }
+  }
+
+  async startFreeChat(chatDto: CreateFreeChatDto): Promise<string[]> {
+    const { question, testResult, imageUrl } = chatDto;
+    const session = await this.connection.startSession();
+    try {
+      //1. 캡쳐 첨부했을 경우:s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 텍스트로 따옴.
+      // 리턴 - {text: string, log: {count:number, uploadeaAt: Date}}
+      const imageOCR = imageUrl
+        ? await this.chatImageService.getImageText(imageUrl)
+        : null;
+
+      //2. 프롬프트 가공
+      //[persona + greeting (with 사전설문) + 첫질문 (with imageOCR)]
+      //리턴:ChatCompletionMessageParam[]
+      const { prompt, questionAndOCR } = this.promptService.format1stPrompt(
+        question,
+        testResult,
+        imageOCR, //임시, 마저 구현하면 타입 변경
+        true, //freeChat용 프롬프트 생성
+      );
+
+      //3. 작성된 prompt 사용해서 구루에게 첫 채팅 날림
+      //리턴: ChatCompletion
+      const response = await this.openAiService.getCompletion(prompt);
+
+      //4. 유저 질문, 구루 답변, 메타데이터 가공
+      //리턴: [freeChatLogDoc, answer]
+      const { freeChatLogDoc, answer } =
+        this.chatDataManageService.formatFreeCompletion(
+          prompt,
+          response,
+          imageOCR,
+        );
+
+      //freeChatLog DB 무료채팅로그 저장
+      session.startTransaction();
+      await this.chatRepository.createFreeChatLog(freeChatLogDoc, session);
+      await session.commitTransaction();
+
+      //결과 가공해서 컨트롤러에 전송
+      // [question (with OCR), answer]
+      const result = [questionAndOCR, answer];
+
+      return result;
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      await session.endSession();
     }
   }
 
@@ -99,27 +178,30 @@ export class ChatService {
       const response = await this.openAiService.getCompletion(prompt);
 
       //4. 유저 질문, 구루 답변, 메타데이터 가공
-      //리턴: [chatDoc, chatLogDoc, title, answer]
-      const chatDoc = this.chatDataManageService.format1stCompletion(
-        userId,
-        question,
-        prompt,
-        response,
-        imageOCR,
-      );
+      //리턴: {chatDoc, chatLogDoc, chatDialogueDoc, title, answer}
+      const { chatDoc, chatLogDoc, chatDialogueDoc, title, answer } =
+        this.chatDataManageService.format1stCompletion(
+          userId,
+          questionAndOCR,
+          prompt,
+          response,
+          imageOCR,
+        );
 
-      //DB 저장, 저장결과 조회
+      //DB 저장, 저장결과 조회: chat(with oai 전송용 프롬프트), chatLog(기타 메타정보), chatDialoque(유저전송용)
       session.startTransaction();
-      const savedId = await this.chatRepository.createChat(chatDoc[0], session);
-      chatDoc[1].chatId = savedId;
-      await this.chatRepository.createChatLog(chatDoc[1], session);
+      const savedId = await this.chatRepository.createChat(chatDoc, session);
+      chatLogDoc.chatId = savedId;
+      chatDialogueDoc.chatId = savedId;
+      await this.chatRepository.createChatLog(chatLogDoc, session);
+      await this.chatRepository.createChatDialogue(chatDialogueDoc, session);
       await session.commitTransaction();
 
       //결과 가공해서 컨트롤러에 전송
       // [ [chatId, title], [question, answer] ]
       const result = [
-        [savedId, chatDoc[2]],
-        [questionAndOCR, chatDoc[3]],
+        [savedId, title],
+        [questionAndOCR, answer],
       ];
 
       return result;
@@ -128,56 +210,6 @@ export class ChatService {
       throw err;
     } finally {
       // await session.endSession();
-    }
-  }
-
-  async startFreeChat(chatDto: CreateFreeChatDto): Promise<string[]> {
-    const { question, testResult, imageUrl } = chatDto;
-    const session = await this.connection.startSession();
-    try {
-      //1. 캡쳐 첨부했을 경우:s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 텍스트로 따옴.
-      // 리턴 - {text: string, log: {count:number, uploadeaAt: Date}}
-      const imageOCR = imageUrl
-        ? await this.chatImageService.getImageText(imageUrl)
-        : null;
-
-      //2. 프롬프트 가공
-      //[persona + greeting (with 사전설문) + 첫질문 (with imageOCR)]
-      //리턴:ChatCompletionMessageParam[]
-      const { prompt, questionAndOCR } = this.promptService.format1stPrompt(
-        question,
-        testResult,
-        imageOCR, //임시, 마저 구현하면 타입 변경
-        true, //freeChat용 프롬프트 생성
-      );
-
-      //3. 작성된 prompt 사용해서 구루에게 첫 채팅 날림
-      //리턴: ChatCompletion
-      const response = await this.openAiService.getCompletion(prompt);
-
-      //4. 유저 질문, 구루 답변, 메타데이터 가공
-      //리턴: [freeChatLogDoc, answer]
-      const freeChatLogDoc = this.chatDataManageService.formatFreeCompletion(
-        prompt,
-        response,
-        imageOCR,
-      );
-
-      //freeChatLog DB 무료채팅로그 저장
-      session.startTransaction();
-      await this.chatRepository.createFreeChatLog(freeChatLogDoc[0], session);
-      await session.commitTransaction();
-
-      //결과 가공해서 컨트롤러에 전송
-      // [question (with OCR), answer]
-      const result = [questionAndOCR, freeChatLogDoc[1]];
-
-      return result;
-    } catch (err) {
-      await session.abortTransaction();
-      throw err;
-    } finally {
-      await session.endSession();
     }
   }
 
@@ -212,35 +244,41 @@ export class ChatService {
         this.promptService.formatContinuePrompt(
           history.dialogue,
           question,
-          imageOCR, //임시, 마저 구현하면 타입 변경
+          imageOCR,
         );
 
       //4. 생성된 프롬프트 open ai 에 쏴줌(실패시 멤버십 차감횟수 다시 돌려줌)
       const response = await this.openAiService.getCompletion(prompt);
 
       //5. ai 답변 받아서 db 저장 용으로 가공(1에서 꺼낸 문서 이용)(실패시 엠버십 차감횟수 다시 돌려줌)
-      //데이터가공용 서비스 하나 더 파서 거기에 모아버리자
-      //로그랑 다이알이랑 db 따로 만들어서 로그는 push만 해주고, 다이알만 꺼내오자
-      const chatDoc = this.chatDataManageService.formatContinueCompletion(
-        question,
-        prompt,
-        response,
-        history,
-      );
+      //{ chatDoc: Chat; chatLog: ChatLogType; title: string; answer: string }
+      const { chatDoc, chatLog, answer } =
+        this.chatDataManageService.formatContinueCompletion(
+          questionAndOCR,
+          prompt,
+          response,
+          history,
+        );
 
       //6. db 저장, 트랜잭션 커밋 (실패시 멤버십 차감횟수 다시 돌려줌)
-      await this.chatRepository.updateChat(chatId, chatDoc[0], session);
+      await this.chatRepository.updateChat(chatId, chatDoc, session);
       await this.chatRepository.updateChatLog(
         chatId,
-        chatDoc[1],
+        chatLog,
         session,
         imageOCR,
+      );
+      await this.chatRepository.updateChatDialogue(
+        chatId,
+        questionAndOCR,
+        answer,
+        session,
       );
       await session.commitTransaction();
 
       //7. 결과 가공해서 컨트롤러에 전송(실패시 멤버십 차감횟수 다시 돌려줌)
       // [question (with OCR), answer]
-      const result = [questionAndOCR, chatDoc[3]];
+      const result = [questionAndOCR, answer];
 
       return result;
     } catch (err) {

@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsNotEmpty,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -98,4 +99,18 @@ export class UpdateChatDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+}
+
+export class ReturnReadChatDto {
+  @IsNotEmpty()
+  @IsNumber()
+  cursor: number;
+
+  @IsNotEmpty()
+  @IsArray()
+  history: string[];
+
+  @IsOptional()
+  @IsString()
+  message?: string;
 }
