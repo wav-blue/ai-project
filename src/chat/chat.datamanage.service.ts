@@ -18,7 +18,7 @@ export class ChatDataManageService {
     question: string,
     prompt: ChatCompletionMessageParam[],
     response: ChatCompletion,
-    imageOCR?: ImageLogType,
+    imageOCR?: null | { text: string; log: ImageLogType },
   ): [Chat, ChatLog, string, string] {
     const { id, created, usage, system_fingerprint, choices } = response;
     const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
@@ -63,7 +63,7 @@ export class ChatDataManageService {
     };
 
     if (imageOCR) {
-      chatLogDoc.imageLog.push(imageOCR); //이미지 로그 있을경우 챗로그에 밀어넣음
+      chatLogDoc.imageLog.push(imageOCR.log); //이미지 로그 있을경우 챗로그에 밀어넣음
     }
 
     return [chatDoc, chatLogDoc, title, answer];
@@ -110,7 +110,7 @@ export class ChatDataManageService {
   formatFreeCompletion(
     prompt: ChatCompletionMessageParam[],
     response: ChatCompletion,
-    imageOCR?: ImageLogType,
+    imageOCR?: null | { text: string; log: ImageLogType },
   ): [FreeChatLog, string] {
     const { id, created, usage, system_fingerprint, choices } = response;
     const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
@@ -134,7 +134,7 @@ export class ChatDataManageService {
     };
 
     if (imageOCR) {
-      freeChatLogDoc.imageLog.push(imageOCR); //이미지 로그 있을경우 챗로그에 밀어넣음
+      freeChatLogDoc.imageLog.push(imageOCR.log); //이미지 로그 있을경우 챗로그에 밀어넣음
     }
 
     return [freeChatLogDoc, answer];

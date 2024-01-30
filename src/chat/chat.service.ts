@@ -27,7 +27,7 @@ export class ChatService {
     const session = await this.connection.startSession();
     try {
       session.startTransaction();
-      const result = this.chatRepository.findChatList(userId, session);
+      const result = await this.chatRepository.findChatList(userId, session);
       await session.commitTransaction();
       return result;
     } catch (err) {
@@ -44,25 +44,25 @@ export class ChatService {
     const session = await this.connection.startSession();
     try {
       session.startTransaction();
-      const result = this.chatRepository.findChatDialogue(
+      const result = await this.chatRepository.findChatDialogue(
         userId,
         chatId,
         session,
       );
       await session.commitTransaction();
+      console.log(result);
       return result;
     } catch (err) {
       await session.abortTransaction();
       throw err;
     } finally {
-      await session.endSession();
+      session.endSession();
     }
   }
 
   //첫 채팅: 무료챗을 로그인챗으로 만들어주고 다음채팅날리기(2번째 채팅, 유료), or 로그인유저 첫 채팅(무료)
   async startChat(chatDto: Create1stChatDto): Promise<string[][]> {
     const { userId, question, history, testResult, imageUrl } = chatDto;
-    const imageOCR = [];
     const session = await this.connection.startSession();
     try {
       //0. 프리 ->유료인 경우 멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
@@ -75,27 +75,24 @@ export class ChatService {
       }
       //1. 캡쳐 첨부했을 경우:s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 텍스트로 따옴.
       // 리턴 - {text: string, log: {count:number, uploadeaAt: Date}}
-      if (imageUrl) {
-        const resultOCR = await this.chatImageService.getImageText(imageUrl);
-        imageOCR.push(resultOCR);
-      }
+      const imageOCR = imageUrl
+        ? await this.chatImageService.getImageText(imageUrl)
+        : null;
+
+      console.log('OCR', imageOCR);
 
       //2. 프롬프트 가공
       //무료 -> 유료일 경우: [persona + greeting (with 사전설문) + 첫질문(with free imageOCR) + 첫응답 + 새질문 (with new imageOCR)]
       //로그인 첫챗일경우: [persona + greeting (with 사전설문) + 첫질문 (with new imageOCR)]
       //리턴:ChatCompletionMessageParam[]
-      const prompt = history
-        ? this.promptService.format1stPrompt(
-            question,
-            testResult,
-            imageOCR[0], //임시, 마저 구현하면 타입 변경
-          )
-        : this.promptService.format2ndPrompt(
+      const { prompt, questionAndOCR } = history
+        ? this.promptService.format2ndPrompt(
             question,
             history,
-            imageOCR[0],
+            imageOCR,
             testResult,
-          );
+          )
+        : this.promptService.format1stPrompt(question, testResult, imageOCR);
 
       //3. 작성된 prompt 사용해서 구루에게 첫 채팅 날림
       //리턴: ChatCompletion
@@ -108,7 +105,7 @@ export class ChatService {
         question,
         prompt,
         response,
-        imageOCR[0], //임시
+        imageOCR,
       );
 
       //DB 저장, 저장결과 조회
@@ -122,37 +119,35 @@ export class ChatService {
       // [ [chatId, title], [question, answer] ]
       const result = [
         [savedId, chatDoc[2]],
-        [question, chatDoc[3]],
+        [questionAndOCR, chatDoc[3]],
       ];
 
       return result;
     } catch (err) {
-      await session.abortTransaction();
+      // await session.abortTransaction();
       throw err;
     } finally {
-      await session.endSession();
+      // await session.endSession();
     }
   }
 
   async startFreeChat(chatDto: CreateFreeChatDto): Promise<string[]> {
     const { question, testResult, imageUrl } = chatDto;
-    const imageOCR = [];
     const session = await this.connection.startSession();
     try {
       //1. 캡쳐 첨부했을 경우:s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 텍스트로 따옴.
       // 리턴 - {text: string, log: {count:number, uploadeaAt: Date}}
-      if (imageUrl) {
-        const resultOCR = await this.chatImageService.getImageText(imageUrl);
-        imageOCR.push(resultOCR);
-      }
+      const imageOCR = imageUrl
+        ? await this.chatImageService.getImageText(imageUrl)
+        : null;
 
       //2. 프롬프트 가공
       //[persona + greeting (with 사전설문) + 첫질문 (with imageOCR)]
       //리턴:ChatCompletionMessageParam[]
-      const prompt = this.promptService.format1stPrompt(
+      const { prompt, questionAndOCR } = this.promptService.format1stPrompt(
         question,
         testResult,
-        imageOCR[0], //임시, 마저 구현하면 타입 변경
+        imageOCR, //임시, 마저 구현하면 타입 변경
         true, //freeChat용 프롬프트 생성
       );
 
@@ -165,7 +160,7 @@ export class ChatService {
       const freeChatLogDoc = this.chatDataManageService.formatFreeCompletion(
         prompt,
         response,
-        imageOCR[0], //임시
+        imageOCR,
       );
 
       //freeChatLog DB 무료채팅로그 저장
@@ -175,7 +170,7 @@ export class ChatService {
 
       //결과 가공해서 컨트롤러에 전송
       // [question (with OCR), answer]
-      const result = [question, freeChatLogDoc[1]];
+      const result = [questionAndOCR, freeChatLogDoc[1]];
 
       return result;
     } catch (err) {
@@ -189,7 +184,6 @@ export class ChatService {
   //채팅 내역중에서 이어서 채팅. 무료회원:5번, 베이직:100번, 프리미엄:무제한
   async continueChat(chatDto: UpdateChatDto): Promise<string[]> {
     const { userId, chatId, question, imageUrl } = chatDto;
-    const imageOCR = [];
     const session = await this.connection.startSession();
     try {
       //0. DB에서 userId, guestId, chatId 매칭하는 채팅 Doc 꺼내옴// 일치하는 것 없으면 여기서 end.
@@ -209,19 +203,17 @@ export class ChatService {
       }
 
       //2. 카톡캡쳐 이미지 있는 경우 OCR 거침(실패시 멤버십 차감횟수 다시 돌려줌)
-      if (imageUrl) {
-        // s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 텍스트로 따옴.
-        // 리턴 - {text: string, log: {count:number, uploadeaAt: Date}}
-        const resultOCR = await this.chatImageService.getImageText(imageUrl);
-        imageOCR.push(resultOCR);
-      }
+      const imageOCR = imageUrl
+        ? await this.chatImageService.getImageText(imageUrl)
+        : null;
 
       //3. 저장된 다이알로그에 새 질문과 OCR결과 붙여 가공해서 프롬프트 생성(실패시 멤버십 차감횟수 다시 돌려줌)
-      const prompt = this.promptService.formatContinuePrompt(
-        history.dialogue,
-        question,
-        imageOCR[0], //임시, 마저 구현하면 타입 변경
-      );
+      const { prompt, questionAndOCR } =
+        this.promptService.formatContinuePrompt(
+          history.dialogue,
+          question,
+          imageOCR, //임시, 마저 구현하면 타입 변경
+        );
 
       //4. 생성된 프롬프트 open ai 에 쏴줌(실패시 멤버십 차감횟수 다시 돌려줌)
       const response = await this.openAiService.getCompletion(prompt);
@@ -238,12 +230,17 @@ export class ChatService {
 
       //6. db 저장, 트랜잭션 커밋 (실패시 멤버십 차감횟수 다시 돌려줌)
       await this.chatRepository.updateChat(chatId, chatDoc[0], session);
-      await this.chatRepository.updateChatLog(chatId, chatDoc[1], session);
+      await this.chatRepository.updateChatLog(
+        chatId,
+        chatDoc[1],
+        session,
+        imageOCR,
+      );
       await session.commitTransaction();
 
       //7. 결과 가공해서 컨트롤러에 전송(실패시 멤버십 차감횟수 다시 돌려줌)
       // [question (with OCR), answer]
-      const result = [question, chatDoc[3]];
+      const result = [questionAndOCR, chatDoc[3]];
 
       return result;
     } catch (err) {

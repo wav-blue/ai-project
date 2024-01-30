@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, ClientSession } from 'mongoose';
 import { Chat } from './chat.schema';
 import { ChatLog } from './chatlog.schema';
-import { ChatLogType } from './chat.dto';
+import { ChatLogType, ImageLogType } from './chat.dto';
 import { FreeChatLog } from './freechatLog.schema';
 
 @Injectable()
@@ -83,27 +83,6 @@ export class ChatRepository {
     }
   }
 
-  //무료채팅 생성하며 부여한 게스트아이디로 Chat 찾기
-  async findChatByGuestId(
-    guestId: string,
-    chatId: string,
-    session: ClientSession,
-  ): Promise<Chat> {
-    try {
-      const result = await this.chatModel
-        .findOne({
-          _id: chatId,
-          guestId,
-        })
-        .session(session)
-        .exec();
-
-      return result;
-    } catch (err) {
-      throw new Error('일치하는 챗 내역 못찾음');
-    }
-  }
-
   //로그인회원 유저아이디로 chat 찾기
   async findChatByUserId(
     userId: string,
@@ -146,8 +125,18 @@ export class ChatRepository {
     chatId: string,
     chatLog: ChatLogType,
     session: ClientSession,
+    imageOCR?: null | { text: string; log: ImageLogType },
   ): Promise<void> {
     try {
+      if (imageOCR) {
+        await this.chatLogModel
+          .updateOne(
+            { chatId: chatId },
+            { $push: { log: chatLog, imageLog: imageOCR.log } },
+          )
+          .session(session)
+          .exec();
+      }
       await this.chatLogModel
         .updateOne({ chatId: chatId }, { $push: { log: chatLog } })
         .session(session)
