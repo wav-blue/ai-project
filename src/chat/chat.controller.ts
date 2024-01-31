@@ -73,7 +73,10 @@ export class ChatController {
   ): Promise<string[][]> {
     chatDto.userId = userId;
     try {
-      const result = await this.chatService.startChat(chatDto);
+      const result =
+        chatDto.history && chatDto.title
+          ? await this.chatService.saveFreeChat(chatDto)
+          : await this.chatService.startChat(chatDto);
       console.log(result);
       return result;
     } catch (err) {
@@ -84,7 +87,9 @@ export class ChatController {
   //무료 채팅 1회, DB 저장 X (로그만 저장)
   @Post('/free')
   @UsePipes(ValidationPipe)
-  async createFreeChat(@Body() chatDto: CreateFreeChatDto): Promise<string[]> {
+  async createFreeChat(
+    @Body() chatDto: CreateFreeChatDto,
+  ): Promise<string[][]> {
     try {
       const result = await this.chatService.startFreeChat(chatDto);
       console.log(result);

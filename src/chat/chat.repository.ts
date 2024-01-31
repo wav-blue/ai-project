@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ClientSession } from 'mongoose';
 import { Chat } from './chat.schema';
@@ -34,7 +34,9 @@ export class ChatRepository {
         .session(session)
         .exec();
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException(
+        'DB에서 대화 내역 목록 조회 중 오류 발생',
+      );
     }
   }
 
@@ -53,7 +55,9 @@ export class ChatRepository {
         .session(session);
       return result[0].length;
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException(
+        'DB에서 대화 히스토리 확인 중 오류 발생',
+      );
     }
   }
 
@@ -80,11 +84,13 @@ export class ChatRepository {
 
       return result[0].dialogue;
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException(
+        'DB에서 대화 히스토리 읽던 중 오류 발생',
+      );
     }
   }
 
-  //채팅 생성하기(무료), 게스트아이디 저장
+  //채팅 생성하기
   async createChat(chatDoc: Chat, session: ClientSession): Promise<string> {
     try {
       const newChat = new this.chatModel(chatDoc);
@@ -94,7 +100,9 @@ export class ChatRepository {
 
       return chatId;
     } catch (err) {
+      console.error;
       throw err;
+      //throw new InternalServerErrorException('DB 에 새 채팅 생성 중 오류 발생');
     }
   }
 
@@ -107,9 +115,10 @@ export class ChatRepository {
       const newChatLog = new this.chatLogModel(chatLogDoc);
       await newChatLog.save({ session });
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException('DB 에 로그 생성 중 오류 발생');
     }
   }
+
   //유저용 챗다이알로그 생성
   async createChatDialogue(
     chatDialogueDoc: ChatDialogue,
@@ -119,7 +128,9 @@ export class ChatRepository {
       const newChatDialogue = new this.chatDialogueModel(chatDialogueDoc);
       await newChatDialogue.save({ session });
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException(
+        'DB 에 대화내역 생성 중 오류 발생',
+      );
     }
   }
 
@@ -132,7 +143,9 @@ export class ChatRepository {
       const newFreeChatLog = new this.freeChatLogModel(freeChatLogDoc);
       await newFreeChatLog.save({ session });
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException(
+        'DB 에 비로그인 채팅 로그 생성 중 오류 발생',
+      );
     }
   }
 
@@ -153,7 +166,7 @@ export class ChatRepository {
 
       return result;
     } catch (err) {
-      throw new Error('일치하는 챗 내역 못찾음');
+      throw new InternalServerErrorException('DB 조회 중 오류 발생');
     }
   }
 
@@ -169,7 +182,7 @@ export class ChatRepository {
         .session(session)
         .exec();
     } catch (err) {
-      throw new Error('저장 실패');
+      throw new InternalServerErrorException('DB 에 채팅 기록 중 오류 발생');
     }
   }
 
@@ -196,7 +209,7 @@ export class ChatRepository {
           .exec();
       }
     } catch (err) {
-      throw new Error('로그 저장 실패');
+      throw new InternalServerErrorException('DB 에 로그 기록 중 오류 발생');
     }
   }
 
@@ -215,7 +228,9 @@ export class ChatRepository {
         .session(session)
         .exec();
     } catch (err) {
-      throw new Error('유저용 다이알 저장 실패');
+      throw new InternalServerErrorException(
+        'DB 에 대화내역 기록 중 오류 발생',
+      );
     }
   }
 }

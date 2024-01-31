@@ -5,6 +5,7 @@ import {
   ChatCompletion,
   ChatCompletionAssistantMessageParam,
   ChatCompletionMessageParam,
+  CompletionUsage,
 } from 'openai/resources';
 import { ChatLog } from './chatlog.schema';
 import { Chat } from './chat.schema';
@@ -129,10 +130,10 @@ export class ChatDataManageService {
     prompt: ChatCompletionMessageParam[],
     response: ChatCompletion,
     imageOCR?: null | { text: string; log: ImageLogType },
-  ): { freeChatLogDoc: FreeChatLog; answer: string } {
+  ): { freeChatLogDoc: FreeChatLog; title: string; answer: string } {
     const { id, created, usage, system_fingerprint, choices } = response;
     const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
-    const answer = resOBJ.answer; //답변 텍스트 추출
+    const { title, answer } = resOBJ; //답변 텍스트 추출
 
     //로그용 다이알로그에 답변 끼우기
     const logMessage = [...prompt];
@@ -155,6 +156,53 @@ export class ChatDataManageService {
       freeChatLogDoc.imageLog.push(imageOCR.log); //이미지 로그 있을경우 챗로그에 밀어넣음
     }
 
-    return { freeChatLogDoc, answer };
+    return { freeChatLogDoc, title, answer };
+  }
+
+  freeChatForSaving(
+    userId: string,
+    title: string,
+    history: string[],
+    prompt: ChatCompletionMessageParam[],
+  ): { chatDoc: Chat; chatLogDoc: ChatLog; chatDialogueDoc: ChatDialogue } {
+    const dialogue = [...prompt];
+    dialogue[2].content = history[0];
+    dialogue[3].content = history[1];
+
+    const tokenLog: CompletionUsage = {
+      completion_tokens: 0,
+      prompt_tokens: 0,
+      total_tokens: 0,
+    };
+    const chatDoc = {
+      userId: userId,
+      title: title,
+      dialogue: dialogue, //클라이언트 표시, GPT에게 전달할 대화맥락
+      nextPromptToken: 0,
+      tokenUsageRecords: 0,
+    };
+
+    const chatLogDoc = {
+      chatId: '',
+      userId: userId,
+      log: [
+        {
+          guest: true,
+          completionId: 'GUEST-FREE-CHAT',
+          token: tokenLog,
+          fingerPrint: 'GUEST-FREE-CHAT',
+          message: prompt,
+        },
+      ],
+      imageLog: [],
+    };
+
+    const chatDialogueDoc = {
+      chatId: '',
+      userId: userId,
+      dialogue: history,
+    };
+
+    return { chatDoc, chatLogDoc, chatDialogueDoc };
   }
 }

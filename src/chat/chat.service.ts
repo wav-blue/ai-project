@@ -27,7 +27,7 @@ export class ChatService {
     @InjectConnection() private connection: Connection,
   ) {}
 
-  //유저별 채팅 내역
+  //유저별 채팅 내역 목록
   async listChats(userId: string): Promise<Chat[]> {
     const session = await this.connection.startSession();
     try {
@@ -88,7 +88,7 @@ export class ChatService {
     }
   }
 
-  async startFreeChat(chatDto: CreateFreeChatDto): Promise<string[]> {
+  async startFreeChat(chatDto: CreateFreeChatDto): Promise<string[][]> {
     const { question, testResult, imageUrl } = chatDto;
     const session = await this.connection.startSession();
     try {
@@ -104,8 +104,7 @@ export class ChatService {
       const { prompt, questionAndOCR } = this.promptService.format1stPrompt(
         question,
         testResult,
-        imageOCR, //임시, 마저 구현하면 타입 변경
-        true, //freeChat용 프롬프트 생성
+        imageOCR,
       );
 
       //3. 작성된 prompt 사용해서 구루에게 첫 채팅 날림
@@ -113,8 +112,8 @@ export class ChatService {
       const response = await this.openAiService.getCompletion(prompt);
 
       //4. 유저 질문, 구루 답변, 메타데이터 가공
-      //리턴: [freeChatLogDoc, answer]
-      const { freeChatLogDoc, answer } =
+      //리턴: {freeChatLogDoc, title, answer}
+      const { freeChatLogDoc, title, answer } =
         this.chatDataManageService.formatFreeCompletion(
           prompt,
           response,
@@ -128,7 +127,10 @@ export class ChatService {
 
       //결과 가공해서 컨트롤러에 전송
       // [question (with OCR), answer]
-      const result = [questionAndOCR, answer];
+      const result = [
+        ['GUEST', title],
+        [questionAndOCR, answer],
+      ];
 
       return result;
     } catch (err) {
@@ -138,20 +140,55 @@ export class ChatService {
       await session.endSession();
     }
   }
-
-  //첫 채팅: 무료챗을 로그인챗으로 만들어주고 다음채팅날리기(2번째 채팅, 유료), or 로그인유저 첫 채팅(무료)
-  async startChat(chatDto: Create1stChatDto): Promise<string[][]> {
-    const { userId, question, history, testResult, imageUrl } = chatDto;
+  //클라이언트에서 로컬스토리지에 저장해뒀던 freechat history를 DB 저장해주기
+  //프롬프트 가공 -> 메타데이터 가공(첫채팅 free챗이라 메타데이터 소실) -> DB 저장 -> id, 타이틀, 질, 답
+  async saveFreeChat(chatDto: Create1stChatDto): Promise<string[][]> {
+    const { userId, title, history, testResult } = chatDto;
     const session = await this.connection.startSession();
     try {
-      //0. 프리 ->유료인 경우 멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
-      if (history) {
-        const checkMembership =
-          await this.membershipService.checkAndDeductMembership(userId);
-        if (!checkMembership) {
-          throw new Error('멤버십 ㄴㄴ');
-        }
-      }
+      //첫채팅 프롬프트 복원, 구루 응답 형식까지 가공
+      // [{persona}, {greeting}, {유저질문}, {구루응답}]
+      const prompt = this.promptService.formatFreePrompt(
+        title,
+        history,
+        testResult,
+      );
+
+      //DB 저장용 문서 가공..
+      const { chatDoc, chatLogDoc, chatDialogueDoc } =
+        this.chatDataManageService.freeChatForSaving(
+          userId,
+          title,
+          history,
+          prompt,
+        );
+
+      //DB 저장
+      session.startTransaction();
+      const savedId = await this.chatRepository.createChat(chatDoc, session);
+      chatLogDoc.chatId = savedId;
+      chatDialogueDoc.chatId = savedId;
+      await this.chatRepository.createChatLog(chatLogDoc, session);
+      await this.chatRepository.createChatDialogue(chatDialogueDoc, session);
+      await session.commitTransaction();
+
+      //결과 컨트롤러에 전송
+      // [ [chatId, title], [question, answer] ]
+      const result = [[savedId, title], history];
+      return result;
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  //첫 채팅: 로그인유저 첫 채팅(무료)
+  async startChat(chatDto: Create1stChatDto): Promise<string[][]> {
+    const { userId, question, testResult, imageUrl } = chatDto;
+    const session = await this.connection.startSession();
+    try {
       //1. 캡쳐 첨부했을 경우:s3 경로에서 이미지 가져와서, OCR 연결해서 대화내역 텍스트로 따옴.
       // 리턴 - {text: string, log: {count:number, uploadeaAt: Date}}
       const imageOCR = imageUrl
@@ -161,17 +198,13 @@ export class ChatService {
       console.log('OCR', imageOCR);
 
       //2. 프롬프트 가공
-      //무료 -> 유료일 경우: [persona + greeting (with 사전설문) + 첫질문(with free imageOCR) + 첫응답 + 새질문 (with new imageOCR)]
-      //로그인 첫챗일경우: [persona + greeting (with 사전설문) + 첫질문 (with new imageOCR)]
+      //[persona + greeting (with 사전설문) + 첫질문 (with new imageOCR)]
       //리턴:ChatCompletionMessageParam[]
-      const { prompt, questionAndOCR } = history
-        ? this.promptService.format2ndPrompt(
-            question,
-            history,
-            imageOCR,
-            testResult,
-          )
-        : this.promptService.format1stPrompt(question, testResult, imageOCR);
+      const { prompt, questionAndOCR } = this.promptService.format1stPrompt(
+        question,
+        testResult,
+        imageOCR,
+      );
 
       //3. 작성된 prompt 사용해서 구루에게 첫 채팅 날림
       //리턴: ChatCompletion
@@ -206,10 +239,10 @@ export class ChatService {
 
       return result;
     } catch (err) {
-      // await session.abortTransaction();
+      await session.abortTransaction();
       throw err;
     } finally {
-      // await session.endSession();
+      await session.endSession();
     }
   }
 
