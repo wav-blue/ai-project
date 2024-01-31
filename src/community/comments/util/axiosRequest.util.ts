@@ -3,24 +3,20 @@ import { bytesToBase64 } from './comment.util';
 import { AxiosError } from 'axios';
 import * as config from 'config';
 import { HttpService } from '@nestjs/axios';
-import { MyLogger } from 'src/common/logger/logger.service';
 import { Injectable } from '@nestjs/common';
 
 const flaskConfig = config.get('flask');
 
 @Injectable()
 export class AxiosRequest {
-  private readonly logger = new MyLogger(AxiosRequest.name);
-
   constructor(private readonly httpService: HttpService) {}
 
   async FlaskAxios(body): Promise<any> {
     // flask 서버로 요청 보낼 body 내용
-    this.logger.debug(`미들웨어 axiosRequest 실행 >> ${body}`);
     const apiUrl =
       `http://${flaskConfig.url}` + ':' + `${flaskConfig.port}` + `/analysis`;
 
-    this.logger.log(`http://${apiUrl}로 Post 요청!`);
+    console.log(`http://${apiUrl}로 Post 요청!`);
 
     const username = process.env.FLASK_USER_NAME || flaskConfig.username;
     const password = process.env.FLASK_PASSWORD || flaskConfig.password;
@@ -32,7 +28,7 @@ export class AxiosRequest {
       'Content-Type': 'application/json',
       Authorization: `Basic ${encodedUsername}:${encodedPassword}`,
     };
-    this.logger.verbose(
+    console.log(
       `인증 헤더의 내용: Basic ${encodedUsername}:${encodedPassword}`,
     );
 
@@ -42,7 +38,7 @@ export class AxiosRequest {
         .pipe(map((res) => res))
         .pipe(
           catchError((error: AxiosError) => {
-            this.logger.error('Axios Error::', error);
+            console.error('Axios Error::', error);
             throw 'Flask Server 에러 발생!';
           }),
         ),

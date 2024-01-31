@@ -9,6 +9,7 @@ import { Comment } from './entity/comments.entity';
 import { CommentPositionCount } from './entity/count-comments.entity';
 import { CommentPosition } from './enum/CommentPosition.enum';
 import { MyLogger } from 'src/logger/logger.service';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class CommentRepository {
@@ -298,13 +299,15 @@ export class CommentRepository {
     deleteType: string,
   ): Promise<{ affected: number }> {
     try {
+      const day = dayjs();
+
       const result = await this.commentRepository
         .createQueryBuilder()
         .update(Comment)
         .set({
           status: deleteType,
-          updatedAt: new Date(),
-          deletedAt: new Date(),
+          updatedAt: day.format(),
+          deletedAt: day.format(),
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
