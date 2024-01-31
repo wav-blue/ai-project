@@ -19,20 +19,23 @@ import { Comment } from './entity/comments.entity';
 import * as dayjs from 'dayjs';
 import { QuerySetPage } from './decorator/query-param.decorator';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
-import { MyLogger } from 'src/common/logger/logger.service';
 import { CommentsService } from './service/comments.service';
 import { CommentsReadService } from './service/comments-read.service';
 import { CommentsReportService } from './service/comments-report.service';
+import { MyLogger } from 'src/logger/logger.service';
 
 @Controller('comments')
 export class CommentsController {
-  private logger = new MyLogger(CommentsController.name);
+  // private logger = new MyLogger(CommentsController.name);
 
   constructor(
     private commentsService: CommentsService,
     private commentsReadService: CommentsReadService,
     private commentsReportService: CommentsReportService,
-  ) {}
+    private logger: MyLogger,
+  ) {
+    this.logger.setContext(CommentsController.name);
+  }
 
   // 출력 확인용 API
   @Get('logger')

@@ -12,20 +12,23 @@ import { AnonymousNumberType } from '.././enum/AnonymousNumberType.enum';
 import { Comment } from '.././entity/comments.entity';
 import { CommentPosition } from '.././enum/CommentPosition.enum';
 import * as dayjs from 'dayjs';
-import { MyLogger } from 'src/common/logger/logger.service';
 import { AxiosRequest } from '../util/axiosRequest.util';
 import { randomPosition } from '../util/comment.util';
 import { Board } from 'src/community/boards/boards.entity';
+import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
 export class CommentsService {
-  private readonly logger = new MyLogger(CommentsService.name);
+  // private readonly logger = new MyLogger(CommentsService.name);
 
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private readonly axiosRequest: AxiosRequest,
-  ) {}
+    private logger: MyLogger,
+  ) {
+    this.logger.setContext(CommentsService.name);
+  }
 
   // DTO의 날짜 관련 컬럼을 설정
   private setTimeOfCreateDto(dto: any) {
@@ -63,8 +66,6 @@ export class CommentsService {
         `Flask 서버로의 요청 성공! 분석을 통해 position 결정: ${response.data.position}`,
       );
       createCommentDto.position = response.data.position;
-
-      this.logger.debug(`axiosRequest 완료 >> ${createCommentDto.position}`);
     } catch (err) {
       this.logger.warn(`분석 요청이 실패했습니다. Flask 서버를 확인해주세요!`);
       const position = randomPosition();

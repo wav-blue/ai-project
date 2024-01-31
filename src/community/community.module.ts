@@ -12,9 +12,10 @@ import { CommentsReadService } from './comments/service/comments-read.service';
 import { CommentsReportService } from './comments/service/comments-report.service';
 import { CommentsService } from './comments/service/comments.service';
 import { AxiosRequest } from './comments/util/axiosRequest.util';
+import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
-  imports: [HttpModule, TypeOrmModule.forFeature([Board])],
+  imports: [HttpModule, TypeOrmModule.forFeature([Board]), LoggerModule],
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,

@@ -8,15 +8,19 @@ import { CommentReport } from './entity/report-comment.entity';
 import { Comment } from './entity/comments.entity';
 import { CommentPositionCount } from './entity/count-comments.entity';
 import { CommentPosition } from './enum/CommentPosition.enum';
-import { MyLogger } from 'src/common/logger/logger.service';
+import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
 export class CommentRepository {
   private commentRepository: Repository<Comment>;
-  private logger = new MyLogger(CommentRepository.name);
+  // private logger = new MyLogger(CommentRepository.name);
 
-  constructor(private readonly dataSource: DataSource) {
+  constructor(
+    private readonly dataSource: DataSource,
+    private logger: MyLogger,
+  ) {
     this.commentRepository = this.dataSource.getRepository(Comment);
+    this.logger.setContext(CommentRepository.name);
   }
 
   async checkCommentCount(

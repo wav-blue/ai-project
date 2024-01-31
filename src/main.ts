@@ -5,12 +5,13 @@ import { setSwagger } from './common/swagger.setting';
 import * as config from 'config';
 import * as cookieParser from 'cookie-parser';
 import * as mongoose from 'mongoose';
-import { MyLogger } from './common/logger/logger.service';
+import { MyLogger } from './logger/logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
   const serverConfig = config.get('server');
-  const logger = new MyLogger();
 
   mongoose.set('debug', true);
   app.setGlobalPrefix('/api');
@@ -31,9 +32,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useLogger(new MyLogger());
   setSwagger(app);
 
   await app.listen(serverConfig.port);
-  logger.log(`Application running on port ${serverConfig.port}`);
 }
 bootstrap();

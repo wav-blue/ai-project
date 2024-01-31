@@ -1,5 +1,6 @@
-import { ConsoleLogger } from '@nestjs/common';
+import { ConsoleLogger, Injectable, Scope } from '@nestjs/common';
 
+@Injectable({ scope: Scope.TRANSIENT })
 export class MyLogger extends ConsoleLogger {
   winstonLogger = require('./wintonLogger');
 

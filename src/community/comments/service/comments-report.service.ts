@@ -7,17 +7,14 @@ import {
 import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from '.././dto/create-comment-report.dto';
-import { HttpService } from '@nestjs/axios';
 import { CommentStatus } from '.././enum/CommentStatus.enum';
 import { Comment } from '.././entity/comments.entity';
 import { CommentPosition } from '.././enum/CommentPosition.enum';
 import * as dayjs from 'dayjs';
-import { MyLogger } from 'src/common/logger/logger.service';
+import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
 export class CommentsReportService {
-  private readonly logger = new MyLogger(CommentsReportService.name);
-
   private checkAffectedDB(queryAffected: number) {
     if (queryAffected === 0) {
       this.logger.error('DB에서 업데이트 된 내용이 존재하지 않습니다.');
@@ -36,12 +33,15 @@ export class CommentsReportService {
 
     return dto;
   }
+  // private readonly logger = new MyLogger(CommentsReportService.name);
 
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
-    private readonly httpService: HttpService,
-  ) {}
+    private logger: MyLogger,
+  ) {
+    this.logger.setContext(CommentsReportService.name);
+  }
 
   // 신고 내역 작성 && 신고 누적 시 삭제
   async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
