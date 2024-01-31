@@ -53,7 +53,7 @@ export class ChatPromptService {
   private answerFomatWithTitle: string = `
   Follow the format below for your answers
   <Format: JSON(json)>
-  {title: Use up to five Korean words to summarize "the question" with previous context., 
+  {title: Use up to seven Korean words to summarize "the question" with previous context., 
   answer: a thoughtful consultation on "the question", considering the previous context.}`;
 
   private answerFomatOnlyAnswer: string = `
@@ -94,12 +94,13 @@ export class ChatPromptService {
     return question;
   }
 
+  //free 챗 저장해주기
+
   //로그인유저 첫질문
   format1stPrompt(
     question: string,
     testResult?: { classification: string; situation?: string[] },
     imageOCR?: null | { text: string; log: ImageLogType },
-    free?: boolean,
   ): { prompt: ChatCompletionMessageParam[]; questionAndOCR: string } {
     const questionAndOCR = imageOCR
       ? this.addImageOCRInQuestion(question, imageOCR.text) //캡쳐를 새로 넣었다면, 질문에 끼워넣기
@@ -110,41 +111,30 @@ export class ChatPromptService {
       ? this.addTestResulInGreeting(testResult) //사전 질문지 답변이 있다면 greeting에 정보 포함
       : { ...this.greeting }; //사전 질문지 없다면 기본 greeting
 
-    //유저 입력 질문을 프롬프트에 삽입
-    const prompt = free
-      ? this.formatQuestion(questionAndOCR, this.answerFomatOnlyAnswer) //free 챗일경우 title 없이
-      : this.formatQuestion(questionAndOCR, this.answerFomatWithTitle); //로그인 첫질문일 경우 타이틀생성
+    //유저 입력 질문을 프롬프트에 삽입 - title,answer 답변형식 지정
+    const prompt = this.formatQuestion(
+      questionAndOCR,
+      this.answerFomatWithTitle,
+    );
     //페르소나, 그리팅, 유저프롬프트 묶어서 결과 리턴
     const result = [persona, greeting, prompt];
 
     return { prompt: result, questionAndOCR: questionAndOCR };
   }
 
-  //무료->유료질문(2번째)
-  format2ndPrompt(
-    question: string,
+  //free chat 저장 위해 프롬프트 복원, 응답형태까지 복원해 덧붙이기
+  formatFreePrompt(
+    title: string,
     history: string[],
-    imageOCR?: null | { text: string; log: ImageLogType },
     testResult?: { classification: string; situation?: string[] },
-  ): { prompt: ChatCompletionMessageParam[]; questionAndOCR: string } {
-    //첫프롬프트의 system message, greeting 복원, 새 질문 형식 작성(imageOCR 끼우기, json 형식 지시)
-    const result = this.format1stPrompt(question, testResult, imageOCR);
-
-    //새 질문 분리
-    const newQuestion = result.prompt.pop();
-
-    //첫 질문과 첫 답변 형식 작성
-    const firstQuestion = { ...this.prompt };
-    firstQuestion.content = history[0];
-    const firstAnswer = { ...this.completion };
-    firstAnswer.content = history[1];
-
-    //첫 질문, 첫 답변, 새 질문 순서대로 끼우기
-    result.prompt.push(firstQuestion);
-    result.prompt.push(firstAnswer);
-    result.prompt.push(newQuestion);
-
-    return result;
+  ): ChatCompletionMessageParam[] {
+    const result = this.format1stPrompt(history[0], testResult);
+    const firstAnswer = { ...this.completion }; //응답 객체 복사ㄴ
+    const answerOBJ = { title, answer: history[1] }; //구루 응답 형식 가공
+    const answerJSON = JSON.stringify(answerOBJ); //JSON화
+    firstAnswer.content = answerJSON; //가공한 응답형식 밀어넣기
+    result.prompt.push(firstAnswer); //프롬프트배열에 구루 응답까지 밀어넣기
+    return result.prompt;
   }
 
   formatContinuePrompt(
@@ -170,3 +160,29 @@ export class ChatPromptService {
     return { prompt: prompt, questionAndOCR: questionAndOCR };
   }
 }
+//무료->유료질문(2번째)
+// format2ndPrompt(
+//   question: string,
+//   history: string[],
+//   imageOCR?: null | { text: string; log: ImageLogType },
+//   testResult?: { classification: string; situation?: string[] },
+// ): { prompt: ChatCompletionMessageParam[]; questionAndOCR: string } {
+//   //첫프롬프트의 system message, greeting 복원, 새 질문 형식 작성(imageOCR 끼우기, json 형식 지시)
+//   const result = this.format1stPrompt(question, testResult, imageOCR);
+
+//   //새 질문 분리
+//   const newQuestion = result.prompt.pop();
+
+//   //첫 질문과 첫 답변 형식 작성
+//   const firstQuestion = { ...this.prompt };
+//   firstQuestion.content = history[0];
+//   const firstAnswer = { ...this.completion };
+//   firstAnswer.content = history[1];
+
+//   //첫 질문, 첫 답변, 새 질문 순서대로 끼우기
+//   result.prompt.push(firstQuestion);
+//   result.prompt.push(firstAnswer);
+//   result.prompt.push(newQuestion);
+
+//   return result;
+// }
