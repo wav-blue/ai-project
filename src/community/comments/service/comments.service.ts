@@ -132,11 +132,13 @@ export class CommentsService {
             `기존의 익명 번호가 존재함 : ${existingAnonymousNumber}`,
           );
         } else {
-          const new_anonymous_number =
+          let new_anonymous_number =
             await this.commentRepository.getNewAnonymousNumber(
               createCommentDto,
               queryRunnerForGet,
             );
+          if (!new_anonymous_number) new_anonymous_number = 0;
+
           createCommentDto.anonymous_number = new_anonymous_number + 1;
           this.logger.verbose(
             `새로 익명 번호가 부여됨 : ${new_anonymous_number + 1}`,
