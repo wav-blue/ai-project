@@ -99,7 +99,7 @@ export class UpdateChatDto {
 
   @IsOptional()
   @IsString()
-  chatId?: string; //history 배열 빼고 chatId만 꺼냄, API 명세서에서 고쳐줘야 함..
+  chatId?: string;
 
   @IsNotEmpty()
   @IsString()

@@ -15,10 +15,10 @@ import {
   CreateFreeChatDto,
   ReturnReadChatDto,
   UpdateChatDto,
-} from './chat.dto';
+} from './dtos/chat.dto';
 import { LocalAuthGuard } from '../user/guards/local-service.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
-import { Chat } from './chat.schema';
+import { Chat } from './schemas/chat.schema';
 
 @Controller('chat')
 export class ChatController {
@@ -111,7 +111,7 @@ export class ChatController {
     chatDto.userId = userId;
     chatDto.chatId = chatId;
     try {
-      const result = await this.chatService.continueChat(chatDto);
+      const result = await this.chatService.checkMembershipAndCarryOn(chatDto);
       console.log(result);
       return result;
     } catch (err) {
