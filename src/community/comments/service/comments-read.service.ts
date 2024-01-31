@@ -4,23 +4,24 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CommentRepository } from './comments.repository';
+import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
-import { HttpService } from '@nestjs/axios';
-import { Mylogger } from './logger/mylogger.service';
-import { Comment } from './entity/comments.entity';
-import { CommentStatus } from './enum/CommentStatus.enum';
-import { AnonymousNumberType } from './enum/AnonymousNumberType.enum';
+import { Comment } from '.././entity/comments.entity';
+import { CommentStatus } from '.././enum/CommentStatus.enum';
+import { AnonymousNumberType } from '.././enum/AnonymousNumberType.enum';
+import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
 export class CommentsReadService {
-  private readonly logger = new Mylogger(CommentsReadService.name);
+  // private logger = new MyLogger(CommentsReadService.name);
 
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
-    private readonly httpService: HttpService,
-  ) {}
+    private logger: MyLogger,
+  ) {
+    this.logger.setContext(CommentsReadService.name);
+  }
 
   // 삭제된 데이터의 정보를 숨김
   private parseDeletedComment(comments: Comment[]): Comment[] {

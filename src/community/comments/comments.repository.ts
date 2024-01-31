@@ -4,19 +4,24 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { CommentStatus } from './enum/CommentStatus.enum';
-import { Mylogger } from './logger/mylogger.service';
 import { CommentReport } from './entity/report-comment.entity';
 import { Comment } from './entity/comments.entity';
 import { CommentPositionCount } from './entity/count-comments.entity';
 import { CommentPosition } from './enum/CommentPosition.enum';
+import { MyLogger } from 'src/logger/logger.service';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class CommentRepository {
   private commentRepository: Repository<Comment>;
-  private logger = new Mylogger(CommentRepository.name);
+  // private logger = new MyLogger(CommentRepository.name);
 
-  constructor(private readonly dataSource: DataSource) {
+  constructor(
+    private readonly dataSource: DataSource,
+    private logger: MyLogger,
+  ) {
     this.commentRepository = this.dataSource.getRepository(Comment);
+    this.logger.setContext(CommentRepository.name);
   }
 
   async checkCommentCount(
@@ -127,14 +132,14 @@ export class CommentRepository {
     const { boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
-      .select('COUNT(DISTINCT(`user_id`))', 'count')
+      .select('MAX(`anonymous_number`)', 'max')
       .from(Comment, 'comment')
-      .where('anonymous_number != 0 and comment.boardId = :boardId', {
+      .where('comment.boardId = :boardId', {
         boardId,
       })
       .getRawMany();
-    const { count } = result[0];
-    return parseInt(count);
+    const { max } = result[0];
+    return parseInt(max);
   }
   async checkComment(commentId: number) {
     const found = this.commentRepository
@@ -294,13 +299,15 @@ export class CommentRepository {
     deleteType: string,
   ): Promise<{ affected: number }> {
     try {
+      const day = dayjs();
+
       const result = await this.commentRepository
         .createQueryBuilder()
         .update(Comment)
         .set({
           status: deleteType,
-          updatedAt: new Date(),
-          deletedAt: new Date(),
+          updatedAt: day.format(),
+          deletedAt: day.format(),
         })
         .where('comment_id = :commentId', { commentId })
         .execute();
