@@ -1,3 +1,4 @@
+import { Transform, TransformFnParams } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 //import { User } from 'src/user/user.entity';
@@ -48,10 +49,12 @@ export class BoardsListQueryDto {
   tag?: string;
 
   @IsOptional()
+  @Transform(({ value }: TransformFnParams) => parseInt(value, 10))
   @IsNumber()
   page?: number = 1;
 
   @IsOptional()
+  @Transform(({ value }: TransformFnParams) => parseInt(value, 10))
   @IsNumber()
   limit?: number = 15;
 }

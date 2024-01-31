@@ -38,6 +38,7 @@ export class BoardsController {
       console.log(result);
       return result;
     } catch (err) {
+      console.error(err);
       throw err;
     }
   }

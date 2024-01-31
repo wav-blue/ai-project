@@ -15,6 +15,7 @@ import {
   ChatDialogue,
   ChatDialogueSchema,
 } from './schemas/chatDialogue.schema';
+import { ReadChatRepository } from './repositories/readChat.repository';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import {
     ChatOpenAi,
     ChatDataManageService,
     ChatRepository,
+    ReadChatRepository,
   ],
 })
 export class ChatModule {}
