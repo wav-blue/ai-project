@@ -20,6 +20,8 @@ import { LocalAuthGuard } from './guards/local-service.guard';
 import { GoogleRequest } from 'passport-google-oauth20';
 
 import { Response } from 'express';
+import * as config from 'config';
+const domainConfig = config.get('domain');
 
 @Controller('user')
 export class UserController {
@@ -107,7 +109,7 @@ export class UserController {
       await this.userService.userLoginSocial(userDto);
 
     await this.setTokens(res, accessToken, refreshToken);
-    res.redirect('http://localhost:3000');
+    res.redirect(`http://${domainConfig.address}:3000`);
   }
 
   @Get('/login/kakao')
@@ -123,20 +125,21 @@ export class UserController {
       await this.userService.userLoginSocial(userDto);
 
     await this.setTokens(res, accessToken, refreshToken);
-    res.redirect('http://localhost:3000');
+
+    res.redirect(`http://${domainConfig.address}:3000`);
   }
 
   setTokens(@Res() res: Response, accessToken, refreshToken): void {
     //토큰 설정
     res.cookie('accessToken', accessToken, {
-      domain: 'localhost',
+      domain: domainConfig.address,
       maxAge: 600 * 1000,
       httpOnly: true,
       path: '/',
     });
 
     res.cookie('refreshToken', refreshToken, {
-      domain: 'localhost',
+      domain: domainConfig.address,
       maxAge: 3600 * 1000,
       httpOnly: true,
       path: '/',

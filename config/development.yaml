@@ -9,3 +9,6 @@ jwt:
 
 flask:
   url: 'kdt-ai-9-team01.elicecoding.com'
+
+domain:
+  address: 'localhost'

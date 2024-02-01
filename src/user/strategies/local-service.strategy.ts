@@ -9,7 +9,7 @@ import { UserService } from '../user.service';
 import { JwtService } from '@nestjs/jwt';
 dotenv.config();
 const jwtConfig = config.get('jwt');
-
+const domainConfig = config.get('domain');
 @Injectable()
 export class AccessStrategy extends PassportStrategy(Strategy, 'access') {
   constructor() {
@@ -58,8 +58,12 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
     }
     const accessToken = this.jwt.sign({ user_id: userId }, { expiresIn: 600 });
 
-    const bearerToken = `Bearer ${accessToken}`;
-    req.res.header('Authorization', bearerToken);
+    req.res.cookie('accessToken', accessToken, {
+      domain: domainConfig.address,
+      maxAge: 600 * 1000,
+      httpOnly: true,
+      path: '/',
+    });
 
     return userId;
   }
