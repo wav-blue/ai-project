@@ -160,12 +160,20 @@ export class MembershipService {
         }
         case 'basic': {
           if (remainChances > 0) {
+            await this.membershipRepository.deductMembership(
+              userId,
+              queryRunner,
+            );
             return true;
           }
           return false;
         }
         case 'normal': {
           if (remainChances > 0) {
+            await this.membershipRepository.deductMembership(
+              userId,
+              queryRunner,
+            );
             return true;
           }
           return false;

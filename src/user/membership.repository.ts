@@ -174,7 +174,7 @@ export class MembershipRepository {
         .createQueryBuilder()
         .update(MemberShip)
         .set({ remainChances: () => 'remainChances - 1' })
-        .where('membership.userId = :userId', { userId })
+        .where('userId = :userId', { userId })
         .execute();
     } catch (err) {
       throw err;
@@ -191,7 +191,7 @@ export class MembershipRepository {
         .createQueryBuilder()
         .update(MemberShip)
         .set({ remainChances: () => 'remainChances + 1' })
-        .where('membership.userId = :userId', { userId })
+        .where('userId = :userId', { userId })
         .execute();
     } catch (err) {
       throw err;
