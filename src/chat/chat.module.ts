@@ -2,16 +2,20 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
-import { ChatOpenAi } from './chat.openai.service';
-import { ChatPromptService } from './chat.prompt.service';
-import { Chat, ChatSchema } from './chat.schema';
-import { ChatImageService } from './chat.image.service';
-import { ChatRepository } from './chat.repository';
+import { ChatOpenAi } from './services/chat.openai.service';
+import { ChatPromptService } from './services/chat.prompt.service';
+import { Chat, ChatSchema } from './schemas/chat.schema';
+import { ChatImageService } from './services/chat.image.service';
+import { ChatRepository } from './repositories/chat.repository';
 import { UserModule } from 'src/user/user.module';
-import { ChatDataManageService } from './chat.datamanage.service';
-import { ChatLog, ChatLogSchema } from './chatlog.schema';
-import { FreeChatLog, FreeChatLogSchema } from './freechatLog.schema';
-import { ChatDialogue, ChatDialogueSchema } from './chatDialogue.schema';
+import { ChatDataManageService } from './services/chat.datamanage.service';
+import { ChatLog, ChatLogSchema } from './schemas/chatlog.schema';
+import { FreeChatLog, FreeChatLogSchema } from './schemas/freechatLog.schema';
+import {
+  ChatDialogue,
+  ChatDialogueSchema,
+} from './schemas/chatDialogue.schema';
+import { ReadChatRepository } from './repositories/readChat.repository';
 
 @Module({
   imports: [
@@ -31,6 +35,7 @@ import { ChatDialogue, ChatDialogueSchema } from './chatDialogue.schema';
     ChatOpenAi,
     ChatDataManageService,
     ChatRepository,
+    ReadChatRepository,
   ],
 })
 export class ChatModule {}

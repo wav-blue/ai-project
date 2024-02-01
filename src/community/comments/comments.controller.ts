@@ -11,32 +11,38 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { CommentsService } from './comments.service';
-import { CommentsReadService } from './comments-read.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
-import { Mylogger } from './logger/mylogger.service';
 import { Comment } from './entity/comments.entity';
 
 import * as dayjs from 'dayjs';
 import { QuerySetPage } from './decorator/query-param.decorator';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
+import { CommentsService } from './service/comments.service';
+import { CommentsReadService } from './service/comments-read.service';
+import { CommentsReportService } from './service/comments-report.service';
+import { MyLogger } from 'src/logger/logger.service';
 
 @Controller('comments')
 export class CommentsController {
-  private logger = new Mylogger(CommentsController.name);
+  // private logger = new MyLogger(CommentsController.name);
+
   constructor(
     private commentsService: CommentsService,
     private commentsReadService: CommentsReadService,
-  ) {}
+    private commentsReportService: CommentsReportService,
+    private logger: MyLogger,
+  ) {
+    this.logger.setContext(CommentsController.name);
+  }
 
   // 출력 확인용 API
   @Get('logger')
   getLogger(): string {
+    this.logger.log('this is log');
     this.logger.error('this is error');
     this.logger.warn('this is warn');
-    this.logger.log('this is log');
     this.logger.verbose('this is verbose');
     this.logger.debug('this is debug');
     const d = dayjs();
@@ -135,24 +141,7 @@ export class CommentsController {
 
     createCommentReportDto.reportUserId = reportUserId;
 
-    const result = this.commentsService.createCommentReport(
-      createCommentReportDto,
-    );
-    return result;
-  }
-
-  // 댓글 좋아요 기능 예정
-  @Post('/:commentId/like')
-  @UseGuards(LocalAuthGuard)
-  updateCommentLike(
-    @GetUser() userId: string,
-    @Body() createCommentReportDto: CreateCommentReportDto,
-  ): Promise<{ status: string }> {
-    this.logger.log(
-      `${createCommentReportDto.commentId}번 댓글에 대한 좋아요 접수!`,
-    );
-
-    const result = this.commentsService.createCommentReport(
+    const result = this.commentsReportService.createCommentReport(
       createCommentReportDto,
     );
     return result;

@@ -12,6 +12,7 @@ import { OrderModule } from './order/order.module';
 import { ExceptionToHttpExceptionFilter } from './common/exception-filter';
 import { ChatModule } from './chat/chat.module';
 import { PurchaseModule } from './purchase/purchase.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PurchaseModule } from './purchase/purchase.module';
     OrderModule,
     ItemModule,
     PurchaseModule,
+    LoggerModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ExceptionToHttpExceptionFilter },

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { QueryRunner } from 'typeorm';
+import { Brackets, QueryRunner } from 'typeorm';
 import { Board, BoardReport } from './boards.entity';
 import {
   BoardSearchAndListDto,
@@ -114,9 +114,13 @@ export class BoardsRepository {
         .createQueryBuilder(Board, 'B')
         .select('COUNT(B.boardId) AS count')
         .where('B.tag = :tag', { tag })
-        .andWhere('B.title LIKE :keyword OR B.content LIKE :keyword', {
-          keyword: `%${keyword}%`,
-        })
+        .andWhere(
+          new Brackets((qb) => {
+            qb.where('B.title LIKE :keyword', {
+              keyword: `%${keyword}%`,
+            }).orWhere('B.content LIKE :keyword', { keyword: `%${keyword}%` });
+          }),
+        )
         .getRawOne();
       return parseInt(result.count);
     } catch (err) {
@@ -142,9 +146,13 @@ export class BoardsRepository {
           'B.updatedAt',
         ])
         .where('B.tag = :tag', { tag })
-        .andWhere('B.title LIKE :keyword OR B.content LIKE :keyword', {
-          keyword: `%${keyword}%`,
-        })
+        .andWhere(
+          new Brackets((qb) => {
+            qb.where('B.title LIKE :keyword', {
+              keyword: `%${keyword}%`,
+            }).orWhere('B.content LIKE :keyword', { keyword: `%${keyword}%` });
+          }),
+        )
         .orderBy('B.createdAt', 'DESC')
         .offset(offset)
         .limit(limit)

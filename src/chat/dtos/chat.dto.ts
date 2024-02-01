@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -26,8 +27,12 @@ export class Create1stChatDto {
   userId?: string;
 
   @IsString()
-  @IsNotEmpty()
-  question: string;
+  @IsOptional()
+  question?: string;
+
+  @IsString()
+  @IsOptional()
+  title?: string;
 
   @IsOptional()
   @IsArray()
@@ -61,6 +66,10 @@ export class CreateFreeChatDto {
 }
 
 export class ChatLogType {
+  @IsOptional()
+  @IsBoolean()
+  guest?: boolean;
+
   @IsString()
   @IsNotEmpty()
   completionId: string;
@@ -71,8 +80,8 @@ export class ChatLogType {
   @IsNotEmpty()
   fingerPrint: string;
 
-  @IsNotEmpty()
-  date: Date;
+  @IsOptional()
+  date?: Date;
 
   message: ChatCompletionMessageParam[];
 }
@@ -90,7 +99,7 @@ export class UpdateChatDto {
 
   @IsOptional()
   @IsString()
-  chatId?: string; //history 배열 빼고 chatId만 꺼냄, API 명세서에서 고쳐줘야 함..
+  chatId?: string;
 
   @IsNotEmpty()
   @IsString()

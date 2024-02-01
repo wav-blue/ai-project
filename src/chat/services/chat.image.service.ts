@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ImageLogType } from './chat.dto';
+import { ImageLogType } from '../dtos/chat.dto';
 
 @Injectable()
 export class ChatImageService {

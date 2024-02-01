@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 
 import { DataSource } from 'typeorm';
 import { MembershipRepository } from './membership.repository';
@@ -183,11 +187,20 @@ export class MembershipService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      await this.membershipRepository.restoreBalance(userId, queryRunner);
+      const status = await this.membershipRepository.getMembershipbyuserId(
+        userId,
+        queryRunner,
+      );
+      //normal 이나 basic 인 경우만 돌려줌
+      if (status.usingService == 'basic' || status.usingService == 'normal') {
+        await this.membershipRepository.restoreBalance(userId, queryRunner);
+      }
       await queryRunner.commitTransaction();
     } catch (err) {
       await queryRunner.rollbackTransaction();
-      throw err;
+      throw new ServiceUnavailableException(
+        '멤버십 반환중 오류가 발생했습니다. 운영진에게 연락해주세요',
+      );
     } finally {
       await queryRunner.release();
     }

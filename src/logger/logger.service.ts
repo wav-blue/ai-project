@@ -1,33 +1,32 @@
-import { ConsoleLogger } from '@nestjs/common';
+import { ConsoleLogger, Injectable, Scope } from '@nestjs/common';
 
-export class Mylogger extends ConsoleLogger {
+@Injectable({ scope: Scope.TRANSIENT })
+export class MyLogger extends ConsoleLogger {
+  winstonLogger = require('./wintonLogger');
+
   // 일반 로그
   log(message: any, ...optionalParams: [...any, string?]) {
     super.log(`${message}`, ...optionalParams);
-    this.saveLog();
+    this.winstonLogger.info(`${message}`);
   }
   // 실제 에러 메시지를 출력
   error(message: any, ...optionalParams: [...any, string?]) {
     super.error(`${message}`, ...optionalParams);
-    this.saveLog();
+    this.winstonLogger.error(`${message}`);
   }
   // 경고성 메시지를 출력
   warn(message: any, ...optionalParams: [...any, string?]) {
     super.warn(`⚠️  ${message}`, ...optionalParams);
-    this.saveLog();
+    this.winstonLogger.warn(`${message}`);
   }
   // 상세한 로그를 출력
   verbose(message: any, ...optionalParams: [...any, string?]) {
     super.verbose(`📜 ${message}`, ...optionalParams);
-    this.saveLog();
+    this.winstonLogger.verbose(`${message}`);
   }
   // 디버그를 위한 메시지를 출력
   debug(message: any, ...optionalParams: [...any, string?]) {
     super.debug(`🔧 ${message}`, ...optionalParams);
-    this.saveLog();
-  }
-
-  private saveLog() {
-    // winston을 추가하고 싶은 공간..
+    this.winstonLogger.debug(`${message}`);
   }
 }
