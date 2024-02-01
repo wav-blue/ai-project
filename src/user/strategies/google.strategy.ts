@@ -2,8 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy, VerifyCallback } from 'passport-google-oauth20';
 import * as dotenv from 'dotenv';
+import * as config from 'config';
 
 dotenv.config();
+const domainConfig = config.get('domain');
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -11,7 +13,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     super({
       clientID: process.env.GOOGLE_ID,
       clientSecret: process.env.GOOGLE_SECRET,
-      callbackURL: 'http://localhost:5001/api/user/login/google/callback',
+      callbackURL: `http://${domainConfig.address}:5001/api/user/login/google/callback`,
+
       scope: ['email', 'profile'],
     });
   }
