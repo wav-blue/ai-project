@@ -35,9 +35,10 @@ export class ChatDataManageService {
 
       //다이알로그 가공
       const dialogue = [...prompt];
-      const newQuestion = dialogue.pop();
+      const newQuestion = { ...dialogue.pop() };
       newQuestion.content = question; //유저 프롬프트에 추가했던 시스템 지시사항 삭제, 질문만 남기고 다시 끼움
       dialogue.push(newQuestion);
+
       const newAnswer: ChatCompletionAssistantMessageParam = {
         role: 'assistant',
         content: answer,
@@ -45,7 +46,7 @@ export class ChatDataManageService {
       };
       dialogue.push(newAnswer); //구루 응답에서 타이틀 부분 제거한 답변만 밀어넣음.
 
-      const logMessage = [...prompt];
+      const logMessage = [...prompt]; //로그용 질문 형식 지시도 남김
       logMessage.push(choices[0].message);
 
       const chatDoc = {
@@ -99,7 +100,7 @@ export class ChatDataManageService {
       const resOBJ = JSON.parse(choices[0].message.content); //구루 답변: json string parsing
       const { title, answer } = resOBJ; //고민주제와 답변 분리
 
-      const newQuestion = [...prompt].pop();
+      const newQuestion = { ...[...prompt].pop() };
       newQuestion.content = question; //유저 프롬프트에 추가했던 시스템 지시사항 삭제, 질문만 남겨서 다시 넣음
       history.dialogue.push(newQuestion);
       const newAnswer: ChatCompletionAssistantMessageParam = {
