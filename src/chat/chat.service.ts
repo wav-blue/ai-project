@@ -330,10 +330,9 @@ export class ChatService {
       return result;
     } catch (err) {
       await session.abortTransaction();
-      await this.membershipService.restoreMembershipBalance(userId);
-      throw new ServiceUnavailableException(
-        '채팅 진행중 문제가 발생하여 차감 멤버십을 반환하였습니다.',
-      );
+      const message =
+        await this.membershipService.restoreMembershipBalance(userId);
+      throw new ServiceUnavailableException(message);
     } finally {
       await session.endSession();
     }

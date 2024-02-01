@@ -190,7 +190,7 @@ export class MembershipService {
     }
   }
 
-  async restoreMembershipBalance(userId: string): Promise<void> {
+  async restoreMembershipBalance(userId: string): Promise<string> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -202,8 +202,11 @@ export class MembershipService {
       //normal 이나 basic 인 경우만 돌려줌
       if (status.usingService == 'basic' || status.usingService == 'normal') {
         await this.membershipRepository.restoreBalance(userId, queryRunner);
+        await queryRunner.commitTransaction();
+        return '채팅 진행중 문제가 발생하여 차감 멤버십을 반환하였습니다.';
       }
       await queryRunner.commitTransaction();
+      return '채팅 진행중 문제가 발생하여 중단되었습니다. 다시 시도해주세요';
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw new ServiceUnavailableException(
