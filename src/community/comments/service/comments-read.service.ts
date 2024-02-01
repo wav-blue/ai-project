@@ -33,7 +33,6 @@ export class CommentsReadService {
         comments[i].content = '삭제된 댓글입니다.';
         comments[i].status = CommentStatus.DELETED;
         comments[i].position = 'deleted';
-        comments[i].createdAt = new Date();
       }
     }
     return comments;
@@ -71,7 +70,6 @@ export class CommentsReadService {
         queryRunner,
       );
       if (!found) {
-        this.logger.error('해당하는 게시글을 찾을 수 없음');
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
