@@ -58,11 +58,11 @@ export class MemberShip extends BaseEntity {
   @Column({ type: 'int' })
   remainChances: number;
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  // @CreateDateColumn({ type: 'datetime' })
+  // createdAt: Date;
 
-  @UpdateDateColumn({ type: 'datetime', nullable: true })
-  updatedAt: Date;
+  // @UpdateDateColumn({ type: 'datetime', nullable: true })
+  // updatedAt: Date;
 
   @DeleteDateColumn({ type: 'datetime', nullable: true })
   deletedAt: Date;
