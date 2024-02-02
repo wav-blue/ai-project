@@ -1,5 +1,5 @@
 import { openai } from 'src/configs/openai.config';
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ChatCompletion, ChatCompletionMessageParam } from 'openai/resources';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class ChatOpenAi {
     try {
       console.log('질문시작');
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo-1106',
+        model: 'gpt-3.5-turbo-0125',
         temperature: 0.75,
         max_tokens: 500,
         top_p: 0.98,
@@ -22,7 +22,7 @@ export class ChatOpenAi {
       });
       return response;
     } catch (err) {
-      throw err;
+      throw new ServiceUnavailableException('open ai에 연결할 수 없습니다.');
     }
   }
 }
