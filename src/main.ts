@@ -18,7 +18,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'kdt-ai-9-team01.elicecoding.com',
+      'http://kdt-ai-9-team01.elicecoding.com',
       'https://developers.tosspayments.com',
       'https://api.tosspayments.com',
     ],
