@@ -129,14 +129,12 @@ export class UserController {
   setTokens(@Res() res: Response, accessToken, refreshToken): void {
     //토큰 설정
     res.cookie('accessToken', accessToken, {
-      domain: 'localhost',
       maxAge: 600 * 1000,
       httpOnly: true,
       path: '/',
     });
 
     res.cookie('refreshToken', refreshToken, {
-      domain: 'localhost',
       maxAge: 3600 * 1000,
       httpOnly: true,
       path: '/',
