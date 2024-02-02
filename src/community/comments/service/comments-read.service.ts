@@ -10,6 +10,7 @@ import { Comment } from '.././entity/comments.entity';
 import { CommentStatus } from '.././enum/CommentStatus.enum';
 import { AnonymousNumberType } from '.././enum/AnonymousNumberType.enum';
 import { MyLogger } from 'src/logger/logger.service';
+import { QueryPageDto } from '../dto/query-page.dto';
 
 @Injectable()
 export class CommentsReadService {
@@ -26,7 +27,6 @@ export class CommentsReadService {
   // 삭제된 데이터의 정보를 숨김
   private parseDeletedComment(comments: Comment[]): Comment[] {
     for (let i = 0; i < comments.length; i++) {
-      delete comments[i].userId;
       delete comments[i].updatedAt;
       if (comments[i].status !== CommentStatus.NOT_DELETED) {
         comments[i].anonymous_number = AnonymousNumberType.DELETED;
@@ -46,8 +46,7 @@ export class CommentsReadService {
   // 해당 Board의 Comment 조회
   async getBoardComments(
     boardId: number,
-    page: number,
-    pageSize: number,
+    queryPageDto: QueryPageDto,
   ): Promise<{
     count: number;
     list: Comment[];
@@ -75,8 +74,7 @@ export class CommentsReadService {
 
       results = await this.commentRepository.getBoardComments(
         boardId,
-        page,
-        pageSize,
+        queryPageDto,
         queryRunner,
       );
 
@@ -111,26 +109,23 @@ export class CommentsReadService {
       // 삭제된 댓글은 자세한 정보 제거
       results = this.parseDeletedComment(results);
 
-      // 총 페이지 수 계산
-      // const maxPage = Math.ceil(amount / pageSize);
-      // this.logger.verbose(
-      //   `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
-      // );
       return {
         count: amount,
         list: results,
         ...positionCount,
       };
     } catch (err) {
-      throw new ConflictException();
+      this.logger.error('삭제된 댓글의 정보 제거 중 오류 발생');
+      throw new ConflictException(
+        '알 수 없는 이유로 요청을 완료하지 못했습니다.',
+      );
     }
   }
 
   // 로그인한 유저가 작성한 Comment 조회
   async getMyComments(
     userId: string,
-    page: number,
-    pageSize: number,
+    queryPageDto: QueryPageDto,
   ): Promise<{ count: number; list: Comment[] }> {
     let results = null;
     let amount = 0;
@@ -141,8 +136,7 @@ export class CommentsReadService {
     try {
       results = await this.commentRepository.getMyComments(
         userId,
-        page,
-        pageSize,
+        queryPageDto,
         queryRunner,
       );
 
@@ -167,13 +161,12 @@ export class CommentsReadService {
     try {
       // 삭제된 댓글은 자세한 정보 제거
       results = this.parseDeletedComment(results);
-      const maxPage = Math.ceil(amount / pageSize);
-      this.logger.log(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
-      );
-      return { count: maxPage, list: results };
+      return { count: amount, list: results };
     } catch (err) {
-      throw new ConflictException();
+      this.logger.error('삭제된 댓글의 정보 제거 중 오류 발생');
+      throw new InternalServerErrorException(
+        '알 수 없는 이유로 요청을 완료하지 못했습니다.',
+      );
     }
   }
 }

@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -23,6 +24,7 @@ import { CommentsService } from './service/comments.service';
 import { CommentsReadService } from './service/comments-read.service';
 import { CommentsReportService } from './service/comments-report.service';
 import { MyLogger } from 'src/logger/logger.service';
+import { QueryPageDto } from './dto/query-page.dto';
 
 @Controller('comments')
 export class CommentsController {
@@ -58,15 +60,12 @@ export class CommentsController {
   @UseGuards(LocalAuthGuard)
   getMyComments(
     @GetUser() userId: string,
-    @QuerySetPage() querySetPage: { page: number; limit: number },
+    @Query() queryPageDto: QueryPageDto,
   ): Promise<{ count: number; list: Comment[] }> {
-    const { page, limit } = querySetPage;
-
-    this.logger.verbose(`현재 설정된 userId: ${userId}`);
+    this.logger.log(`현재 설정된 userId: ${userId}`);
     const comments = this.commentsReadService.getMyComments(
       userId,
-      page,
-      limit,
+      queryPageDto,
     );
     return comments;
   }
@@ -75,21 +74,18 @@ export class CommentsController {
   @Get('/:boardId')
   async getBoardComments(
     @Param('boardId', ParseIntPipe) boardId: number,
-    @QuerySetPage() querySetPage: { page: number; limit: number },
+    @Query() queryPageDto: QueryPageDto,
   ): Promise<{
     count: number;
     list: Comment[];
     positiveCount: number;
     negativeCount: number;
   }> {
-    const { page, limit } = querySetPage;
-
-    this.logger.verbose(`${boardId}번 게시글의 댓글 조회!`);
+    this.logger.log(`${boardId}번 게시글의 댓글 조회!`);
 
     const comments = await this.commentsReadService.getBoardComments(
       boardId,
-      page,
-      limit,
+      queryPageDto,
     );
     return comments;
   }
