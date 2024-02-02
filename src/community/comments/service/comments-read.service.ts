@@ -33,7 +33,6 @@ export class CommentsReadService {
         comments[i].content = '삭제된 댓글입니다.';
         comments[i].status = CommentStatus.DELETED;
         comments[i].position = 'deleted';
-        comments[i].createdAt = new Date();
       }
     }
     return comments;
@@ -71,7 +70,6 @@ export class CommentsReadService {
         queryRunner,
       );
       if (!found) {
-        this.logger.error('해당하는 게시글을 찾을 수 없음');
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
 
@@ -114,12 +112,12 @@ export class CommentsReadService {
       results = this.parseDeletedComment(results);
 
       // 총 페이지 수 계산
-      const maxPage = Math.ceil(amount / pageSize);
-      this.logger.verbose(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
-      );
+      // const maxPage = Math.ceil(amount / pageSize);
+      // this.logger.verbose(
+      //   `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
+      // );
       return {
-        count: maxPage,
+        count: amount,
         list: results,
         ...positionCount,
       };

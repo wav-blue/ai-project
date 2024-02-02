@@ -94,7 +94,6 @@ export class CommentsReportService {
         if (checkResult[i].report_user_id !== reportUserId) {
           reportUserList.push(checkResult[i].report_user_id);
         } else {
-          this.logger.error(`한 유저가 같은 댓글을 두번 신고할 수 없음`);
           throw new ConflictException('이미 신고된 댓글입니다.');
         }
       }
