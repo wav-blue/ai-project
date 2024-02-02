@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -90,7 +91,7 @@ export class MembershipService {
       );
 
       if (usingService == found.usingService) {
-        throw new ServiceUnavailableException(
+        throw new ForbiddenException(
           '구독기간이 남은 서비스를 중도 갱신 할 수 없습니다.',
         );
       }
