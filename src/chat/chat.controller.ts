@@ -24,11 +24,6 @@ import { Chat } from './schemas/chat.schema';
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
-  // !! 타입들, DTO 정리 필요!!
-  // 커스텀 에러 생성, 정리 필요!!
-  // 채팅 내역 읽기 커서기반 페이지네이션 추가해야함
-  // 채팅이미지 OCR 받아오기 추가해야함
-
   //채팅내역
   @Get()
   @UseGuards(LocalAuthGuard)

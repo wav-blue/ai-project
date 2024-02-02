@@ -57,7 +57,8 @@ export class UserRepository {
       );
       return newUser;
     } catch (err) {
-      throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
+      throw err;
+      // throw new InternalServerErrorException('데이터베이스 처리 중 오류 발생');
     }
   }
 

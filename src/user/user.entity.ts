@@ -4,7 +4,6 @@ import {
   Entity,
   OneToOne,
   BeforeInsert,
-  JoinColumn,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,

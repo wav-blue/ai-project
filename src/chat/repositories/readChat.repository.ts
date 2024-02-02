@@ -60,9 +60,10 @@ export class ReadChatRepository {
       }
       return result[0].length;
     } catch (err) {
-      throw new InternalServerErrorException(
-        'DB에서 구루와의 대화 히스토리 확인 중 오류 발생',
-      );
+      throw err;
+      // throw new InternalServerErrorException(
+      //   'DB에서 구루와의 대화 히스토리 확인 중 오류 발생',
+      // );
     }
   }
 

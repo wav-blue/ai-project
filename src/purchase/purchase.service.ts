@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PurchaseDto } from './purchase.dto';
-import { DataSource, QueryRunner } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { MembershipService } from 'src/user/membership.service';
 import { PurchaseRepository } from './purchase.repository';
 import * as dotenv from 'dotenv';
@@ -52,6 +52,12 @@ export class PurchaseService {
         throw new ForbiddenException('존재하지 않는 상품입니다.');
       }
 
+      await this.membershipService.checkMembershipPrePurchase(
+        userId,
+        foundproduct.name,
+        queryRunner,
+      );
+
       // 결제 승인 요청
       const response = await fetch(
         'https://api.tosspayments.com/v1/payments/confirm',
@@ -69,7 +75,11 @@ export class PurchaseService {
       const data = await response.json();
 
       // 멤버십 업데이트
-      await this.membershipService.updateMembership(userId, foundproduct.name);
+      await this.membershipService.updateMembership(
+        userId,
+        foundproduct.name,
+        queryRunner,
+      );
 
       //결제 내역 저장
       purchaseDto.productId = foundproduct.productId;

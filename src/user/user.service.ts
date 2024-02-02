@@ -18,6 +18,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
 import { LoginUserDto } from './dtos/login-user.dto';
+import { MembershipRepository } from './membership.repository';
 
 dotenv.config();
 //const jwtConfig = config.get('jwt');
@@ -27,8 +28,8 @@ export class UserService {
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository,
-
     private refreshTokenRepository: RefreshTokenRepository,
+    private membershipRepository: MembershipRepository,
     private jwt: JwtService,
   ) {}
 
@@ -66,6 +67,11 @@ export class UserService {
         createUserDto,
         queryRunner,
       );
+      await this.membershipRepository.createWelcomeMembership(
+        createdUser.userId,
+        queryRunner,
+      ); //웰컴 멤버십 5회-한달짜리 생성
+
       await queryRunner.commitTransaction();
       return createdUser;
     } catch (error) {
@@ -114,7 +120,7 @@ export class UserService {
         loginUser.email,
         queryRunner,
       );
-      // 없는 유저면 DB에 유저정보 저장
+
       if (!found) {
         throw new BadRequestException('존재하지 않는 계정입니다.');
       }
@@ -157,6 +163,11 @@ export class UserService {
       // 없는 유저면 DB에 유저정보 저장
       if (!found) {
         found = await this.userRepository.createUser(loginUser, queryRunner);
+        await this.membershipRepository.createWelcomeMembership(
+          //가입완료되면 5회 멤버십도 생성
+          found.userId,
+          queryRunner,
+        );
       }
 
       const { accessToken, refreshToken } = await this.TokenCreate(

@@ -10,55 +10,32 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-// @Entity({ name: 'MEMBERSHIP' })
-// export class MemberShip extends BaseEntity {
-//   @OneToOne(() => User, (user) => user.membership)
-//   @PrimaryColumn('uuid')
-//   userId: string;
-
-//   @CreateDateColumn()
-//   @UpdateDateColumn({ type: 'datetime', nullable: true })
-//   startAt: Date;
-
-//   @Column({ type: 'datetime', nullable: true })
-//   endAt: Date;
-
-//   @Column({ type: 'enum', enum: ['normal', 'basic', 'premium'] })
-//   usingService: string;
-
-//   @Column({ type: 'int' })
-//   remainChances: number;
-
-//   @DeleteDateColumn({ type: 'datetime', nullable: true })
-//   deletedAt: Date;
-
-//   readonlyData() {
-//     return {
-//       usingService: this.usingService,
-//       remainChances: this.remainChances,
-//     };
-//   }
-// }
-
 @Entity({ name: 'MEMBERSHIP' })
 export class MemberShip extends BaseEntity {
   @OneToOne(() => User, (user) => user.membership)
   @PrimaryColumn('uuid')
   userId: string;
 
-  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   startAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP + INTERVAL 1 MONTH',
+  })
   endAt: Date;
 
-  @Column({ type: 'enum', enum: ['normal', 'basic', 'premium'] })
+  @Column({
+    type: 'enum',
+    enum: ['normal', 'basic', 'premium'],
+    default: 'normal',
+  })
   usingService: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', default: 5 })
   remainChances: number;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'datetime' }) //가입하면 무조건 basic 생성해주므로 가입일자가 될것.
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'datetime', nullable: true })

@@ -46,9 +46,7 @@ export class ChatService {
       return result;
     } catch (err) {
       await session.abortTransaction();
-      throw new ServiceUnavailableException(
-        '알 수 없는 이유로 목록을 읽어오지 못했습니다',
-      );
+      throw err;
     } finally {
       await session.endSession();
     }
@@ -94,9 +92,7 @@ export class ChatService {
       return result;
     } catch (err) {
       await session.abortTransaction();
-      throw new ServiceUnavailableException(
-        '알 수 없는 이유로 내역을 읽어오지 못했습니다',
-      );
+      throw err;
     } finally {
       session.endSession();
     }
@@ -149,9 +145,7 @@ export class ChatService {
       return result;
     } catch (err) {
       await session.abortTransaction();
-      throw new ServiceUnavailableException(
-        '알 수 없는 이유로 첫 질문 생성 실패',
-      );
+      throw err;
     } finally {
       await session.endSession();
     }
@@ -195,9 +189,7 @@ export class ChatService {
       return result;
     } catch (err) {
       await session.abortTransaction();
-      throw new ServiceUnavailableException(
-        '알 수 없는 이유로 로그인 전 질문 저장 실패',
-      );
+      throw err;
     } finally {
       await session.endSession();
     }
@@ -259,9 +251,7 @@ export class ChatService {
       return result;
     } catch (err) {
       await session.abortTransaction();
-      throw new ServiceUnavailableException(
-        '알 수 없는 이유로 첫 질문 생성 실패',
-      );
+      throw err;
     } finally {
       await session.endSession();
     }
@@ -342,8 +332,9 @@ export class ChatService {
   async checkMembershipAndCarryOn(chatDto: UpdateChatDto): Promise<string[]> {
     try {
       //0.멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
-      const checkMembership =
-        await this.membershipService.checkAndDeductMembership(chatDto.userId);
+      const checkMembership = await this.membershipService.useMembership(
+        chatDto.userId,
+      );
       if (!checkMembership) {
         throw new ForbiddenException('멤버십 상태를 확인해주세요.');
       }
