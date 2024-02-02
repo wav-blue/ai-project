@@ -112,12 +112,12 @@ export class CommentsReadService {
       results = this.parseDeletedComment(results);
 
       // 총 페이지 수 계산
-      const maxPage = Math.ceil(amount / pageSize);
-      this.logger.verbose(
-        `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
-      );
+      // const maxPage = Math.ceil(amount / pageSize);
+      // this.logger.verbose(
+      //   `데이터베이스에서 조회된 comment의 총 갯수 : ${amount} | 계산된 페이지 수 : ${maxPage}`,
+      // );
       return {
-        count: maxPage,
+        count: amount,
         list: results,
         ...positionCount,
       };
