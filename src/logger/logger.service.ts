@@ -7,7 +7,6 @@ export class MyLogger extends ConsoleLogger {
   // 일반 로그
   log(message: any, ...optionalParams: [...any, string?]) {
     super.log(`${message}`, ...optionalParams);
-    this.winstonLogger.info(`${message}`);
   }
   // 실제 에러 메시지를 출력
   error(message: any, ...optionalParams: [...any, string?]) {

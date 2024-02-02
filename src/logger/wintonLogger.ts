@@ -27,7 +27,7 @@ const logger = winston.createLogger({
   //* 실제 로그를 어떻게 기록을 한 것인가 정의
   transports: [
     new winstonDaily({
-      level: 'debug', // debug 이상의 레벨 저장
+      level: 'info', // debug 이상의 레벨 저장
       datePattern: 'YYYY-MM-DD', // 파일 날짜 형식
       dirname: logDir, // 파일 경로
       filename: `%DATE%.log`, // 파일 이름
