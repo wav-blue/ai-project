@@ -4,7 +4,6 @@ import { DataSource } from 'typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { mongoConfig } from './configs/mongo.config';
-import { ItemModule } from './item/item.module';
 import { CommunityModule } from './community/community.module';
 import { APP_FILTER } from '@nestjs/core';
 import { UserModule } from './user/user.module';
@@ -22,7 +21,6 @@ import { LoggerModule } from './logger/logger.module';
     CommunityModule,
     ChatModule,
     OrderModule,
-    ItemModule,
     PurchaseModule,
     LoggerModule,
   ],
