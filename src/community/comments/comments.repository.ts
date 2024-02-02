@@ -10,6 +10,7 @@ import { CommentPositionCount } from './entity/count-comments.entity';
 import { CommentPosition } from './enum/CommentPosition.enum';
 import { MyLogger } from 'src/logger/logger.service';
 import * as dayjs from 'dayjs';
+import { QueryPageDto } from './dto/query-page.dto';
 
 @Injectable()
 export class CommentRepository {
@@ -178,10 +179,10 @@ export class CommentRepository {
 
   async getBoardComments(
     boardId: number,
-    page: number,
-    limit: number,
+    queryPageDto: QueryPageDto,
     queryRunner: QueryRunner,
   ): Promise<Comment[]> {
+    const { page, limit } = queryPageDto;
     this.logger.log(`${boardId}번 게시글 댓글 조회`);
     this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
     const previous = (page - 1) * limit;
@@ -202,12 +203,12 @@ export class CommentRepository {
 
   async getMyComments(
     userId: string,
-    page: number,
-    limit: number,
+    queryPageDto: QueryPageDto,
     queryRunner: QueryRunner,
   ): Promise<Comment[]> {
-    this.logger.log(`${userId}가 작성한 댓글 조회`);
+    const { page, limit } = queryPageDto;
     this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
+
     const previous = (page - 1) * limit;
     const comments = await queryRunner.manager
       .createQueryBuilder()
@@ -219,6 +220,7 @@ export class CommentRepository {
       .skip(previous)
       .take(limit)
       .getMany();
+
     this.logger.log(`조회된 comments의 length: ${comments.length}`);
     return comments;
   }
@@ -237,7 +239,10 @@ export class CommentRepository {
     const total = result.count;
     return total;
   }
-  async countCommentsByUser(userId: string, queryRunner): Promise<number> {
+  async countCommentsByUser(
+    userId: string,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
     const result = await queryRunner.manager
       .createQueryBuilder()
       .select('COUNT(`comment_id`)', 'count')
