@@ -150,7 +150,7 @@ export class MembershipService {
     }
   }
 
-  async useMembership(userId: string): Promise<boolean> {
+  async useMembership(userId: string): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -162,19 +162,20 @@ export class MembershipService {
 
       if (found.usingService == 'premium') {
         await queryRunner.commitTransaction();
-        return true;
+        return;
       } //프리미엄을 먼저 걸러서 다른 작업 없이 반환시킴
 
       //premium 거르고 나면 남은것은 basic, normal 뿐임
       //남은 횟수가 부족한 경우 에러
       if (found.remainChances <= 0) {
+        await queryRunner.commitTransaction();
         throw new UnauthorizedException('잔여 질문권 횟수가 부족합니다.');
       }
 
       //정상적인 basic, normal 횟수 차감
       await this.membershipRepository.useRemain(userId, queryRunner);
       await queryRunner.commitTransaction();
-      return true;
+      return;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;

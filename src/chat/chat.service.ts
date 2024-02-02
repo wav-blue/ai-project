@@ -1,9 +1,5 @@
 import { Connection } from 'mongoose';
-import {
-  ForbiddenException,
-  Injectable,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import {
   Create1stChatDto,
   CreateFreeChatDto,
@@ -332,12 +328,7 @@ export class ChatService {
   async checkMembershipAndCarryOn(chatDto: UpdateChatDto): Promise<string[]> {
     try {
       //0.멤버십 테이블에서 userId로 검색해서 횟수 남았는지 확인하고 차감. 커밋까지 완료.
-      const checkMembership = await this.membershipService.useMembership(
-        chatDto.userId,
-      );
-      if (!checkMembership) {
-        throw new ForbiddenException('멤버십 상태를 확인해주세요.');
-      }
+      await this.membershipService.useMembership(chatDto.userId);
 
       const result = await this.continueChat(chatDto);
       return result;

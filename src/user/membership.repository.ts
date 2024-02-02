@@ -114,7 +114,7 @@ export class MembershipRepository {
         .where('userId = :userId', { userId })
         .execute();
     } catch (err) {
-      throw err;
+      throw new InternalServerErrorException('멤버십 차감 중 DB 오류 발생');
     }
   }
 
