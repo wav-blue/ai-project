@@ -18,7 +18,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as dotenv from 'dotenv';
 import { LoginUserDto } from './dtos/login-user.dto';
-import { MembershipRepository } from './membership.repository';
+import { MembershipService } from './membership.service';
 
 dotenv.config();
 //const jwtConfig = config.get('jwt');
@@ -29,7 +29,7 @@ export class UserService {
     private dataSource: DataSource,
     private userRepository: UserRepository,
     private refreshTokenRepository: RefreshTokenRepository,
-    private membershipRepository: MembershipRepository,
+    private membershipService: MembershipService,
     private jwt: JwtService,
   ) {}
 
@@ -67,7 +67,7 @@ export class UserService {
         createUserDto,
         queryRunner,
       );
-      await this.membershipRepository.createWelcomeMembership(
+      await this.membershipService.createWelcomeMembership(
         createdUser.userId,
         queryRunner,
       ); //웰컴 멤버십 5회-한달짜리 생성
@@ -163,7 +163,7 @@ export class UserService {
       // 없는 유저면 DB에 유저정보 저장
       if (!found) {
         found = await this.userRepository.createUser(loginUser, queryRunner);
-        await this.membershipRepository.createWelcomeMembership(
+        await this.membershipService.createWelcomeMembership(
           //가입완료되면 5회 멤버십도 생성
           found.userId,
           queryRunner,
@@ -243,6 +243,20 @@ export class UserService {
       return { accessToken, refreshToken };
     } catch (error) {
       throw error;
+    }
+  }
+
+  async getMembership(userId: string): Promise<{
+    usingService: string;
+    remainChances?: number;
+    startAt: Date;
+    endAt: Date;
+  }> {
+    try {
+      const result = this.membershipService.getMembershipbyUser(userId);
+      return result;
+    } catch (err) {
+      throw err;
     }
   }
 }

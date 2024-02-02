@@ -38,8 +38,8 @@ export class MemberShip extends BaseEntity {
   @CreateDateColumn({ type: 'datetime' }) //가입하면 무조건 basic 생성해주므로 가입일자가 될것.
   createdAt: Date;
 
-  // @UpdateDateColumn({ type: 'datetime', nullable: true })
-  // updatedAt: Date;
+  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  updatedAt: Date;
 
   @DeleteDateColumn({ type: 'datetime', nullable: true })
   deletedAt: Date;

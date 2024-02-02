@@ -44,13 +44,24 @@ export class MembershipService {
     }
   }
   // 유저 마이페이지 용도 조회 서비스
-  async getMembershipbyUser(userId: string) {
+  async getMembershipbyUser(userId: string): Promise<{
+    usingService: string;
+    remainChances?: number;
+    startAt: Date;
+    endAt: Date;
+  }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const result = await this.searchMembershipByUser(userId, queryRunner);
+      const found = await this.searchMembershipByUser(userId, queryRunner);
       await queryRunner.commitTransaction();
+      const { startAt, endAt, usingService, remainChances } = found;
+      const result =
+        usingService == 'premium'
+          ? { usingService, startAt, endAt }
+          : { usingService, remainChances, startAt, endAt };
+
       return result;
     } catch (err) {
       await queryRunner.rollbackTransaction();
@@ -195,6 +206,18 @@ export class MembershipService {
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  //가입시 웰컴멤버십 생성
+  async createWelcomeMembership(userId: string, queryRunner: QueryRunner) {
+    try {
+      await this.membershipRepository.createWelcomeMembership(
+        userId,
+        queryRunner,
+      );
+    } catch (err) {
+      throw err;
     }
   }
 }

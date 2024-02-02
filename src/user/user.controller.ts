@@ -21,6 +21,7 @@ import { GoogleRequest } from 'passport-google-oauth20';
 
 import { Response } from 'express';
 import * as config from 'config';
+import { GetUser } from 'src/common/decorator/get-user.decorator';
 const domainConfig = config.get('domain');
 
 @Controller('user')
@@ -64,6 +65,19 @@ export class UserController {
     return user.readonlyData();
   }
 
+  //내 멤버십정보 조회
+  @Get('/my/membership')
+  @UseGuards(LocalAuthGuard)
+  async getMembership(@GetUser() userId: string) {
+    try {
+      const result = this.userService.getMembership(userId);
+      return result;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  //비번 수정
   @Put('/edit')
   @UsePipes(ValidationPipe)
   @UseGuards(LocalAuthGuard)
