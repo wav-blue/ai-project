@@ -7,7 +7,6 @@ import { CommentStatus } from './enum/CommentStatus.enum';
 import { CommentReport } from './entity/report-comment.entity';
 import { Comment } from './entity/comments.entity';
 import { CommentPositionCount } from './entity/count-comments.entity';
-import { CommentPosition } from './enum/CommentPosition.enum';
 import { MyLogger } from 'src/logger/logger.service';
 import * as dayjs from 'dayjs';
 import { QueryPageDto } from './dto/query-page.dto';
@@ -43,22 +42,12 @@ export class CommentRepository {
 
   async createCommentCount(
     boardId: number,
-    position: CommentPosition,
     queryRunner: QueryRunner,
   ): Promise<CommentPositionCount> {
-    let positiveCount = 0;
-    let negativeCount = 0;
-    if (position == CommentPosition.POSITIVE) {
-      positiveCount = 1;
-    } else {
-      negativeCount = 1;
-    }
     const newCommentPositionCount = queryRunner.manager.create(
       CommentPositionCount,
       {
         boardId,
-        positiveCount,
-        negativeCount,
       },
     );
 
@@ -256,13 +245,11 @@ export class CommentRepository {
   }
 
   async createComment(
-    user: string,
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
   ): Promise<Comment> {
     const newComment = queryRunner.manager.create(Comment, {
       ...createCommentDto,
-      userId: user,
       status: CommentStatus.NOT_DELETED,
       deletedAt: null,
     });

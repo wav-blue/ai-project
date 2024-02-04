@@ -1,17 +1,17 @@
 import { catchError, firstValueFrom, map } from 'rxjs';
-import { bytesToBase64 } from './comment.util';
 import { AxiosError } from 'axios';
 import * as config from 'config';
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { bytesToBase64 } from '../util/comment.util';
 
 const flaskConfig = config.get('flask');
 
 @Injectable()
-export class AxiosRequest {
+export class AxiosRequestService {
   constructor(private readonly httpService: HttpService) {}
 
-  async FlaskAxios(body): Promise<any> {
+  async FlaskRequest(body: { content: string }): Promise<any> {
     // flask 서버로 요청 보낼 body 내용
     const apiUrl =
       `http://${flaskConfig.url}` + ':' + `${flaskConfig.port}` + `/analysis`;

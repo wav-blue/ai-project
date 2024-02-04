@@ -8,7 +8,6 @@ import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { CommentStatus } from '.././enum/CommentStatus.enum';
 import { CommentPosition } from '.././enum/CommentPosition.enum';
-import { AxiosRequest } from '../util/axiosRequest.util';
 import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
@@ -16,7 +15,6 @@ export class CommentsService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
-    private readonly axiosRequest: AxiosRequest,
     private logger: MyLogger,
   ) {
     this.logger.setContext(CommentsService.name);

@@ -1,44 +1,64 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
 import { CreateCommentDto } from '.././dto/create-comment.dto';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { CommentStatus } from '.././enum/CommentStatus.enum';
 import { AnonymousNumberType } from '.././enum/AnonymousNumberType.enum';
 import { Comment } from '.././entity/comments.entity';
 import { CommentPosition } from '.././enum/CommentPosition.enum';
-import * as dayjs from 'dayjs';
-import { AxiosRequest } from '../util/axiosRequest.util';
 import { randomPosition } from '../util/comment.util';
 import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
+import { AxiosRequestService } from './axiosRequest.service';
+import { setTimeColumn } from '../util/commentData.util';
 
 @Injectable()
 export class CommentsCreateService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
-    private readonly axiosRequest: AxiosRequest,
+    private readonly axiosRequestService: AxiosRequestService,
     private logger: MyLogger,
   ) {
     this.logger.setContext(CommentsCreateService.name);
   }
 
-  // DTO의 날짜 관련 컬럼을 설정
-  private setTimeOfCreateDto(dto: any) {
-    const day = dayjs();
+  // Comment 작성
+  async createComment(createCommentDto: CreateCommentDto): Promise<Comment> {
+    // DTO 값 설정
+    createCommentDto = setTimeColumn(createCommentDto);
+    createCommentDto = await this.setPosition(createCommentDto);
+    createCommentDto = await this.setAnonymousNumber(createCommentDto);
 
-    dto.createdAt = day.format();
-    dto.updatedAt = day.format();
-    dto.deletedAt = null;
+    // 생성된 Comment의 정보를 저장하는 변수
+    let createResult: Comment;
 
-    return dto;
-  }
-  // 불필요한 값 제거
-  private deleteColumn(comment: Comment): Comment {
-    delete comment.updatedAt;
-    delete comment.deletedAt;
+    // 댓글의 긍정/부정 카운팅 업데이트
+    // 댓글 데이터 생성
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
-    return comment;
+    await queryRunner.startTransaction();
+    try {
+      this.calCommentCount(createCommentDto, queryRunner);
+
+      // 댓글 테이블에 데이터 생성
+      createResult = await this.commentRepository.createComment(
+        createCommentDto,
+        queryRunner,
+      );
+
+      createResult = this.deleteColumn(createResult);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+
+    return createResult;
   }
 
   // 댓글을 생성할 때 postion을 설정
@@ -52,7 +72,7 @@ export class CommentsCreateService {
         content: substring_string,
       };
 
-      const response = await this.axiosRequest.FlaskAxios(body); // 분석된 결과를 DTO에 추가
+      const response = await this.axiosRequestService.FlaskRequest(body); // 분석된 결과를 DTO에 추가
       this.logger.verbose(
         `Flask 서버로의 요청 성공! 분석을 통해 position 결정: ${response.data.position}`,
       );
@@ -67,23 +87,24 @@ export class CommentsCreateService {
     return createCommentDto;
   }
 
-  // Comment 작성
-  async createComment(
-    user: string,
+  // 불필요한 Column 제거
+  private deleteColumn(comment: Comment): Comment {
+    delete comment.updatedAt;
+    delete comment.deletedAt;
+
+    return comment;
+  }
+
+  // 익명 번호를 설정
+  private async setAnonymousNumber(
     createCommentDto: CreateCommentDto,
-  ): Promise<Comment> {
-    // DTO 값 설정
-    createCommentDto = this.setTimeOfCreateDto(createCommentDto);
-    createCommentDto = await this.setPosition(createCommentDto);
+  ): Promise<CreateCommentDto> {
+    const { userId, boardId } = createCommentDto;
+    this.logger.log(`setAnonymousNumber >> ${userId} | ${boardId} 확인!`);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
-    const queryRunnerForGet = this.dataSource.createQueryRunner();
-    await queryRunnerForGet.connect();
-
-    const { boardId, position } = createCommentDto;
-    await queryRunnerForGet.startTransaction();
-
-    // 생성된 댓글의 정보를 저장
-    let createResult: Comment;
+    await queryRunner.startTransaction();
 
     let foundBoard: Board;
 
@@ -91,105 +112,91 @@ export class CommentsCreateService {
       // 게시글 정보 조회
       foundBoard = await this.commentRepository.checkBoard(
         boardId,
-        queryRunnerForGet,
+        queryRunner,
       );
       const boardStatus = foundBoard?.status;
 
       if (!foundBoard || boardStatus !== CommentStatus.NOT_DELETED) {
-        this.logger.error('해당 게시글을 조회할 수 없음');
-        if (foundBoard) this.logger.error(`게시글의 상태: ${boardStatus}`);
+        if (foundBoard)
+          this.logger.warn(
+            `게시글 상태가 ${boardStatus}인 데이터의 조회 요청 들어옴`,
+          );
         throw new NotFoundException('해당하는 게시글이 없습니다.');
       }
-
       // 익명 번호를 부여
       // 게시글 작성자: 특수한 익명 번호 부여(0)
       const boardWriter = foundBoard.userId;
-      if (user === boardWriter) {
+      if (userId === boardWriter) {
         createCommentDto.anonymous_number = AnonymousNumberType.WRITER;
-        this.logger.verbose(
+        this.logger.debug(
           `게시글 작성자가 댓글 작성함 : 익명번호 ${AnonymousNumberType.WRITER}`,
         );
       } else {
         // 일반 작성자
         const existingAnonymousNumber =
           await this.commentRepository.getAnonymousNumber(
-            user,
+            userId,
             createCommentDto,
-            queryRunnerForGet,
+            queryRunner,
           );
         if (existingAnonymousNumber) {
           createCommentDto.anonymous_number = existingAnonymousNumber;
-          this.logger.verbose(
+          this.logger.debug(
             `기존의 익명 번호가 존재함 : ${existingAnonymousNumber}`,
           );
         } else {
-          let new_anonymous_number =
+          let newAnonymousNumber =
             await this.commentRepository.getNewAnonymousNumber(
               createCommentDto,
-              queryRunnerForGet,
+              queryRunner,
             );
-          if (!new_anonymous_number) new_anonymous_number = 0;
 
-          createCommentDto.anonymous_number = new_anonymous_number + 1;
-          this.logger.verbose(
-            `새로 익명 번호가 부여됨 : ${new_anonymous_number + 1}`,
+          // 조회된 내역 없음
+          if (!newAnonymousNumber) newAnonymousNumber = 0;
+
+          createCommentDto.anonymous_number = newAnonymousNumber + 1;
+          this.logger.debug(
+            `새로 익명 번호가 부여됨 : ${createCommentDto.anonymous_number}`,
           );
         }
       }
     } catch (err) {
-      await queryRunnerForGet.rollbackTransaction();
+      await queryRunner.rollbackTransaction();
+      throw err;
     } finally {
-      await queryRunnerForGet.release();
+      await queryRunner.release();
+    }
+    return createCommentDto;
+  }
+
+  private async calCommentCount(
+    createCommentDto: CreateCommentDto,
+    queryRunner: QueryRunner,
+  ): Promise<string> {
+    const { boardId, position } = createCommentDto;
+    // 해당 댓글의 카운팅 데이터
+    const foundCountPosition = await this.commentRepository.checkCommentCount(
+      boardId,
+      queryRunner,
+    );
+
+    // 없으면 생성: 첫번째 댓글
+    if (!foundCountPosition) {
+      await this.commentRepository.createCommentCount(boardId, queryRunner);
     }
 
-    // 댓글 카운팅을 늘리고 댓글 데이터 생성
-    const queryRunnerForCreate = this.dataSource.createQueryRunner();
-    await queryRunnerForCreate.connect();
+    this.logger.debug(`댓글이 생성되어 ${position}Count 증가`);
 
-    await queryRunnerForCreate.startTransaction();
-    try {
-      // 해당 댓글의 카운팅 데이터
-      let foundCountPosition = await this.commentRepository.checkCommentCount(
-        boardId,
-        queryRunnerForCreate,
-      );
-      if (!foundCountPosition) {
-        // 없으면 생성: 첫번째 댓글
-        foundCountPosition = await this.commentRepository.createCommentCount(
-          boardId,
-          position,
-          queryRunnerForCreate,
-        );
-      } else {
-        this.logger.debug(`댓글이 생성되어 ${position}Count 증가`);
+    if (position === CommentPosition.POSITIVE)
+      foundCountPosition.positiveCount += 1;
+    if (position === CommentPosition.NEGATIVE)
+      foundCountPosition.negativeCount += 1;
+    await this.commentRepository.updateCommentCount(
+      boardId,
+      foundCountPosition,
+      queryRunner,
+    );
 
-        if (position === CommentPosition.POSITIVE)
-          foundCountPosition.positiveCount += 1;
-        if (position === CommentPosition.NEGATIVE)
-          foundCountPosition.negativeCount += 1;
-        await this.commentRepository.updateCommentCount(
-          boardId,
-          foundCountPosition,
-          queryRunnerForCreate,
-        );
-      }
-
-      // 댓글 테이블에 데이터 생성
-      createResult = await this.commentRepository.createComment(
-        user,
-        createCommentDto,
-        queryRunnerForCreate,
-      );
-
-      createResult = this.deleteColumn(createResult);
-
-      await queryRunnerForCreate.commitTransaction();
-    } catch (err) {
-      await queryRunnerForCreate.rollbackTransaction();
-    } finally {
-      await queryRunnerForCreate.release();
-    }
-
-    return createResult;
+    return 'success';
   }
 }

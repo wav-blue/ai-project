@@ -74,13 +74,6 @@ export class CommentsController {
     return comments;
   }
 
-  // 테스트용 전체 조회
-  @Get('/')
-  getAllComments(): Promise<Comment[]> {
-    this.logger.log(`get 요청 받아짐`);
-    return this.commentsReadService.getAllComments();
-  }
-
   //댓글 작성
   @Post('/')
   @UseGuards(LocalAuthGuard)
@@ -90,10 +83,10 @@ export class CommentsController {
     @Body() createCommentDto: CreateCommentDto,
   ) {
     this.logger.log(`댓글 작성 요청!\n현재 설정된 userId: ${userId}`);
-    const result = this.commentsCreateService.createComment(
-      userId,
-      createCommentDto,
-    );
+
+    createCommentDto.userId = userId;
+
+    const result = this.commentsCreateService.createComment(createCommentDto);
 
     return result;
   }
