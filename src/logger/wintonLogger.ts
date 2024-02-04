@@ -27,7 +27,7 @@ const logger = winston.createLogger({
   //* 실제 로그를 어떻게 기록을 한 것인가 정의
   transports: [
     new winstonDaily({
-      level: 'info', // debug 이상의 레벨 저장
+      level: 'info', // info 이상의 레벨 저장
       datePattern: 'YYYY-MM-DD', // 파일 날짜 형식
       dirname: logDir, // 파일 경로
       filename: `%DATE%.log`, // 파일 이름
@@ -36,7 +36,7 @@ const logger = winston.createLogger({
     }),
     //* error 레벨 로그를 저장할 파일 설정
     new winstonDaily({
-      level: 'error', // error 레벨에선
+      level: 'warn',
       datePattern: 'YYYY-MM-DD',
       dirname: logDir + '/error',
       filename: `%DATE%.error.log`,

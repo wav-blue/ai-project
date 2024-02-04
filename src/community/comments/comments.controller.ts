@@ -17,14 +17,13 @@ import { CreateCommentReportDto } from './dto/create-comment-report.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 import { Comment } from './entity/comments.entity';
 
-import * as dayjs from 'dayjs';
-import { QuerySetPage } from './decorator/query-param.decorator';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { CommentsService } from './service/comments.service';
 import { CommentsReadService } from './service/comments-read.service';
 import { CommentsReportService } from './service/comments-report.service';
 import { MyLogger } from 'src/logger/logger.service';
 import { QueryPageDto } from './dto/query-page.dto';
+import { CommentsCreateService } from './service/comments-create.service';
 
 @Controller('comments')
 export class CommentsController {
@@ -33,26 +32,11 @@ export class CommentsController {
   constructor(
     private commentsService: CommentsService,
     private commentsReadService: CommentsReadService,
+    private commentsCreateService: CommentsCreateService,
     private commentsReportService: CommentsReportService,
     private logger: MyLogger,
   ) {
     this.logger.setContext(CommentsController.name);
-  }
-
-  // 출력 확인용 API
-  @Get('logger')
-  getLogger(): string {
-    this.logger.log('this is log');
-    this.logger.error('this is error');
-    this.logger.warn('this is warn');
-    this.logger.verbose('this is verbose');
-    this.logger.debug('this is debug');
-    const d = dayjs();
-    this.logger.verbose(`현재 설정된 시간 : ${d.format()}`);
-    this.logger.verbose(
-      `현재 설정된 시간 : ${d.format('YYYY-MM-DD HH:mm:ss')}`,
-    );
-    return 'success!';
   }
 
   // 자신이 작성한 댓글 목록 조회
@@ -90,13 +74,6 @@ export class CommentsController {
     return comments;
   }
 
-  // 테스트용 전체 조회
-  @Get('/')
-  getAllComments(): Promise<Comment[]> {
-    this.logger.log(`get 요청 받아짐`);
-    return this.commentsReadService.getAllComments();
-  }
-
   //댓글 작성
   @Post('/')
   @UseGuards(LocalAuthGuard)
@@ -106,7 +83,10 @@ export class CommentsController {
     @Body() createCommentDto: CreateCommentDto,
   ) {
     this.logger.log(`댓글 작성 요청!\n현재 설정된 userId: ${userId}`);
-    const result = this.commentsService.createComment(userId, createCommentDto);
+
+    createCommentDto.userId = userId;
+
+    const result = this.commentsCreateService.createComment(createCommentDto);
 
     return result;
   }

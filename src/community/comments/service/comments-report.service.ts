@@ -10,8 +10,8 @@ import { CreateCommentReportDto } from '.././dto/create-comment-report.dto';
 import { CommentStatus } from '.././enum/CommentStatus.enum';
 import { Comment } from '.././entity/comments.entity';
 import { CommentPosition } from '.././enum/CommentPosition.enum';
-import * as dayjs from 'dayjs';
 import { MyLogger } from 'src/logger/logger.service';
+import { setTimeColumn } from '../util/commentData.util';
 
 @Injectable()
 export class CommentsReportService {
@@ -24,17 +24,6 @@ export class CommentsReportService {
     }
   }
 
-  private setTimeOfCreateDto(dto: any) {
-    const day = dayjs();
-
-    dto.createdAt = day.format();
-    dto.updatedAt = day.format();
-    dto.deletedAt = null;
-
-    return dto;
-  }
-  // private readonly logger = new MyLogger(CommentsReportService.name);
-
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
@@ -46,7 +35,7 @@ export class CommentsReportService {
   // 신고 내역 작성 && 신고 누적 시 삭제
   async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
     // DTO 설정
-    createCommentReportDto = this.setTimeOfCreateDto(createCommentReportDto);
+    createCommentReportDto = setTimeColumn(createCommentReportDto);
 
     // 변수 선언
     let foundComment: Comment;
@@ -61,7 +50,10 @@ export class CommentsReportService {
       const { commentId, reportUserId } = createCommentReportDto;
 
       // 신고된 Comment의 정보 조회
-      foundComment = await this.commentRepository.checkComment(commentId);
+      foundComment = await this.commentRepository.checkComment(
+        commentId,
+        queryRunner,
+      );
       if (!foundComment || foundComment.status !== CommentStatus.NOT_DELETED) {
         if (!foundComment) {
           this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
@@ -134,6 +126,7 @@ export class CommentsReportService {
         targetUserId,
         commentId,
         commentStatus,
+        queryRunner,
       );
 
       // 변경된 내용이 없는 경우

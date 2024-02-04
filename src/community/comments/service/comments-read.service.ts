@@ -38,11 +38,6 @@ export class CommentsReadService {
     return comments;
   }
 
-  async getAllComments(): Promise<Comment[]> {
-    const found = this.commentRepository.getAllComments();
-    return found;
-  }
-
   // 해당 Board의 Comment 조회
   async getBoardComments(
     boardId: number,

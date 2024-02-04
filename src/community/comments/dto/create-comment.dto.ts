@@ -8,6 +8,8 @@ export class CreateCommentDto {
   @IsNotEmpty()
   content: string;
 
+  userId: string;
+
   anonymous_number: number;
 
   position: CommentPosition;
