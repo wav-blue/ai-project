@@ -30,25 +30,29 @@ export class CommentsService {
   }
 
   // 댓글 삭제 (status를 deleted로 변경)
-  async deleteComment(reqUserId: string, commentId: number) {
+  async deleteComment(userId: string, commentId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
     await queryRunner.startTransaction();
     try {
-      const foundComment = await this.commentRepository.checkComment(commentId);
+      const foundComment = await this.commentRepository.checkComment(
+        commentId,
+        queryRunner,
+      );
       if (!foundComment || foundComment.status != CommentStatus.NOT_DELETED) {
         // 이미 삭제됐거나 데이터베이스에서 찾을 수 없는 댓글
         throw new NotFoundException('댓글이 존재하지 않습니다.');
       }
-      if (foundComment.userId !== reqUserId) {
+      if (foundComment.userId !== userId) {
         this.logger.error(`삭제 권한이 없는 유저의 요청`);
         throw new ForbiddenException('삭제 권한이 없습니다.');
       }
       const deleteCommentResult = await this.commentRepository.deleteComment(
-        reqUserId,
+        userId,
         commentId,
         CommentStatus.DELETED,
+        queryRunner,
       );
 
       // 쿼리 수행 결과 확인 후, 수정사항이 없을 경우 예외 발생

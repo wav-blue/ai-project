@@ -50,7 +50,10 @@ export class CommentsReportService {
       const { commentId, reportUserId } = createCommentReportDto;
 
       // 신고된 Comment의 정보 조회
-      foundComment = await this.commentRepository.checkComment(commentId);
+      foundComment = await this.commentRepository.checkComment(
+        commentId,
+        queryRunner,
+      );
       if (!foundComment || foundComment.status !== CommentStatus.NOT_DELETED) {
         if (!foundComment) {
           this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
@@ -123,6 +126,7 @@ export class CommentsReportService {
         targetUserId,
         commentId,
         commentStatus,
+        queryRunner,
       );
 
       // 변경된 내용이 없는 경우

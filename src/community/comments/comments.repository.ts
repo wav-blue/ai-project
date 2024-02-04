@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/create-comment-report.dto';
@@ -13,14 +13,10 @@ import { QueryPageDto } from './dto/query-page.dto';
 
 @Injectable()
 export class CommentRepository {
-  private commentRepository: Repository<Comment>;
-  // private logger = new MyLogger(CommentRepository.name);
-
   constructor(
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.commentRepository = this.dataSource.getRepository(Comment);
     this.logger.setContext(CommentRepository.name);
   }
 
@@ -84,28 +80,16 @@ export class CommentRepository {
     return result;
   }
 
-  async getAllComments(): Promise<Comment[]> {
-    this.logger.log('Comment 조회 실행');
-    const found = this.commentRepository
-      .createQueryBuilder()
-      .select('comment')
-      .from(Comment, 'comment')
-      .getMany();
-
-    return found;
-  }
-
   async getAnonymousNumber(
-    user: string,
     createCommentDto: CreateCommentDto,
     queryRunner: QueryRunner,
   ): Promise<number> {
-    const { boardId } = createCommentDto;
+    const { userId, boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
       .select('DISTINCT `anonymous_number`', 'anonymous_number')
       .from(Comment, 'comment')
-      .where(`user_id = :user AND board_id = :boardId`, { user, boardId })
+      .where(`user_id = :userId AND board_id = :boardId`, { userId, boardId })
       .getRawMany();
 
     if (result.length === 0) {
@@ -131,8 +115,11 @@ export class CommentRepository {
     const { max } = result[0];
     return parseInt(max);
   }
-  async checkComment(commentId: number) {
-    const found = this.commentRepository
+  async checkComment(
+    commentId: number,
+    queryRunner: QueryRunner,
+  ): Promise<Comment> {
+    const found = queryRunner.manager
       .createQueryBuilder()
       .select('comment')
       .from(Comment, 'comment')
@@ -150,17 +137,6 @@ export class CommentRepository {
       .where('board.board_id = :boardId', {
         boardId,
       })
-      .getOne();
-
-    return found;
-  }
-
-  async getCommentById(commentId: number): Promise<Comment> {
-    const found = this.commentRepository
-      .createQueryBuilder()
-      .select('comments')
-      .from(Comment, 'comments')
-      .where('comments.comment_id = :commentId', { commentId })
       .getOne();
 
     return found;
@@ -289,11 +265,12 @@ export class CommentRepository {
     userId: string,
     commentId: number,
     deleteType: string,
+    queryRunner: QueryRunner,
   ): Promise<{ affected: number }> {
     try {
       const day = dayjs();
 
-      const result = await this.commentRepository
+      const result = await queryRunner.manager
         .createQueryBuilder()
         .update(Comment)
         .set({
