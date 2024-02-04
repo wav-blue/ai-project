@@ -1,7 +1,7 @@
 import * as dayjs from 'dayjs';
 
 // DTO의 날짜 관련 컬럼을 설정
-function setTimeColumn(dto: any) {
+function setTimeColumn(dto: any): any {
   const day = dayjs();
 
   dto.createdAt = day.format();
