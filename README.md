@@ -45,6 +45,11 @@ OpenAI 서비스를 이용한 인간성이 느껴지는 답변으로 연애의 �
 
    <img src="https://img.shields.io/badge/MySQL-5294E2?logo=MySQL&logoColor=white]"/> <img src="https://img.shields.io/badge/MongoDB-47A248?logo=MySQL&logoColor=white]"/> <img src="https://img.shields.io/badge/Amazon RDS-527FFF?logo=Amazon RDS&logoColor=white]"/> <img src="https://img.shields.io/badge/Amazon S3-569A31?logo=Amazon S3&logoColor=white]"/>
 
+#### 사용한 모델 및 데이터셋
+
+- 모델: https://huggingface.co/bert-base-multilingual-cased
+- 데이터셋: https://github.com/songys/Chatbot_data/tree/master
+
 ## 팀원 소개
 
 | 팀원   | 포지션              |
