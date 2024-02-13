@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.title-resizing {
+  width: 70%;
+  height: 70%;
+}
+
+.quarter-size {
+  width: 20%;
+  height: 20%;
+}

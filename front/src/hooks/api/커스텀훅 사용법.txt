@@ -1,0 +1,122 @@
+** reactQueryConfig 사용법 **
+
+0. useBaseQuery, useBaseMutation??
+- react-query의 useQuery, 그리고 useMutation 훅을 커스텀 훅으로 만들기 위한 커스텀 훅입니다.
+- 바로 커스텀 훅을 만들 경우 공통적인 설정 변경이 어렵기 때문에 axios config처럼 설정했다고 생각하시면 됩니다.
+
+1. useBaseQuery -> 서버 데이터 요청: get
+* 함수의 인자 
+- endpoint: string 값
+- queryKey: useQuery를 사용하기 위해 필수로 입력해야 하는 키입니다. 원래는 endpoint로 자동 생성하려했으나 endpoint가 겹칠 경우가 생길 것 같아 직접 입력으로 바꾸었습니다. 간단하게 문자열을 입력해주시면 됩니다.
+
+* return 값 
+- isLoading: 로딩 여부, 로딩 상황의 로직 처리를 위한 값 
+- error: 에러처리에 사용 
+- data: 담겨있는 데이터
+
+* <T> 이게 뭐죠?
+- useQuery<T>, Api.get<T>에서 모든 값을 받을 수 있게 any 타입을 설정했다고 생각하시면 됩니다. 요청마다 보내거나 받아오는 data의 타입이 다르기 때문에 설정했습니다. 이는 커스텀 훅을 생성할 때 
+
+2. useBaseMutation -> 서버 데이터 변경: post, put, delete
+* 함수의 인자 
+- (endpoint, bodyData, method, queryKey) 총 4가지의 인자가 있습니다. queryKey는 선택사항이고 나머지는 필수입니다.
+- endpoint: string 값
+- bodyData: api 명세서대로 타입 인터페이스를 생성하고 넣어주시면 됩니다.
+- method: 'post', 'put', 'delete' 중 하나를 선택해주시면 됩니다.
+- queryKey: api 호출 이후 자동으로 get요청을 하고 싶은 경우 넣어야 하는 useBaseQuery의 쿼리 키 입니다. 게시글 상세페이지에서 좋아요를 눌렀을 경우, 댓글의 좋아요를 눌렀을 경우처럼 post나 put 요청 이후 바로 get요청을 통해 데이터를 갱신해야 할 때 사용됩니다.
+
+* return 값 
+- isPending: 로딩 여부, 로딩 상황의 로직 처리를 위한 값. 이유는 모르겠지만 useMutation에는 isLoading 대신에 isPending을 사용합니다.
+- isSuccess: 성공 여부, api 성공 로직 처리를 위한 값입니다. 
+- error: 에러처리에 사용 
+- data: 담겨있는 데이터
+- mutate: handleSubmit()과 같이 이벤트와 연결된 함수 내부에서 mutation을 실행시키는 메서드입니다. 훅은 항상 컴포넌트의 최상위 레벨에서 사용되어야 하기에, 이 메서드를 사용해야만 다른 함수 내부에서 사용할 수 있습니다. 
+
+3. 커스텀 훅 생성 예시
+
+* useBaseMutation을 사용한 커스텀 훅
+export const useSendFirstMessage = (bodyData: SendingMessageType) => {
+  return useBaseMutation<ChatResponseType>('/chat/first', bodyData , 'post')
+}
+
+- 타입 설정: 
+`bodyData: SendingMessageType`: 보내야 하는 형식에 맞게 SendingMessageType을 설정했습니다.
+`useBaseMutation<ChatResponseType>`: api 요청의 결과로 받아올 데이터의 타입을 설정했습니다.
+
+- useBaseMutation에 넣은 인자: 경로, bodyData, method를 지정해주었습니다.
+bodyData는 실제 컴포넌트에서 사용할 때 넣을 수 있게 타입만 지정했습니다.
+
+4. 커스텀 훅 사용 예시
+- 위에서 생성한 useSendFirstMessage를 사용하는 예시입니다.
+- 전체 코드는 pages/chat/input에서 확인 가능합니다.
+
+(1) 일반적인 post 요청
+
+const firstMessage = useSendFirstMessage({question: userInput})
+  console.log(firstMessage)
+  
+  // 클릭 시 제출하는 함수 
+  const handleSubmit = async () => {
+    firstMessage.mutate() // Api 호출
+  }
+
+  // 로딩 시 처리할 로직
+  if(firstMessage.isPending) {
+    setLoading(true)
+  }
+
+  // 성공 시 처리할 로직
+  if(firstMessage.isSuccess && firstMessage.data) {
+    const apiRes = firstMessage.data;
+    const history = apiRes.response;
+    localStorage.setItem(`chat${history[0][0]}`, JSON.stringify(history));
+
+    const answer = history[1][1] || '...(고민을 다시 입력해보자.)'
+    dispatch(saveResult({ result : answer }))
+    setLoading(false);
+    router.push('/chat/result')
+  }
+
+  // 오류 시 처리할 로직
+  if(firstMessage.error) {
+    console.error('api 호출 오류', firstMessage.error);
+    setLoading(false);
+    setGptAnswer('무언가 오류가 있는 모양이군? 다시 시도해보게.');
+  }
+
+* 로딩 로직을 굳이 넣을 필요가 없는 경우라면? (ex: 게시글 작성, 댓글 작성)
+- gpt와 챗은 따로만든 로딩 페이지를 보여주기 때문에 로딩 로직을 따로 추가했지만 게시글 작성이나 댓글 작성과도 같은 post요청은 최상위 컴포넌트(_app.tsx)에서 공통적으로 로딩 화면을 추가할 예정이기에 따로 설정하지 않아도 됩니다.
+
+예시: 게시글 작성
+
+// 게시글 작성
+interface PostContentType {
+  title: string;
+  content: string; // 예시입니다
+  tag: string;
+}
+
+// hooks/board.ts
+export const usePostContent = (bodyData : PostContentType) => {
+  return useBaseMutation('/board', bodyData, 'post')
+}
+
+// 사용 예시: 작성페이지
+const postContent = usePostContent({title: '오늘 헤어졌어요', content: '으아아', tag: '이별'})
+
+// 게시글 post 요청
+const handleSubmit = async () => {
+  postContent.mutate()
+}
+
+// 성공 시 상세페이지로 이동
+if(postContent.isSuccess) {
+  // api 호출 결과에서 postId 저장하기
+  const postId = postContent.data.postId
+  router.push('/board/[postId]') // useRouter import
+}
+
+if(postContent.error) {
+  alert('게시글 등록에 실패했습니다.')
+  console.log(error)
+}
