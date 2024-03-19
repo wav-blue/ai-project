@@ -81,10 +81,10 @@ export class CommentRepository {
   }
 
   async getAnonymousNumber(
-    createCommentDto: CreateCommentDto,
+    boardId: number,
+    userId: string,
     queryRunner: QueryRunner,
   ): Promise<number> {
-    const { userId, boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
       .select('DISTINCT `anonymous_number`', 'anonymous_number')
@@ -100,10 +100,9 @@ export class CommentRepository {
   }
 
   async getNewAnonymousNumber(
-    createCommentDto: CreateCommentDto,
+    boardId: number,
     queryRunner: QueryRunner,
   ): Promise<number> {
-    const { boardId } = createCommentDto;
     const result = await queryRunner.manager
       .createQueryBuilder()
       .select('MAX(`anonymous_number`)', 'max')
@@ -222,6 +221,8 @@ export class CommentRepository {
 
   async createComment(
     createCommentDto: CreateCommentDto,
+    position,
+    anonymousNumber: number,
     queryRunner: QueryRunner,
   ): Promise<Comment> {
     const newComment = queryRunner.manager.create(Comment, {

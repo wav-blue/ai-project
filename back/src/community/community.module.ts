@@ -14,6 +14,7 @@ import { CommentsService } from './comments/service/comments.service';
 import { LoggerModule } from 'src/logger/logger.module';
 import { CommentsCreateService } from './comments/service/comments-create.service';
 import { AxiosRequestService } from './comments/service/axiosRequest.service';
+import { AnonymousNumberReadService } from './comments/service/anonymous-number-read.service';
 
 @Module({
   imports: [HttpModule, TypeOrmModule.forFeature([Board]), LoggerModule],
@@ -24,6 +25,7 @@ import { AxiosRequestService } from './comments/service/axiosRequest.service';
     CommentsCreateService,
     CommentsReadService,
     CommentsReportService,
+    AnonymousNumberReadService,
     BoardsRepository,
     CommentRepository,
     S3Service,
