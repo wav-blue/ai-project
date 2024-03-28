@@ -1,5 +1,4 @@
 import { IsNotEmpty } from 'class-validator';
-import { CommentPosition } from '../enum/CommentPosition.enum';
 
 export class CreateCommentDto {
   @IsNotEmpty()
@@ -9,8 +8,4 @@ export class CreateCommentDto {
   content: string;
 
   userId: string;
-
-  anonymous_number: number;
-
-  position: CommentPosition;
 }

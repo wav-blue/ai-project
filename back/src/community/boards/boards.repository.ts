@@ -270,7 +270,7 @@ export class BoardsRepository {
         .createQueryBuilder(Board, 'B')
         .withDeleted()
         .where('B.boardId = :boardId', { boardId })
-        .getOneOrFail();
+        .getOne();
 
       return result;
     } catch (err) {

@@ -1,4 +1,12 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { CommentPosition } from '../enum/CommentPosition.enum';
 import { CommentStatus } from '../enum/CommentStatus.enum';
 
@@ -13,26 +21,24 @@ export class Comment extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   userId: string;
 
-  // 해당 게시글에서 익명으로 부여되는 숫자 (ex. 익명3)
   @Column({ type: 'int' })
-  anonymous_number: number;
+  anonymousNumber: number;
 
   @Column({ type: 'text' })
   content: string;
 
-  // type: set?
   @Column({ type: 'enum', enum: CommentPosition })
   position: string;
 
   @Column({ type: 'enum', enum: CommentStatus })
   status: string;
 
-  @Column({ type: 'datetime' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @Column({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
   deletedAt: Date;
 }

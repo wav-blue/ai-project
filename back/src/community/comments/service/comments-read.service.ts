@@ -29,7 +29,7 @@ export class CommentsReadService {
     for (let i = 0; i < comments.length; i++) {
       delete comments[i].updatedAt;
       if (comments[i].status !== CommentStatus.NOT_DELETED) {
-        comments[i].anonymous_number = AnonymousNumberType.DELETED;
+        comments[i].anonymousNumber = AnonymousNumberType.DELETED;
         comments[i].content = '삭제된 댓글입니다.';
         comments[i].status = CommentStatus.DELETED;
         comments[i].position = 'deleted';

@@ -155,6 +155,10 @@ export class BoardsService {
         queryRunner,
       );
 
+      if (!result) {
+        throw new NotFoundException('게시물을 찾을 수 없습니다');
+      }
+
       const { status, deletedAt, ...normalBoard } = result;
       if (result.status !== 'normal') {
         return { status, deletedAt } as Board;
