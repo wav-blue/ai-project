@@ -10,6 +10,7 @@ import { CommentPositionCount } from './entity/count-comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import * as dayjs from 'dayjs';
 import { QueryPageDto } from './dto/query-page.dto';
+import { ReadNewCommentDto } from './dto/read-new-comment.dto';
 
 @Injectable()
 export class CommentRepository {
@@ -221,18 +222,20 @@ export class CommentRepository {
 
   async createComment(
     createCommentDto: CreateCommentDto,
-    position,
+    position: string,
     anonymousNumber: number,
     queryRunner: QueryRunner,
-  ): Promise<Comment> {
+  ): Promise<ReadNewCommentDto> {
     const newComment = queryRunner.manager.create(Comment, {
       ...createCommentDto,
+      position,
+      anonymousNumber,
       status: CommentStatus.NOT_DELETED,
       deletedAt: null,
     });
 
     const result = await queryRunner.manager.save(newComment);
-    return result;
+    return new ReadNewCommentDto(result);
   }
 
   async checkReportUser(
