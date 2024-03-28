@@ -13,11 +13,17 @@ import { CommentsReportService } from './comments/service/comments-report.servic
 import { CommentsService } from './comments/service/comments.service';
 import { LoggerModule } from 'src/logger/logger.module';
 import { CommentsCreateService } from './comments/service/comments-create.service';
-import { AxiosRequestService } from './comments/service/axiosRequest.service';
 import { AnonymousNumberReadService } from './comments/service/anonymous-number-read.service';
+import { AxiosModule } from 'src/axios/axios.module';
+import { PoistionAnalysisService } from './comments/service/position-analysis.service';
 
 @Module({
-  imports: [HttpModule, TypeOrmModule.forFeature([Board]), LoggerModule],
+  imports: [
+    HttpModule,
+    TypeOrmModule.forFeature([Board]),
+    LoggerModule,
+    AxiosModule,
+  ],
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,
@@ -25,11 +31,11 @@ import { AnonymousNumberReadService } from './comments/service/anonymous-number-
     CommentsCreateService,
     CommentsReadService,
     CommentsReportService,
+    PoistionAnalysisService,
     AnonymousNumberReadService,
     BoardsRepository,
     CommentRepository,
     S3Service,
-    AxiosRequestService,
   ],
 })
 export class CommunityModule {}

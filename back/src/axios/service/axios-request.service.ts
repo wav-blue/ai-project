@@ -3,8 +3,8 @@ import { AxiosError } from 'axios';
 import * as config from 'config';
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
-import { bytesToBase64 } from '../util/comment.util';
 import { MyLogger } from 'src/logger/logger.service';
+import { bytesToBase64 } from 'src/community/comments/util/comment.util';
 
 const flaskConfig = config.get('flask');
 
