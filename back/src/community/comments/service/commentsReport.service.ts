@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
-import { CreateCommentReportDto } from '.././dto/create-comment-report.dto';
-import { CommentStatus } from '.././enum/CommentStatus.enum';
+import { CreateCommentReportDto } from '.././dto/createCommentReport.dto';
+import { CommentStatus } from '.././enum/commentStatus.enum';
 import { Comment } from '.././entity/comments.entity';
-import { CommentPosition } from '.././enum/CommentPosition.enum';
+import { CommentPosition } from '.././enum/commentPosition.enum';
 import { MyLogger } from 'src/logger/logger.service';
 import { setTimeColumn } from '../util/commentData.util';
 

@@ -12,23 +12,21 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { CreateCommentDto } from './dto/create-comment.dto';
-import { CreateCommentReportDto } from './dto/create-comment-report.dto';
+import { CreateCommentDto } from './dto/createComment.dto';
+import { CreateCommentReportDto } from './dto/createCommentReport.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 import { Comment } from './entity/comments.entity';
 
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { CommentsService } from './service/comments.service';
-import { CommentsReadService } from './service/comments-read.service';
-import { CommentsReportService } from './service/comments-report.service';
+import { CommentsReadService } from './service/commentsRead.service';
+import { CommentsReportService } from './service/commentsReport.service';
 import { MyLogger } from 'src/logger/logger.service';
-import { QueryPageDto } from './dto/query-page.dto';
-import { CommentsCreateService } from './service/comments-create.service';
+import { QueryPageDto } from './dto/queryPage.dto';
+import { CommentsCreateService } from './service/commentsCreate.service';
 
 @Controller('comments')
 export class CommentsController {
-  // private logger = new MyLogger(CommentsController.name);
-
   constructor(
     private commentsService: CommentsService,
     private commentsReadService: CommentsReadService,

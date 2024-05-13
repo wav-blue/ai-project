@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
-import { DataSource, QueryRunner } from 'typeorm';
-import { AnonymousNumberType } from '.././enum/AnonymousNumberType.enum';
+import { QueryRunner } from 'typeorm';
+import { AnonymousNumberType } from '.././enum/anonymousNumberType.enum';
 import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
 
@@ -9,7 +9,6 @@ import { MyLogger } from 'src/logger/logger.service';
 export class AnonymousNumberReadService {
   constructor(
     private readonly commentRepository: CommentRepository,
-    private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
     this.logger.setContext(AnonymousNumberReadService.name);

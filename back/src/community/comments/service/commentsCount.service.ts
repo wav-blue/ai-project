@@ -7,21 +7,19 @@ import {
 import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { Comment } from '.././entity/comments.entity';
-import { CommentStatus } from '.././enum/CommentStatus.enum';
-import { AnonymousNumberType } from '.././enum/AnonymousNumberType.enum';
+import { CommentStatus } from '.././enum/commentStatus.enum';
+import { AnonymousNumberType } from '.././enum/anonymousNumberType.enum';
 import { MyLogger } from 'src/logger/logger.service';
-import { QueryPageDto } from '../dto/query-page.dto';
+import { QueryPageDto } from '../dto/queryPage.dto';
 
 @Injectable()
-export class CommentsReadService {
-  // private logger = new MyLogger(CommentsReadService.name);
-
+export class CommentsCountService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CommentsReadService.name);
+    this.logger.setContext(CommentsCountService.name);
   }
 
   // 삭제된 데이터의 정보를 숨김

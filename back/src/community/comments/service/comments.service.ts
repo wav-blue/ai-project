@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
-import { CommentStatus } from '.././enum/CommentStatus.enum';
-import { CommentPosition } from '.././enum/CommentPosition.enum';
+import { CommentStatus } from '.././enum/commentStatus.enum';
+import { CommentPosition } from '.././enum/commentPosition.enum';
 import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()

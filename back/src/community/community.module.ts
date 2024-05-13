@@ -8,14 +8,13 @@ import { BoardsRepository } from './boards/boards.repository';
 import { CommentRepository } from './comments/comments.repository';
 import { S3Service } from '../common/s3.presigned';
 import { HttpModule } from '@nestjs/axios';
-import { CommentsReadService } from './comments/service/comments-read.service';
-import { CommentsReportService } from './comments/service/comments-report.service';
+import { CommentsReadService } from './comments/service/commentsRead.service';
+import { CommentsReportService } from './comments/service/commentsReport.service';
 import { CommentsService } from './comments/service/comments.service';
 import { LoggerModule } from 'src/logger/logger.module';
-import { CommentsCreateService } from './comments/service/comments-create.service';
-import { AnonymousNumberReadService } from './comments/service/anonymous-number-read.service';
+import { CommentsCreateService } from './comments/service/commentsCreate.service';
+import { AnonymousNumberReadService } from './comments/service/anonymousNumberRead.service';
 import { AxiosModule } from 'src/axios/axios.module';
-import { PoistionAnalysisService } from './comments/service/position-analysis.service';
 
 @Module({
   imports: [
@@ -31,7 +30,6 @@ import { PoistionAnalysisService } from './comments/service/position-analysis.se
     CommentsCreateService,
     CommentsReadService,
     CommentsReportService,
-    PoistionAnalysisService,
     AnonymousNumberReadService,
     BoardsRepository,
     CommentRepository,
