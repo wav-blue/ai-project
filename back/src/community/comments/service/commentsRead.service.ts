@@ -72,19 +72,17 @@ export class CommentsReadService {
         queryRunner,
       );
 
-      // 댓글 갯수 조회
-      response.positiveCount =
-        await this.commentRepository.countPositiveCommentsByBoardId(
+      // Group By 이용
+      const countResult =
+        await this.commentRepository.countCommentGroupByPositionByBoardId(
           boardId,
           queryRunner,
         );
 
-      response.count = await this.commentRepository.countCommentsByBoard(
-        boardId,
-        queryRunner,
-      );
+      response.positiveCount = countResult.positiveCount;
+      response.negativeCount = countResult.negativeCount;
 
-      response.negativeCount = response.count - response.positiveCount;
+      response.count = response.positiveCount + response.negativeCount;
 
       await queryRunner.commitTransaction();
     } catch (err) {

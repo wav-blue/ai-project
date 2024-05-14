@@ -84,8 +84,6 @@ export class CommentRepository {
     queryRunner: QueryRunner,
   ): Promise<Comment[]> {
     const { page, limit } = queryPageDto;
-    // this.logger.log(`${boardId}번 게시글 댓글 조회`);
-    // this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
     const previous = (page - 1) * limit;
     const comments = await queryRunner.manager
       .createQueryBuilder()
@@ -98,7 +96,6 @@ export class CommentRepository {
       .take(limit)
       .getMany();
 
-    // this.logger.log(`가져온 길이 : ${comments.length}`);
     return comments;
   }
 
@@ -123,46 +120,31 @@ export class CommentRepository {
 
     return comments;
   }
-  async countCommentsByBoard(
+
+  async countCommentGroupByPositionByBoardId(
     boardId: number,
     queryRunner: QueryRunner,
-  ): Promise<number> {
+  ): Promise<{ positiveCount: number; negativeCount: number }> {
     const result = await queryRunner.manager
       .createQueryBuilder()
-      .select('COUNT(`comment_id`)', 'count')
+      .select('comment.position', 'group')
+      .addSelect('COUNT(*)', 'count')
       .from(Comment, 'comment')
-      .where(`comment.board_id = :boardId`, {
-        boardId,
-      })
-      .getRawOne();
-    const total = result.count;
-    return total;
-  }
+      .groupBy('comment.position')
+      .where(`comment.board_id = :boardId`, { boardId })
+      .getRawMany();
 
-  async countPositiveCommentsByBoardId(boardId, queryRunner): Promise<number> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select('COUNT(`comment_id`)', 'count')
-      .from(Comment, 'comment')
-      .where(`comment.board_id = :boardId AND comment.position='positive'`, {
-        boardId,
-      })
-      .getRawOne();
-    const total = result.count;
-    return total;
-  }
+    const countJson = { positiveCount: 0, negativeCount: 0 };
 
-  async countNegativeCommentsByBoardId(boardId, queryRunner): Promise<number> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select('COUNT(`comment_id`)', 'count')
-      .from(Comment, 'comment')
-      .where(`comment.board_id = :boardId AND comment.position='negative'`, {
-        boardId,
-      })
-      .getRawOne();
-    const total = result.count;
-    return total;
+    if (result[0].group == 'positive') {
+      countJson.positiveCount = parseInt(result[0].count);
+      countJson.negativeCount = parseInt(result[1].count);
+    } else {
+      countJson.positiveCount = parseInt(result[1].count);
+      countJson.negativeCount = parseInt(result[0].count);
+    }
+
+    return countJson;
   }
 
   async countCommentsByUser(
@@ -199,6 +181,7 @@ export class CommentRepository {
     return new ReadNewCommentDto(result);
   }
 
+  // 신고 내역이 있는 유저인지 확인
   async checkReportUser(
     commentId: number,
     queryRunner: QueryRunner,
