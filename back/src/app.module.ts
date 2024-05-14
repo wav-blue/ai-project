@@ -12,6 +12,7 @@ import { ExceptionToHttpExceptionFilter } from './common/exception-filter';
 import { ChatModule } from './chat/chat.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { LoggerModule } from './logger/logger.module';
+import { AxiosModule } from './axios/axios.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { LoggerModule } from './logger/logger.module';
     OrderModule,
     PurchaseModule,
     LoggerModule,
+    AxiosModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ExceptionToHttpExceptionFilter },
