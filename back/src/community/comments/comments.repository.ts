@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, QueryRunner } from 'typeorm';
+import { QueryRunner } from 'typeorm';
 import { CreateCommentDto } from './dto/createComment.dto';
 import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/createCommentReport.dto';
 import { CommentStatus } from './enum/commentStatus.enum';
 import { CommentReport } from './entity/reportComment.entity';
 import { Comment } from './entity/comments.entity';
-import { CommentPositionCount } from './entity/count-comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import * as dayjs from 'dayjs';
 import { QueryPageDto } from './dto/queryPage.dto';
@@ -14,71 +13,8 @@ import { ReadNewCommentDto } from './dto/readNewComment.dto';
 
 @Injectable()
 export class CommentRepository {
-  constructor(
-    private readonly dataSource: DataSource,
-    private logger: MyLogger,
-  ) {
+  constructor(private logger: MyLogger) {
     this.logger.setContext(CommentRepository.name);
-  }
-
-  async checkCommentCount(
-    boardId: number,
-    queryRunner: QueryRunner,
-  ): Promise<CommentPositionCount> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select(
-        'count.positiveCount AS positiveCount, count.negativeCount AS negativeCount',
-      )
-      .from(CommentPositionCount, 'count')
-      .where(`count.board_id = :boardId`, { boardId })
-      .getRawOne();
-
-    return result;
-  }
-
-  async createCommentCount(
-    boardId: number,
-    queryRunner: QueryRunner,
-  ): Promise<CommentPositionCount> {
-    const newCommentPositionCount = queryRunner.manager.create(
-      CommentPositionCount,
-      {
-        boardId,
-      },
-    );
-
-    const result = await queryRunner.manager.save(newCommentPositionCount);
-    return result;
-  }
-
-  async updateCommentCount(
-    boardId: number,
-    foundCountPosition: { positiveCount: number; negativeCount: number },
-    queryRunner: QueryRunner,
-  ) {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .update(CommentPositionCount)
-      .set(foundCountPosition)
-      .where(`board_id = :boardId`, { boardId })
-      .execute();
-    return result;
-  }
-
-  async getCommentCountByBoardId(
-    boardId: number,
-    queryRunner: QueryRunner,
-  ): Promise<{ positiveCount: number; negativeCount: number }> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select(
-        'count.positiveCount AS positiveCount, count.negativeCount AS negativeCount',
-      )
-      .from(CommentPositionCount, 'count')
-      .where('board_id = :boardId', { boardId })
-      .getRawOne();
-    return result;
   }
 
   async getAnonymousNumber(
@@ -148,8 +84,8 @@ export class CommentRepository {
     queryRunner: QueryRunner,
   ): Promise<Comment[]> {
     const { page, limit } = queryPageDto;
-    this.logger.log(`${boardId}번 게시글 댓글 조회`);
-    this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
+    // this.logger.log(`${boardId}번 게시글 댓글 조회`);
+    // this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
     const previous = (page - 1) * limit;
     const comments = await queryRunner.manager
       .createQueryBuilder()
@@ -162,7 +98,7 @@ export class CommentRepository {
       .take(limit)
       .getMany();
 
-    this.logger.log(`가져온 길이 : ${comments.length}`);
+    // this.logger.log(`가져온 길이 : ${comments.length}`);
     return comments;
   }
 
@@ -172,7 +108,6 @@ export class CommentRepository {
     queryRunner: QueryRunner,
   ): Promise<Comment[]> {
     const { page, limit } = queryPageDto;
-    this.logger.log(`설정된 page: ${page} / limit: ${limit}`);
 
     const previous = (page - 1) * limit;
     const comments = await queryRunner.manager
@@ -186,7 +121,6 @@ export class CommentRepository {
       .take(limit)
       .getMany();
 
-    this.logger.log(`조회된 comments의 length: ${comments.length}`);
     return comments;
   }
   async countCommentsByBoard(
@@ -204,6 +138,33 @@ export class CommentRepository {
     const total = result.count;
     return total;
   }
+
+  async countPositiveCommentsByBoardId(boardId, queryRunner): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(`comment_id`)', 'count')
+      .from(Comment, 'comment')
+      .where(`comment.board_id = :boardId AND comment.position='positive'`, {
+        boardId,
+      })
+      .getRawOne();
+    const total = result.count;
+    return total;
+  }
+
+  async countNegativeCommentsByBoardId(boardId, queryRunner): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(`comment_id`)', 'count')
+      .from(Comment, 'comment')
+      .where(`comment.board_id = :boardId AND comment.position='negative'`, {
+        boardId,
+      })
+      .getRawOne();
+    const total = result.count;
+    return total;
+  }
+
   async countCommentsByUser(
     userId: string,
     queryRunner: QueryRunner,

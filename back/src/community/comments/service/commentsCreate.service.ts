@@ -65,6 +65,7 @@ export class CommentsCreateService {
 
       // 댓글 내용 기반으로 Position 결정
       const position = await this.analysisPosition(createCommentDto.content);
+
       // 익명 번호 anonymousNumber 결정
       const anonymousNumber =
         await this.anonymousNumberReadService.readAnonymousNumber(

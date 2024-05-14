@@ -2,28 +2,17 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from '.././dto/createCommentReport.dto';
 import { CommentStatus } from '.././enum/commentStatus.enum';
 import { Comment } from '.././entity/comments.entity';
-import { CommentPosition } from '.././enum/commentPosition.enum';
 import { MyLogger } from 'src/logger/logger.service';
 import { setTimeColumn } from '../util/commentData.util';
 
 @Injectable()
 export class CommentsReportService {
-  private checkAffectedDB(queryAffected: number) {
-    if (queryAffected === 0) {
-      this.logger.error('DB에서 업데이트 된 내용이 존재하지 않습니다.');
-      throw new ServiceUnavailableException(
-        '알 수 없는 이유로 요청을 완료하지 못했습니다.',
-      );
-    }
-  }
-
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
@@ -66,10 +55,8 @@ export class CommentsReportService {
       }
 
       if (foundComment.userId === reportUserId) {
-        this.logger.warn(
-          `자신의 댓글은 신고할 수 없습니다! 개발 편의를 위해 에러를 주석 처리`,
-        );
-        //   throw new ConflictException('잘못된 신고 요청입니다.');
+        this.logger.warn(`자신의 댓글은 신고할 수 없습니다.`);
+        throw new ConflictException('잘못된 신고 요청입니다.');
       }
 
       // 댓글 작성자의 id 저장
@@ -122,38 +109,12 @@ export class CommentsReportService {
       const { targetUserId, commentId } = createCommentReportDto;
       commentStatus = CommentStatus.REPORTED;
 
-      const updateCommentResult = await this.commentRepository.deleteComment(
+      await this.commentRepository.deleteComment(
         targetUserId,
         commentId,
         commentStatus,
         queryRunner,
       );
-
-      // 변경된 내용이 없는 경우
-      this.checkAffectedDB(updateCommentResult.affected);
-
-      // 긍부정 댓글 카운팅 -1
-      const { boardId, position } = foundComment;
-
-      const foundCountPosition = await this.commentRepository.checkCommentCount(
-        boardId,
-        QueryRunnerForDelete,
-      );
-
-      this.logger.debug(`댓글이 신고되어 ${position}Count 감소`);
-      if (position === CommentPosition.POSITIVE)
-        foundCountPosition.positiveCount -= 1;
-      if (position === CommentPosition.NEGATIVE)
-        foundCountPosition.negativeCount -= 1;
-      const updateCountResult = await this.commentRepository.updateCommentCount(
-        boardId,
-        foundCountPosition,
-        QueryRunnerForDelete,
-      );
-
-      // 변경된 내용이 없는 경우
-      this.checkAffectedDB(updateCountResult.affected);
-
       await QueryRunnerForDelete.commitTransaction();
     } catch (err) {
       await QueryRunnerForDelete.rollbackTransaction();

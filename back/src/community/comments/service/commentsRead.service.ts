@@ -47,8 +47,9 @@ export class CommentsReadService {
     negativeCount: number;
   }> {
     let results = null;
-    let amount = 0;
-    let positionCount = {
+    const response = {
+      count: 0,
+      list: null,
       positiveCount: 0,
       negativeCount: 0,
     };
@@ -71,19 +72,19 @@ export class CommentsReadService {
         queryRunner,
       );
 
-      amount = await this.commentRepository.countCommentsByBoard(
-        boardId,
-        queryRunner,
-      );
-      // positive, negative 갯수 카운팅
-      const foundPositionCount =
-        await this.commentRepository.getCommentCountByBoardId(
+      // 댓글 갯수 조회
+      response.positiveCount =
+        await this.commentRepository.countPositiveCommentsByBoardId(
           boardId,
           queryRunner,
         );
-      if (foundPositionCount) {
-        positionCount = foundPositionCount;
-      }
+
+      response.count = await this.commentRepository.countCommentsByBoard(
+        boardId,
+        queryRunner,
+      );
+
+      response.negativeCount = response.count - response.positiveCount;
 
       await queryRunner.commitTransaction();
     } catch (err) {
@@ -101,12 +102,9 @@ export class CommentsReadService {
     try {
       // 삭제된 댓글은 자세한 정보 제거
       results = this.parseDeletedComment(results);
+      response.list = results;
 
-      return {
-        count: amount,
-        list: results,
-        ...positionCount,
-      };
+      return response;
     } catch (err) {
       this.logger.error('삭제된 댓글의 정보 제거 중 오류 발생');
       throw new ConflictException(
