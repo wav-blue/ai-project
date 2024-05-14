@@ -288,7 +288,6 @@ export class BoardsRepository {
         .set({ views: () => 'views + 1' })
         .where('boardId = :boardId', { boardId })
         .execute();
-      console.log(result);
       return result.raw;
     } catch (err) {
       console.error('게시물 조회수 수정 중 뭔가 잘못됨:', err.message);

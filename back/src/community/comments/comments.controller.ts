@@ -18,17 +18,17 @@ import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 import { Comment } from './entity/comments.entity';
 
 import { GetUser } from 'src/common/decorator/get-user.decorator';
-import { CommentsService } from './service/comments.service';
 import { CommentsReadService } from './service/commentsRead.service';
 import { CommentsReportService } from './service/commentsReport.service';
 import { MyLogger } from 'src/logger/logger.service';
 import { QueryPageDto } from './dto/queryPage.dto';
 import { CommentsCreateService } from './service/commentsCreate.service';
+import { CommentsDeleteService } from './service/commentsDelete.service';
 
 @Controller('comments')
 export class CommentsController {
   constructor(
-    private commentsService: CommentsService,
+    private commentsDeleteService: CommentsDeleteService,
     private commentsReadService: CommentsReadService,
     private commentsCreateService: CommentsCreateService,
     private commentsReportService: CommentsReportService,
@@ -63,7 +63,7 @@ export class CommentsController {
     positiveCount: number;
     negativeCount: number;
   }> {
-    this.logger.log(`${boardId}번 게시글의 댓글 조회!`);
+    // this.logger.log(`${boardId}번 게시글의 댓글 조회!`);
 
     const comments = await this.commentsReadService.getBoardComments(
       boardId,
@@ -80,8 +80,6 @@ export class CommentsController {
     @GetUser() userId: string,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    this.logger.log(`댓글 작성 요청!\n현재 설정된 userId: ${userId}`);
-
     createCommentDto.userId = userId;
 
     const result = this.commentsCreateService.createComment(createCommentDto);
@@ -98,7 +96,7 @@ export class CommentsController {
     @Param('commentId', ParseIntPipe) commentId: number,
   ) {
     this.logger.log(`${commentId}번 댓글 삭제:: 성공 시 응답코드 204`);
-    const result = this.commentsService.deleteComment(userId, commentId);
+    const result = this.commentsDeleteService.deleteComment(userId, commentId);
     return result;
   }
 

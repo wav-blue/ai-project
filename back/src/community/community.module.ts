@@ -10,11 +10,11 @@ import { S3Service } from '../common/s3.presigned';
 import { HttpModule } from '@nestjs/axios';
 import { CommentsReadService } from './comments/service/commentsRead.service';
 import { CommentsReportService } from './comments/service/commentsReport.service';
-import { CommentsService } from './comments/service/comments.service';
 import { LoggerModule } from 'src/logger/logger.module';
 import { CommentsCreateService } from './comments/service/commentsCreate.service';
 import { AnonymousNumberReadService } from './comments/service/anonymousNumberRead.service';
 import { AxiosModule } from 'src/axios/axios.module';
+import { CommentsDeleteService } from './comments/service/commentsDelete.service';
 
 @Module({
   imports: [
@@ -26,7 +26,7 @@ import { AxiosModule } from 'src/axios/axios.module';
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,
-    CommentsService,
+    CommentsDeleteService,
     CommentsCreateService,
     CommentsReadService,
     CommentsReportService,
