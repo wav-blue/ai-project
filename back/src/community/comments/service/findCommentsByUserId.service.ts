@@ -13,13 +13,13 @@ import { MyLogger } from 'src/logger/logger.service';
 import { QueryPageDto } from '../dto/queryPage.dto';
 
 @Injectable()
-export class CommentsReadService {
+export class FindCommentsByUserIdService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CommentsReadService.name);
+    this.logger.setContext(FindCommentsByUserIdService.name);
   }
 
   // 삭제된 데이터의 정보를 숨김
@@ -36,83 +36,8 @@ export class CommentsReadService {
     return comments;
   }
 
-  // 해당 Board의 Comment 조회
-  async getBoardComments(
-    boardId: number,
-    queryPageDto: QueryPageDto,
-  ): Promise<{
-    count: number;
-    list: Comment[];
-    positiveCount: number;
-    negativeCount: number;
-  }> {
-    let results = null;
-    const response = {
-      count: 0,
-      list: null,
-      positiveCount: 0,
-      negativeCount: 0,
-    };
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-
-    await queryRunner.startTransaction();
-    try {
-      const found = await this.commentRepository.checkBoard(
-        boardId,
-        queryRunner,
-      );
-      if (!found) {
-        throw new NotFoundException('해당하는 게시글이 없습니다.');
-      }
-
-      results = await this.commentRepository.getBoardComments(
-        boardId,
-        queryPageDto,
-        queryRunner,
-      );
-
-      // Group By 이용
-      const countResult =
-        await this.commentRepository.countCommentGroupByPositionByBoardId(
-          boardId,
-          queryRunner,
-        );
-
-      response.positiveCount = countResult.positiveCount;
-      response.negativeCount = countResult.negativeCount;
-
-      response.count = response.positiveCount + response.negativeCount;
-
-      await queryRunner.commitTransaction();
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      if (err instanceof NotFoundException) {
-        throw new NotFoundException(err.message);
-      } else if (err instanceof ConflictException) {
-        throw new ConflictException(err.message);
-      } else {
-        throw new InternalServerErrorException(err.message);
-      }
-    } finally {
-      await queryRunner.release();
-    }
-    try {
-      // 삭제된 댓글은 자세한 정보 제거
-      results = this.parseDeletedComment(results);
-      response.list = results;
-
-      return response;
-    } catch (err) {
-      this.logger.error('삭제된 댓글의 정보 제거 중 오류 발생');
-      throw new ConflictException(
-        '알 수 없는 이유로 요청을 완료하지 못했습니다.',
-      );
-    }
-  }
-
   // 로그인한 유저가 작성한 Comment 조회
-  async getMyComments(
+  async getCommentsByUserId(
     userId: string,
     queryPageDto: QueryPageDto,
   ): Promise<{ count: number; list: Comment[] }> {

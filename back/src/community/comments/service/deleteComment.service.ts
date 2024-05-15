@@ -10,13 +10,13 @@ import { CommentStatus } from '.././enum/commentStatus.enum';
 import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
-export class CommentsDeleteService {
+export class DeleteCommentService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CommentsDeleteService.name);
+    this.logger.setContext(DeleteCommentService.name);
   }
 
   // 댓글 삭제 (status를 deleted로 변경)

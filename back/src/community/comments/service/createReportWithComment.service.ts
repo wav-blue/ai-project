@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from '.././dto/createCommentReport.dto';
@@ -10,15 +6,17 @@ import { CommentStatus } from '.././enum/commentStatus.enum';
 import { Comment } from '.././entity/comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import { setTimeColumn } from '../util/commentData.util';
+import { FindCommentService } from './findComment.service';
 
 @Injectable()
-export class CommentsReportService {
+export class CreateReportWithCommentService {
   constructor(
     private readonly commentRepository: CommentRepository,
+    private readonly findCommentService: FindCommentService,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CommentsReportService.name);
+    this.logger.setContext(CreateReportWithCommentService.name);
   }
 
   // 신고 내역 작성 && 신고 누적 시 삭제
@@ -39,20 +37,11 @@ export class CommentsReportService {
       const { commentId, reportUserId } = createCommentReportDto;
 
       // 신고된 Comment의 정보 조회
-      foundComment = await this.commentRepository.checkComment(
-        commentId,
-        queryRunner,
-      );
-      if (!foundComment || foundComment.status !== CommentStatus.NOT_DELETED) {
-        if (!foundComment) {
-          this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
-        } else {
-          this.logger.error(
-            `댓글의 상태가 ${foundComment.status}이므로 신고할 수 없음`,
-          );
-        }
-        throw new NotFoundException('이미 삭제된 댓글입니다.');
-      }
+      foundComment =
+        await this.findCommentService.getCommentByCommentIdWithQueryRunner(
+          commentId,
+          queryRunner,
+        );
 
       if (foundComment.userId === reportUserId) {
         this.logger.warn(`자신의 댓글은 신고할 수 없습니다.`);

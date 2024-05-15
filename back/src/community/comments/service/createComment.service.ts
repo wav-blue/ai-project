@@ -4,23 +4,23 @@ import { CreateCommentDto } from '.././dto/createComment.dto';
 import { DataSource } from 'typeorm';
 import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
-import { AnonymousNumberReadService } from './anonymousNumberRead.service';
 import { BoardsService } from 'src/community/boards/boards.service';
 import { randomPosition } from '../util/comment.util';
 import { AxiosRequestService } from 'src/axios/service/axios-request.service';
 import { ReadNewCommentDto } from '../dto/readNewComment.dto';
+import { FindAnonymousNumberService } from './findAnonymousNumber.service';
 
 @Injectable()
-export class CommentsCreateService {
+export class CreateCommentService {
   constructor(
     private readonly boardsService: BoardsService,
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private readonly axiosRequestService: AxiosRequestService,
-    private readonly anonymousNumberReadService: AnonymousNumberReadService,
+    private readonly findAnonymousNumberService: FindAnonymousNumberService,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CommentsCreateService.name);
+    this.logger.setContext(CreateCommentService.name);
   }
 
   // 댓글을 생성할 때 postion을 설정
@@ -68,7 +68,7 @@ export class CommentsCreateService {
 
       // 익명 번호 anonymousNumber 결정
       const anonymousNumber =
-        await this.anonymousNumberReadService.readAnonymousNumber(
+        await this.findAnonymousNumberService.readAnonymousNumber(
           createCommentDto.boardId,
           createCommentDto.userId,
           foundBoard,

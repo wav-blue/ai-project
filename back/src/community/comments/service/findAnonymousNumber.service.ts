@@ -6,12 +6,12 @@ import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
 
 @Injectable()
-export class AnonymousNumberReadService {
+export class FindAnonymousNumberService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(AnonymousNumberReadService.name);
+    this.logger.setContext(FindAnonymousNumberService.name);
   }
 
   // 해당 게시글, 해당 유저의 익명번호를 조회

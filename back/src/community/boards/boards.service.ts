@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { BoardsRepository } from './boards.repository';
 import { S3Service } from '../../common/s3.presigned';
 import { Board } from './boards.entity';
@@ -139,6 +139,29 @@ export class BoardsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async readBoardWithQueryRunner(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<Board> {
+    const result = await this.boardsRepository.selectBoard(
+      boardId,
+      queryRunner,
+    );
+
+    if (!result) {
+      throw new NotFoundException('게시물을 찾을 수 없습니다');
+    }
+
+    const { status, deletedAt, ...normalBoard } = result;
+    if (result.status !== 'normal') {
+      return { status, deletedAt } as Board;
+    }
+    // 삭제 | 신고되지 않은 정상 게시물일 경우
+    await this.boardsRepository.updateView(boardId, queryRunner); //조회수 올림
+    normalBoard.views += 1; //보내주는 녀석엔 이미 가져왔던 결과에 조회수 1 반영.
+    return normalBoard as Board;
   }
 
   //스테이터스 먼저 가져가서 읽기 처리  //with delete 적용
