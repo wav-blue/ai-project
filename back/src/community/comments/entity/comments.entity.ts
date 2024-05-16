@@ -2,7 +2,6 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -39,6 +38,6 @@ export class Comment extends BaseEntity {
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   deletedAt: Date;
 }

@@ -8,13 +8,16 @@ import { BoardsRepository } from './boards/boards.repository';
 import { CommentRepository } from './comments/comments.repository';
 import { S3Service } from '../common/s3.presigned';
 import { HttpModule } from '@nestjs/axios';
-import { CommentsReadService } from './comments/service/commentsRead.service';
-import { CommentsReportService } from './comments/service/commentsReport.service';
 import { LoggerModule } from 'src/logger/logger.module';
-import { CommentsCreateService } from './comments/service/commentsCreate.service';
-import { AnonymousNumberReadService } from './comments/service/anonymousNumberRead.service';
 import { AxiosModule } from 'src/axios/axios.module';
-import { CommentsDeleteService } from './comments/service/commentsDelete.service';
+import { CreateCommentService } from './comments/service/createComment.service';
+import { FindAnonymousNumberService } from './comments/service/findAnonymousNumber.service';
+import { DeleteCommentService } from './comments/service/deleteComment.service';
+import { FindCommentsByBoardIdService } from './comments/service/findCommentsByBoardId.service';
+import { CreateReportWithCommentService } from './comments/service/createReportWithComment.service';
+import { FindCommentService } from './comments/service/findComment.service';
+import { FindCommentsByUserIdService } from './comments/service/findCommentsByUserId.service';
+import { CountCommentsByBoardIdService } from './comments/service/countCommentsByBoardId.service';
 
 @Module({
   imports: [
@@ -26,11 +29,14 @@ import { CommentsDeleteService } from './comments/service/commentsDelete.service
   controllers: [BoardsController, CommentsController],
   providers: [
     BoardsService,
-    CommentsDeleteService,
-    CommentsCreateService,
-    CommentsReadService,
-    CommentsReportService,
-    AnonymousNumberReadService,
+    CreateCommentService,
+    DeleteCommentService,
+    FindCommentsByBoardIdService,
+    FindCommentsByUserIdService,
+    FindCommentService,
+    FindAnonymousNumberService,
+    CountCommentsByBoardIdService,
+    CreateReportWithCommentService,
     BoardsRepository,
     CommentRepository,
     S3Service,

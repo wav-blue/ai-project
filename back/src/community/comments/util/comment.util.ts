@@ -1,4 +1,7 @@
+import { Comment } from '../entity/comments.entity';
+import { AnonymousNumberType } from '../enum/anonymousNumberType.enum';
 import { CommentPosition } from '../enum/commentPosition.enum';
+import { CommentStatus } from '../enum/commentStatus.enum';
 
 // 랜덤으로 Position 결정
 function randomPosition(): CommentPosition {
@@ -15,4 +18,17 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binString);
 }
 
-export { randomPosition, bytesToBase64 };
+function parseDeletedComment(comments: Comment[]): Comment[] {
+  for (let i = 0; i < comments.length; i++) {
+    delete comments[i].updatedAt;
+    if (comments[i].status !== CommentStatus.NOT_DELETED) {
+      comments[i].anonymousNumber = AnonymousNumberType.DELETED;
+      comments[i].content = '삭제된 댓글입니다.';
+      comments[i].status = CommentStatus.DELETED;
+      comments[i].position = 'deleted';
+    }
+  }
+  return comments;
+}
+
+export { randomPosition, bytesToBase64, parseDeletedComment };
