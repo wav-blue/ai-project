@@ -15,7 +15,6 @@ import {
 import { CreateCommentDto } from './dto/createComment.dto';
 import { CreateCommentReportDto } from './dto/createCommentReport.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
-import { Comment } from './entity/comments.entity';
 
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { MyLogger } from 'src/logger/logger.service';
@@ -26,6 +25,7 @@ import { DeleteCommentService } from './service/deleteComment.service';
 import { FindCommentsByUserIdService } from './service/findCommentsByUserId.service';
 import { CreateReportWithCommentService } from './service/createReportWithComment.service';
 import { ReadCommentsByBoardIdDto } from './dto/readCommentsByBoardId.dto';
+import { ReadCommentsByUserIdDto } from './dto/readCommentsByUserId.dto';
 
 @Controller('comments')
 export class CommentsController {
@@ -46,8 +46,7 @@ export class CommentsController {
   getMyComments(
     @GetUser() userId: string,
     @Query() queryPageDto: QueryPageDto,
-  ): Promise<{ count: number; list: Comment[] }> {
-    this.logger.log(`현재 설정된 userId: ${userId}`);
+  ): Promise<ReadCommentsByUserIdDto> {
     const comments = this.findCommentsByUserIdService.getCommentsByUserId(
       userId,
       queryPageDto,
@@ -61,8 +60,6 @@ export class CommentsController {
     @Param('boardId', ParseIntPipe) boardId: number,
     @Query() queryPageDto: QueryPageDto,
   ): Promise<ReadCommentsByBoardIdDto> {
-    // this.logger.log(`${boardId}번 게시글의 댓글 조회!`);
-
     const comments =
       await this.findCommentsByBoardIdService.getCommentsByBoardId(
         boardId,
@@ -107,7 +104,7 @@ export class CommentsController {
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {
     this.logger.log(
-      `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수!`,
+      `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수`,
     );
 
     createCommentReportDto.reportUserId = reportUserId;

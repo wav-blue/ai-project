@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { CreateCommentDto } from './dto/createComment.dto';
-import { Board } from '../boards/boards.entity';
 import { CreateCommentReportDto } from './dto/createCommentReport.dto';
 import { CommentStatus } from './enum/commentStatus.enum';
 import { CommentReport } from './entity/reportComment.entity';
@@ -65,19 +64,6 @@ export class CommentRepository {
     return found;
   }
 
-  async checkBoard(boardId: number, queryRunner: QueryRunner): Promise<Board> {
-    const found = await queryRunner.manager
-      .createQueryBuilder()
-      .select('board')
-      .from(Board, 'board')
-      .where('board.board_id = :boardId', {
-        boardId,
-      })
-      .getOne();
-
-    return found;
-  }
-
   async getBoardComments(
     boardId: number,
     queryPageDto: QueryPageDto,
@@ -121,30 +107,32 @@ export class CommentRepository {
     return comments;
   }
 
-  async countCommentGroupByPositionByBoardId(
+  async countCommentByBoardId(
     boardId: number,
     queryRunner: QueryRunner,
-  ): Promise<{ positiveCount: number; negativeCount: number }> {
+  ): Promise<number> {
     const result = await queryRunner.manager
       .createQueryBuilder()
-      .select('comment.position', 'group')
-      .addSelect('COUNT(*)', 'count')
+      .select('COUNT(*)')
       .from(Comment, 'comment')
-      .groupBy('comment.position')
       .where(`comment.board_id = :boardId`, { boardId })
-      .getRawMany();
+      .getRawOne();
 
-    const countJson = { positiveCount: 0, negativeCount: 0 };
+    return parseInt(result['COUNT(*)']);
+  }
 
-    if (result[0].group == 'positive') {
-      countJson.positiveCount = parseInt(result[0].count);
-      countJson.negativeCount = parseInt(result[1].count);
-    } else {
-      countJson.positiveCount = parseInt(result[1].count);
-      countJson.negativeCount = parseInt(result[0].count);
-    }
+  async countCommentByBoardIdAndPositive(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('COUNT(*)')
+      .from(Comment, 'comment')
+      .where(`comment.board_id = :boardId AND position='positive'`, { boardId })
+      .getRawOne();
 
-    return countJson;
+    return parseInt(result['COUNT(*)']);
   }
 
   async countCommentsByUser(

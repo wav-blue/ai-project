@@ -1,35 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { CommentRepository } from '.././comments.repository';
-import { DataSource, QueryRunner } from 'typeorm';
+import { QueryRunner } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
-import { BoardsService } from 'src/community/boards/boards.service';
 
 @Injectable()
-export class CountCommentsByBoardId {
+export class CountCommentsByBoardIdService {
   constructor(
-    private readonly boardsService: BoardsService,
     private readonly commentRepository: CommentRepository,
-    private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CountCommentsByBoardId.name);
+    this.logger.setContext(CountCommentsByBoardIdService.name);
   }
 
-  // 해당 Board의 Counting 조회
   async countCommentsByBoardId(
     boardId: number,
     queryRunner: QueryRunner,
   ): Promise<{
+    count: number;
     positiveCount: number;
     negativeCount: number;
   }> {
-    // Group By 이용
-    const countResult =
-      await this.commentRepository.countCommentGroupByPositionByBoardId(
+    const count = await this.commentRepository.countCommentByBoardId(
+      boardId,
+      queryRunner,
+    );
+
+    const positiveCount =
+      await this.commentRepository.countCommentByBoardIdAndPositive(
         boardId,
         queryRunner,
       );
 
-    return countResult;
+    return {
+      count,
+      positiveCount,
+      negativeCount: count - positiveCount,
+    };
   }
 }
