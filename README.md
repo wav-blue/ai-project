@@ -12,25 +12,25 @@ OpenAI 서비스를 이용한 인간성이 느껴지는 답변으로 연애의 �
 
 #### 공통
 
-<img src="https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white]"/> <img src="https://img.shields.io/badge/Typescript-3178C6?logo=Typescript&logoColor=white]"/>
+<img src="https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white]"/> <img src="https://img.shields.io/badge/Typescript-3178C6?style=for-the-badge&logo=Typescript&logoColor=white]"/>
 
 #### AI
 
-<img src="https://img.shields.io/badge/OpenAI-412991?logo=OpenAI&logoColor=white]"/> <img src="https://img.shields.io/badge/Flask-000000?logo=Flask&logoColor=white]"/>
+<img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=OpenAI&logoColor=white]"/> <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=Flask&logoColor=white]"/>
 
 #### FRONT
 
 1. 프레임워크
 
-   <img src="https://img.shields.io/badge/react-61DAFB?logo=react&logoColor=white]"/> <img src="https://img.shields.io/badge/next.js-000000?logo=Next.js&logoColor=white]"/>
+   <img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=white]"/> <img src="https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=Next.js&logoColor=white]"/>
 
 2. 전역상태관리
 
-   <img src="https://img.shields.io/badge/Redux-CC6699?logo=Redux&logoColor=white]"/>
+   <img src="https://img.shields.io/badge/Redux-CC6699?style=for-the-badge&logo=Redux&logoColor=white]"/>
 
 3. 스타일링
 
-   <img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?logo=TailwindCSS&logoColor=white]"/>
+   <img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=TailwindCSS&logoColor=white]"/>
 
 - Presigned-Url(S3)
 - React-query, React-Quill 라이브러리 활용
@@ -39,11 +39,11 @@ OpenAI 서비스를 이용한 인간성이 느껴지는 답변으로 연애의 �
 
 1. 서버 구축
 
-   <img src="https://img.shields.io/badge/node.js-339933?style=flat&logo=node.js&logoColor=white"/> <img src="https://img.shields.io/badge/nestjs-E0234E?logo=nestjs&logoColor=white]"/>
+   <img src="https://img.shields.io/badge/node.js-339933?style=for-the-badge&&logo=node.js&logoColor=white"/> <img src="https://img.shields.io/badge/nestjs-E0234E?style=for-the-badge&logo=nestjs&logoColor=white]"/>
 
 2. 데이터베이스
 
-   <img src="https://img.shields.io/badge/MySQL-5294E2?logo=MySQL&logoColor=white]"/> <img src="https://img.shields.io/badge/MongoDB-47A248?logo=MySQL&logoColor=white]"/> <img src="https://img.shields.io/badge/Amazon RDS-527FFF?logo=Amazon RDS&logoColor=white]"/> <img src="https://img.shields.io/badge/Amazon S3-569A31?logo=Amazon S3&logoColor=white]"/>
+   <img src="https://img.shields.io/badge/MySQL-5294E2?style=for-the-badge&logo=MySQL&logoColor=white]"/> <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=MySQL&logoColor=white]"/> <img src="https://img.shields.io/badge/Amazon RDS-527FFF?style=for-the-badge&logo=Amazon RDS&logoColor=white]"/> <img src="https://img.shields.io/badge/Amazon S3-569A31?style=for-the-badge&logo=Amazon S3&logoColor=white]"/>
 
 #### 사용한 모델 및 데이터셋
 
