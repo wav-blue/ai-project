@@ -1,4 +1,4 @@
 export enum CommentPosition {
-  POSITIVE = 'positive',
-  NEGATIVE = 'negative',
+  POSITIVE = 1,
+  NEGATIVE = 0,
 }

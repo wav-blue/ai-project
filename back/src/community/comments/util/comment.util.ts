@@ -25,7 +25,6 @@ function parseDeletedComment(comments: Comment[]): Comment[] {
       comments[i].anonymousNumber = AnonymousNumberType.DELETED;
       comments[i].content = '삭제된 댓글입니다.';
       comments[i].status = CommentStatus.DELETED;
-      comments[i].position = 'deleted';
     }
   }
   return comments;

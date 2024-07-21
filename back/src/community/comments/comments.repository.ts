@@ -9,6 +9,7 @@ import { MyLogger } from 'src/logger/logger.service';
 import * as dayjs from 'dayjs';
 import { QueryPageDto } from './dto/queryPage.dto';
 import { ReadNewCommentDto } from './dto/readNewComment.dto';
+import { CommentPosition } from './enum/commentPosition.enum';
 
 @Injectable()
 export class CommentRepository {
@@ -153,7 +154,7 @@ export class CommentRepository {
 
   async createComment(
     createCommentDto: CreateCommentDto,
-    position: string,
+    position: CommentPosition,
     anonymousNumber: number,
     queryRunner: QueryRunner,
   ): Promise<ReadNewCommentDto> {
@@ -198,7 +199,6 @@ export class CommentRepository {
   }
 
   async deleteComment(
-    userId: string,
     commentId: number,
     deleteType: string,
     queryRunner: QueryRunner,

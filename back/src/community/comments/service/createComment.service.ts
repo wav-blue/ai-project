@@ -9,6 +9,7 @@ import { randomPosition } from '../util/comment.util';
 import { AxiosRequestService } from 'src/axios/service/axios-request.service';
 import { ReadNewCommentDto } from '../dto/readNewComment.dto';
 import { FindAnonymousNumberService } from './findAnonymousNumber.service';
+import { CommentPosition } from '../enum/commentPosition.enum';
 
 @Injectable()
 export class CreateCommentService {
@@ -24,10 +25,10 @@ export class CreateCommentService {
   }
 
   // 댓글을 생성할 때 postion을 설정
-  private async analysisPosition(content: string): Promise<string> {
-    let position: string;
+  private async analysisPosition(content: string): Promise<CommentPosition> {
+    let position: CommentPosition;
     try {
-      // 응답 시간이 길어지는 것을 방지하기 위해 적당한 길이만 분석
+      // 앞의 36자까지만 분석
       const substring_string = content.substring(0, 36);
       const body = {
         content: substring_string,
@@ -40,7 +41,7 @@ export class CreateCommentService {
         `Flask 서버로의 요청 성공! 분석을 통해 position 결정: ${position}`,
       );
     } catch (err) {
-      this.logger.warn(`분석 요청이 실패했습니다. Flask 서버를 확인해주세요!`);
+      this.logger.error(`분석 요청이 실패했습니다. Flask 서버를 확인해주세요!`);
       this.logger.verbose(`랜덤으로 position을 결정합니다...`);
       position = randomPosition();
     }
