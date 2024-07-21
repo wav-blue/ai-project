@@ -5,28 +5,25 @@ import { CreateCommentReportDto } from '.././dto/createCommentReport.dto';
 import { CommentStatus } from '.././enum/commentStatus.enum';
 import { Comment } from '.././entity/comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
-import { setTimeColumn } from '../util/commentData.util';
 import { FindCommentService } from './findComment.service';
+import { DeleteCommentReportedService } from './deleteCommentReported.service';
 
 @Injectable()
 export class CreateReportWithCommentService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly findCommentService: FindCommentService,
+    private readonly deleteCommentReportedService: DeleteCommentReportedService,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
     this.logger.setContext(CreateReportWithCommentService.name);
   }
 
-  // 신고 내역 작성 && 신고 누적 시 삭제
+  // 신고 내역 작성
   async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
-    // DTO 설정
-    createCommentReportDto = setTimeColumn(createCommentReportDto);
-
     // 변수 선언
     let foundComment: Comment;
-    let commentStatus = CommentStatus.NOT_DELETED;
     const reportUserList = [];
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -44,14 +41,11 @@ export class CreateReportWithCommentService {
         );
 
       if (foundComment.userId === reportUserId) {
-        this.logger.warn(`자신의 댓글은 신고할 수 없습니다.`);
+        this.logger.log(`자신의 댓글은 신고할 수 없습니다.`);
         throw new ConflictException('잘못된 신고 요청입니다.');
       }
 
-      // 댓글 작성자의 id 저장
-      createCommentReportDto.targetUserId = foundComment.userId;
-
-      // 해당 댓글을 report한 User들의 기록을 조회
+      // 해당 댓글을 report한 유저 조회
       const checkResult = await this.commentRepository.checkReportUser(
         commentId,
         queryRunner,
@@ -82,36 +76,14 @@ export class CreateReportWithCommentService {
     }
 
     if (reportUserList.length < 5) {
-      return { status: commentStatus };
+      return { status: CommentStatus.NOT_DELETED };
+    } else {
+      // 신고 횟수 누적으로 댓글 삭제
+      this.deleteCommentReportedService.deleteCommentReported(
+        createCommentReportDto.commentId,
+      );
     }
 
-    const QueryRunnerForDelete = this.dataSource.createQueryRunner();
-    await QueryRunnerForDelete.connect();
-
-    await QueryRunnerForDelete.startTransaction();
-
-    try {
-      // 일정 횟수 신고되어 댓글 삭제
-      this.logger.verbose(
-        `${reportUserList.length}회 신고되어 댓글 ${CommentStatus.REPORTED} 상태로 변경됨`,
-      );
-      const { targetUserId, commentId } = createCommentReportDto;
-      commentStatus = CommentStatus.REPORTED;
-
-      await this.commentRepository.deleteComment(
-        targetUserId,
-        commentId,
-        commentStatus,
-        queryRunner,
-      );
-      await QueryRunnerForDelete.commitTransaction();
-    } catch (err) {
-      await QueryRunnerForDelete.rollbackTransaction();
-      throw err;
-    } finally {
-      await QueryRunnerForDelete.release();
-    }
-
-    return { status: commentStatus };
+    return { status: CommentStatus.REPORTED };
   }
 }
