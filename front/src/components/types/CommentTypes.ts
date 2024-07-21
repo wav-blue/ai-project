@@ -4,8 +4,8 @@ export interface CommentProps {
   commentId: string;
   userId: string;
   content: string;
-  anonymous_number: number;
-  position: string;
+  anonymousNumber: number;
+  position: number;
   status: string;
   createdAt: any;
   updatedAt: Date;

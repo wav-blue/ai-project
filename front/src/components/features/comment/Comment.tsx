@@ -12,7 +12,7 @@ import 'dayjs/locale/ko';
 const Comment = (commentData: CommentProps) => {
   const {
     content,
-    anonymous_number,
+    anonymousNumber,
     position,
     userId,
     status,
@@ -95,21 +95,21 @@ const Comment = (commentData: CommentProps) => {
     <div className="bg-red-50 p-4 m-1 border-y-2 border-red-100">
       <div className="flex flex-col gap-3">
         <div className="flex flex gap-3">
-          {position && position == 'positive' && (
+          {position == 1 && (
             <img
               src="/images/happy.png"
               className="rounded-full h-[26px] w-[26px]"
             ></img>
           )}
-          {position && position == 'negative' && (
+          {position == 0 && (
             <img
               src="/images/angry.png"
               className="rounded-full h-[26px] w-[26px]"
             ></img>
           )}
-          <p className="inline-block text-gray-800 font-semibold">{`익명${anonymous_number}`}</p>
+          <p className="inline-block text-gray-800 font-semibold">{`익명${anonymousNumber}`}</p>
 
-          <p className="text-gray-700">{position}</p>
+          <p className="text-gray-700">{position ? 'positive' : 'negative'}</p>
           {userState && userState.userId === userId ? (
             <button onClick={handleDelete}>삭제</button>
           ) : (

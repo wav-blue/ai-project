@@ -9,7 +9,7 @@ import { RootState } from '@/src/store';
 
 //백엔드 통신 관련 임시코드
 import axios from 'axios';
-const serverUrl = 'kdt-ai-9-team01.elicecoding.com:5001/api';
+const serverUrl = 'localhost:5001/api';
 
 const api = axios.create({
   baseURL: serverUrl,
@@ -90,9 +90,6 @@ const BoardCardDetail = ({ id, post }: BoardCardType) => {
             통합 게시판
           </div>
           <div className="flex flex-row space-x-2 mt-3 mb-3">
-            <button className="border-zinc-800 border-2 rounded px-4 py-2 bg-gray-100 hover:bg-gray-200">
-              <Link href="/board/">목록</Link>
-            </button>
             {!isUser ? (
               <div></div>
             ) : (

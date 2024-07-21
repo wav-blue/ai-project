@@ -83,8 +83,6 @@ export class CreateBoardReportDto {
 
   reportUserId: string;
 
-  targetUserId: string;
-
   @IsString()
   reportType: string;
 }

@@ -2,14 +2,13 @@ import axios, { AxiosResponse } from 'axios';
 
 const api = axios.create({
   // baseURL: 'http://localhost:5001/api',
-  baseURL: 'http://kdt-ai-9-team01.elicecoding.com:5001/api',
+  baseURL: 'http://localhost:5001/api',
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
 
 api.interceptors.request.use(
   req => {
-
     // Blob 데이터를 감지하고 Content-Type 설정
     if (req.data instanceof Blob) {
       // Blob의 MIME 타입을 Content-Type으로 설정
@@ -37,7 +36,11 @@ async function get<T = any>(endpoint: string, token?: string, cookie?: string) {
   return await api.get<T>(endpoint, { headers });
 }
 
-async function post<T = any>(endpoint: string, bodyData?: FormData | Object, cookie?: string) {
+async function post<T = any>(
+  endpoint: string,
+  bodyData?: FormData | Object,
+  cookie?: string,
+) {
   let headers: { [key: string]: string } = {};
   if (cookie) {
     headers['Cookie'] = cookie;
@@ -45,14 +48,18 @@ async function post<T = any>(endpoint: string, bodyData?: FormData | Object, coo
   return await api.post<T>(endpoint, bodyData, { headers });
 }
 
-async function put<T = any>(endpoint: string, bodyData: FormData | Object, token?: string) {
-  const headers = token ? { Authorization: `Bearer ${token}`} : {}
-  return await api.put<T>(endpoint, bodyData, { headers })
+async function put<T = any>(
+  endpoint: string,
+  bodyData: FormData | Object,
+  token?: string,
+) {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return await api.put<T>(endpoint, bodyData, { headers });
 }
 
 async function del<T = any>(endpoint: string, token?: string) {
-  const headers = token ? { Authorization: `Bearer ${token}`} : {}
-  return await api.delete<T>(endpoint, { headers })
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return await api.delete<T>(endpoint, { headers });
 }
 
 export { get, post, put, del };

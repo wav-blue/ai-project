@@ -13,7 +13,7 @@ import { RootState } from '@/src/store';
 import withAuth from '@/src/hocs/withAuth';
 import Seo from '@/src/components/common/Seo';
 
-const serverUrl = 'http://kdt-ai-9-team01.elicecoding.com:5001/api';
+const serverUrl = 'http://localhost:5001/api';
 
 const BoardPage = () => {
   const [boardList, setBoardList] = useState<BoardDataTypeList>({
@@ -49,7 +49,6 @@ const BoardPage = () => {
     setCurrentPage(1);
   };
   const getBoardlist = async (searchKeyword: String) => {
-
     try {
       const response = await axios.get(
         `${serverUrl}/boards?tag=${tag}&keyword=${searchKeyword}&page=${currentPage}`,
@@ -76,10 +75,9 @@ const BoardPage = () => {
     getBoardlist(searchKeyword); // 컨텐츠 데이터 새롭게 불러와 상태 변경 -> ProductList리렌더링
   }, [page]);
 
-
   return (
     <div className="flex flex-col items-center min-h-screen bg-cover bg-[url('/images/background-board.jpg')]">
-      <Seo title='게시글 목록' />
+      <Seo title="게시글 목록" />
       <div className="my-20">
         <input
           type="text"

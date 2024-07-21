@@ -301,13 +301,8 @@ export class BoardsService {
       }
 
       if (foundBoard.userId === reportUserId) {
-        console.log(`자신의 게시글을 삭제하려고 함`);
-        // 테스트가 힘들어지기 때문에 임시로 주석 처리
-        // throw new ConflictException('잘못된 신고 요청');
+        throw new ConflictException('잘못된 신고 요청');
       }
-
-      // 작성자의 id를 DTO에 저장
-      createBoardReportDto.targetUserId = foundBoard.userId;
 
       // 해당 게시글을 report한 User들의 기록을 조회
       const reportUserList = await this.boardsRepository.checkReportUser(

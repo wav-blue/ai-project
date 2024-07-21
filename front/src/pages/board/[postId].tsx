@@ -14,7 +14,7 @@ import CommentAnalysis from '@/src/components/features/comment/CommentAnalysis';
 import Pagination from '../../components/features/comment/CommentPagination';
 import Seo from '@/src/components/common/Seo';
 
-const serverUrl = 'http://kdt-ai-9-team01.elicecoding.com:5001/api';
+const serverUrl = 'http://localhost:5001/api';
 const config = {
   headers: {
     'Access-Control-Allow-Origin': '*',
@@ -31,9 +31,7 @@ const PostviewPage = () => {
   //댓글새로고침클릭
   const [isRefresh, setIsRefresh] = useState(false);
   const isCommentRefresh = (flag: any) => {
-
     setIsRefresh(true);
-
   };
   // const isClick = () => {
   //   setIsRefresh(true);
@@ -91,7 +89,6 @@ const PostviewPage = () => {
   };
 
   const getCommentList = async () => {
-
     try {
       const response = await axios.get(
         `${serverUrl}/comments/${postId}?page=${currentPage}`,
@@ -127,7 +124,7 @@ const PostviewPage = () => {
 
   return (
     <div className="flex flex-col gap-3">
-      <Seo title='게시글 상세페이지' />
+      <Seo title="게시글 상세페이지" />
       <div>{post && <BoardCardDetail id={postId} post={post} />}</div>
       {/* <button onClick={isClick}>댓글새로고침</button> */}
       <div>
