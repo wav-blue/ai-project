@@ -18,9 +18,6 @@ export class CommentReport extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   reportUserId: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  targetUserId: string;
-
   @Column({ type: 'varchar', length: 100 })
   reportType: string;
 

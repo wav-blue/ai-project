@@ -35,18 +35,16 @@ export class DeleteCommentService {
         throw new NotFoundException('댓글이 존재하지 않습니다.');
       }
       if (foundComment.userId !== userId) {
-        this.logger.error(`삭제 권한이 없는 유저의 요청`);
         throw new ForbiddenException('삭제 권한이 없습니다.');
       }
       const deleteCommentResult = await this.commentRepository.deleteComment(
-        userId,
         commentId,
         CommentStatus.DELETED,
         queryRunner,
       );
 
       if (deleteCommentResult.affected === 0) {
-        this.logger.error('COMMENT 테이블을 업데이트 하지 못했습니다.');
+        this.logger.log('COMMENT 테이블을 업데이트 하지 못했습니다.');
         throw new ServiceUnavailableException(
           '알 수 없는 이유로 요청을 완료하지 못했습니다.',
         );

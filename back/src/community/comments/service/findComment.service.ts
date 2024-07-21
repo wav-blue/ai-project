@@ -28,11 +28,11 @@ export class FindCommentService {
     }
 
     if (!foundComment) {
-      this.logger.error(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
+      this.logger.log(`해당하는 댓글의 정보가 데이터베이스 내에 없음`);
     }
 
     if (foundComment.status !== CommentStatus.NOT_DELETED) {
-      this.logger.error(
+      this.logger.log(
         `댓글의 상태가 ${foundComment.status}이므로 신고할 수 없음`,
       );
       throw new NotFoundException('이미 삭제된 댓글입니다.');
