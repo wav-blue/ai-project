@@ -18,6 +18,7 @@ import { CreateReportWithCommentService } from './comments/service/createReportW
 import { FindCommentService } from './comments/service/findComment.service';
 import { FindCommentsByUserIdService } from './comments/service/findCommentsByUserId.service';
 import { CountCommentsByBoardIdService } from './comments/service/countCommentsByBoardId.service';
+import { DeleteCommentReportedService } from './comments/service/deleteCommentReported.service';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CountCommentsByBoardIdService } from './comments/service/countCommentsB
     FindAnonymousNumberService,
     CountCommentsByBoardIdService,
     CreateReportWithCommentService,
+    DeleteCommentReportedService,
     BoardsRepository,
     CommentRepository,
     S3Service,
