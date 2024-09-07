@@ -8,6 +8,4 @@ export class CreateCommentReportDto {
   reportType: string;
 
   reportUserId: string;
-
-  targetUserId: string;
 }

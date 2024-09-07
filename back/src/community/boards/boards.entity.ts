@@ -58,9 +58,6 @@ export class BoardReport extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   reportUserId: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  targetUserId: string;
-
   @Column({ type: 'varchar', length: 100 })
   reportType: string;
 
