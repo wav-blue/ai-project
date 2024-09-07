@@ -8,7 +8,7 @@ jwt:
   secret: 'mySecretKey'
 
 flask:
-  url: 'kdt-ai-9-team01.elicecoding.com'
+  url: 'localshot'
 
 domain:
   address: 'localhost'
