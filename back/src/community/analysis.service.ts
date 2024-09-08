@@ -13,10 +13,15 @@ export class AnalysisService {
     this.logger.setContext(AnalysisService.name);
   }
 
-  async addJob(content: string): Promise<any> {
-    const job = await this.analysisQueue.add('comment-analysis', {
-      content,
-    });
+  async addJob(commentId: number, content: string): Promise<any> {
+    const job = await this.analysisQueue.add(
+      'comment-analysis',
+      {
+        commentId,
+        content,
+      },
+      { delay: 5000 },
+    );
     return job.id;
   }
 }

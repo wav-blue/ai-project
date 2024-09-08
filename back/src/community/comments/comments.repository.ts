@@ -130,7 +130,10 @@ export class CommentRepository {
       .createQueryBuilder()
       .select('COUNT(*)')
       .from(Comment, 'comment')
-      .where(`comment.board_id = :boardId AND position='positive'`, { boardId })
+      .where(
+        `comment.board_id = :boardId AND position=${CommentPosition.POSITIVE}`,
+        { boardId },
+      )
       .getRawOne();
 
     return parseInt(result['COUNT(*)']);
@@ -154,14 +157,15 @@ export class CommentRepository {
 
   async createComment(
     createCommentDto: CreateCommentDto,
-    position: CommentPosition,
     anonymousNumber: number,
+    position: CommentPosition,
     queryRunner: QueryRunner,
   ): Promise<ReadNewCommentDto> {
     const newComment = queryRunner.manager.create(Comment, {
       ...createCommentDto,
-      position,
+
       anonymousNumber,
+      position,
       status: CommentStatus.NOT_DELETED,
       deletedAt: null,
     });
@@ -221,5 +225,28 @@ export class CommentRepository {
     } catch (error) {
       return error;
     }
+  }
+
+  async updateCommentPosition(
+    commentId: number,
+    position: CommentPosition,
+    queryRunner: QueryRunner,
+  ): Promise<{ affected: number }> {
+    try {
+      const day = dayjs();
+      const result = await queryRunner.manager
+        .createQueryBuilder()
+        .update(Comment)
+        .set({
+          position,
+          updatedAt: day.format(),
+        })
+        .where('comment_id = :commentId', { commentId })
+        .execute();
+
+      const { affected } = result;
+      console.log(affected);
+      return { affected };
+    } catch (err) {}
   }
 }

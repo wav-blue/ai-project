@@ -22,6 +22,7 @@ import { DeleteCommentReportedService } from './comments/service/deleteCommentRe
 import { BullModule } from '@nestjs/bullmq';
 import { AnalysisConsumer } from './analysis.consumer';
 import { AnalysisService } from './analysis.service';
+import { UpdateCommentService } from './comments/service/updateComment.service';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AnalysisService } from './analysis.service';
     CountCommentsByBoardIdService,
     CreateReportWithCommentService,
     DeleteCommentReportedService,
+    UpdateCommentService,
     BoardsRepository,
     CommentRepository,
     S3Service,

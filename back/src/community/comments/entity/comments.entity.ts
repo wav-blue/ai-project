@@ -26,7 +26,7 @@ export class Comment extends BaseEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ type: 'enum', enum: CommentPosition })
+  @Column({ type: 'int' })
   position: CommentPosition;
 
   @Column({ type: 'enum', enum: CommentStatus })

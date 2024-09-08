@@ -5,7 +5,6 @@ import { DataSource } from 'typeorm';
 import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import { BoardsService } from 'src/community/boards/boards.service';
-import { AxiosRequestService } from 'src/axios/service/axios-request.service';
 import { ReadNewCommentDto } from '../dto/readNewComment.dto';
 import { FindAnonymousNumberService } from './findAnonymousNumber.service';
 import { CommentPosition } from '../enum/commentPosition.enum';
@@ -25,11 +24,14 @@ export class CreateCommentService {
   }
 
   // 댓글을 생성할 때 postion을 설정
-  private async analysisRequest(content: string): Promise<CommentPosition> {
+  private async analysisRequest(
+    commentId: number,
+    content: string,
+  ): Promise<CommentPosition> {
     let position: CommentPosition;
     try {
       this.logger.verbose('job add!!');
-      this.analysisService.addJob(content);
+      this.analysisService.addJob(commentId, content);
       this.logger.verbose('job add 완료');
       position = CommentPosition.LOADING;
     } catch (err) {
@@ -55,9 +57,6 @@ export class CreateCommentService {
       // 해당 게시글 조회
       foundBoard = await this.boardsService.readBoard(createCommentDto.boardId);
 
-      // 댓글 내용 기반으로 Position 결정
-      const position = await this.analysisRequest(createCommentDto.content);
-
       // 익명 번호 anonymousNumber 결정
       const anonymousNumber =
         await this.findAnonymousNumberService.readAnonymousNumber(
@@ -71,11 +70,17 @@ export class CreateCommentService {
       // 댓글 데이터 Create
       newComment = await this.commentRepository.createComment(
         createCommentDto,
-        position,
         anonymousNumber,
+        CommentPosition.LOADING,
         queryRunner,
       );
-      this.logger.verbose('댓글 데이터 Create 완료');
+      this.logger.verbose('Comment Create Complete');
+
+      // 댓글 분석 요청(job queue 등록)
+      await this.analysisRequest(
+        newComment.commentId,
+        createCommentDto.content,
+      );
 
       await queryRunner.commitTransaction();
     } catch (err) {
