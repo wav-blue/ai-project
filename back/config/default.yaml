@@ -13,3 +13,6 @@ flask:
   port: 5000
   username: 'guru_back_server'
   password: 'back!Password123!'
+
+redis:
+  url: '127.0.0.1'
