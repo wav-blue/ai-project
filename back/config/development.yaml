@@ -8,7 +8,10 @@ jwt:
   secret: 'mySecretKey'
 
 flask:
-  url: 'localshot'
+  url: '127.0.0.1'
 
 domain:
   address: 'localhost'
+
+queue:
+  url: '127.0.0.1'

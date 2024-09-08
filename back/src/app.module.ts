@@ -13,9 +13,20 @@ import { ChatModule } from './chat/chat.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { LoggerModule } from './logger/logger.module';
 import { AxiosModule } from './axios/axios.module';
+import { BullModule } from '@nestjs/bullmq';
+
+import * as config from 'config';
+const redisConfig = config.get('redis');
 
 @Module({
   imports: [
+    // Import Database
+    BullModule.forRoot({
+      connection: {
+        host: redisConfig.url,
+        port: 6379,
+      },
+    }),
     TypeOrmModule.forRoot(typeORMConfig),
     MongooseModule.forRoot(mongoConfig.uri),
     UserModule,

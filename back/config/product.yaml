@@ -9,3 +9,6 @@ flask:
 
 domain:
   address: 'kdt-ai-9-team01.elicecoding.com'
+
+redis:
+  url: 'kdt-ai-9-team01.elicecoding.com'

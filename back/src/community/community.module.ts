@@ -19,9 +19,16 @@ import { FindCommentService } from './comments/service/findComment.service';
 import { FindCommentsByUserIdService } from './comments/service/findCommentsByUserId.service';
 import { CountCommentsByBoardIdService } from './comments/service/countCommentsByBoardId.service';
 import { DeleteCommentReportedService } from './comments/service/deleteCommentReported.service';
+import { BullModule } from '@nestjs/bullmq';
+import { AnalysisProcessor } from './analysis.consumer';
+import { AnalysisService } from './analysis.service';
 
 @Module({
   imports: [
+    // BullMQ
+    BullModule.registerQueue({
+      name: 'analysis',
+    }),
     HttpModule,
     TypeOrmModule.forFeature([Board]),
     LoggerModule,
@@ -42,6 +49,8 @@ import { DeleteCommentReportedService } from './comments/service/deleteCommentRe
     BoardsRepository,
     CommentRepository,
     S3Service,
+    AnalysisProcessor,
+    AnalysisService,
   ],
 })
 export class CommunityModule {}
