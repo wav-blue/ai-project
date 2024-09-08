@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from utils.model_util import parse_response_by_label, validate_by_base64
+from utils.model_util import parse_response_by_label
+from utils.auth_util import validate_by_base64
 from transformers import pipeline , BertTokenizer
 
 app = Flask(__name__)
@@ -29,7 +30,7 @@ def index():
 def textAnalysis():
   global classifier
 
-  # 헤더에서 인증 정보를 받아옴
+  # Authoriztion
   if request.headers.get('Authorization'):
     auth = request.headers.get('Authorization')
   
