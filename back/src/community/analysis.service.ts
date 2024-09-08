@@ -14,14 +14,10 @@ export class AnalysisService {
   }
 
   async addJob(commentId: number, content: string): Promise<any> {
-    const job = await this.analysisQueue.add(
-      'comment-analysis',
-      {
-        commentId,
-        content,
-      },
-      { delay: 5000 },
-    );
+    const job = await this.analysisQueue.add('comment-analysis', {
+      commentId,
+      content,
+    });
     return job.id;
   }
 }
