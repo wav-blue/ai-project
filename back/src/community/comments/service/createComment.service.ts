@@ -5,11 +5,11 @@ import { DataSource } from 'typeorm';
 import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import { BoardsService } from 'src/community/boards/boards.service';
-import { randomPosition } from '../util/comment.util';
 import { AxiosRequestService } from 'src/axios/service/axios-request.service';
 import { ReadNewCommentDto } from '../dto/readNewComment.dto';
 import { FindAnonymousNumberService } from './findAnonymousNumber.service';
 import { CommentPosition } from '../enum/commentPosition.enum';
+import { AnalysisService } from 'src/community/analysis.service';
 
 @Injectable()
 export class CreateCommentService {
@@ -17,33 +17,24 @@ export class CreateCommentService {
     private readonly boardsService: BoardsService,
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
-    private readonly axiosRequestService: AxiosRequestService,
     private readonly findAnonymousNumberService: FindAnonymousNumberService,
+    private readonly analysisService: AnalysisService,
     private logger: MyLogger,
   ) {
     this.logger.setContext(CreateCommentService.name);
   }
 
   // 댓글을 생성할 때 postion을 설정
-  private async analysisPosition(content: string): Promise<CommentPosition> {
+  private async analysisRequest(content: string): Promise<CommentPosition> {
     let position: CommentPosition;
     try {
-      // 앞의 36자까지만 분석
-      const substring_string = content.substring(0, 36);
-      const body = {
-        content: substring_string,
-      };
-
-      const response = await this.axiosRequestService.FlaskRequest(body);
-      position = response.data.position;
-
-      this.logger.verbose(
-        `Flask 서버로의 요청 성공! 분석을 통해 position 결정: ${position}`,
-      );
+      this.logger.verbose('job add!!');
+      this.analysisService.addJob(content);
+      this.logger.verbose('job add 완료');
+      position = CommentPosition.LOADING;
     } catch (err) {
-      this.logger.error(`분석 요청이 실패했습니다. Flask 서버를 확인해주세요!`);
-      this.logger.verbose(`랜덤으로 position을 결정합니다...`);
-      position = randomPosition();
+      this.logger.error(`작업 요청에 실패했습니다.`);
+      position = CommentPosition.LOADING;
     }
     return position;
   }
@@ -65,7 +56,7 @@ export class CreateCommentService {
       foundBoard = await this.boardsService.readBoard(createCommentDto.boardId);
 
       // 댓글 내용 기반으로 Position 결정
-      const position = await this.analysisPosition(createCommentDto.content);
+      const position = await this.analysisRequest(createCommentDto.content);
 
       // 익명 번호 anonymousNumber 결정
       const anonymousNumber =
@@ -75,6 +66,7 @@ export class CreateCommentService {
           foundBoard,
           queryRunner,
         );
+      this.logger.verbose('익명 번호 결정');
 
       // 댓글 데이터 Create
       newComment = await this.commentRepository.createComment(
@@ -83,6 +75,7 @@ export class CreateCommentService {
         anonymousNumber,
         queryRunner,
       );
+      this.logger.verbose('댓글 데이터 Create 완료');
 
       await queryRunner.commitTransaction();
     } catch (err) {

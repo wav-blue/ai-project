@@ -22,7 +22,7 @@ export class AxiosRequestService {
     const apiUrl =
       `http://${flaskConfig.url}` + ':' + `${flaskConfig.port}` + `/analysis`;
 
-    this.logger.log(`http://${apiUrl}로 Post 요청!`);
+    this.logger.log(`${apiUrl}로 Post 요청!`);
 
     const username = process.env.FLASK_USER_NAME || flaskConfig.username;
     const password = process.env.FLASK_PASSWORD || flaskConfig.password;

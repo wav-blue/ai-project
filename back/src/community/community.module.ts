@@ -20,7 +20,7 @@ import { FindCommentsByUserIdService } from './comments/service/findCommentsByUs
 import { CountCommentsByBoardIdService } from './comments/service/countCommentsByBoardId.service';
 import { DeleteCommentReportedService } from './comments/service/deleteCommentReported.service';
 import { BullModule } from '@nestjs/bullmq';
-import { AnalysisProcessor } from './analysis.consumer';
+import { AnalysisConsumer } from './analysis.consumer';
 import { AnalysisService } from './analysis.service';
 
 @Module({
@@ -49,7 +49,7 @@ import { AnalysisService } from './analysis.service';
     BoardsRepository,
     CommentRepository,
     S3Service,
-    AnalysisProcessor,
+    AnalysisConsumer,
     AnalysisService,
   ],
 })
