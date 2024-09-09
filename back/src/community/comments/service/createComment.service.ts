@@ -23,22 +23,17 @@ export class CreateCommentService {
     this.logger.setContext(CreateCommentService.name);
   }
 
-  // 댓글을 생성할 때 postion을 설정
+  // 분석 큐에 job 등록
   private async analysisRequest(
     commentId: number,
     content: string,
-  ): Promise<CommentPosition> {
-    let position: CommentPosition;
+  ): Promise<void> {
     try {
-      this.logger.verbose('job add!!');
+      this.logger.verbose('job add');
       this.analysisService.addJob(commentId, content);
-      this.logger.verbose('job add 완료');
-      position = CommentPosition.LOADING;
     } catch (err) {
       this.logger.error(`작업 요청에 실패했습니다.`);
-      position = CommentPosition.LOADING;
     }
-    return position;
   }
 
   // Comment 작성
