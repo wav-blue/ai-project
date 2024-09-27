@@ -111,32 +111,16 @@ export class CommentRepository {
   async countCommentByBoardId(
     boardId: number,
     queryRunner: QueryRunner,
-  ): Promise<number> {
+  ): Promise<any> {
     const result = await queryRunner.manager
       .createQueryBuilder()
-      .select('COUNT(*)')
+      .select('position, COUNT(1)')
       .from(Comment, 'comment')
-      .where(`comment.board_id = :boardId`, { boardId })
-      .getRawOne();
+      .where({ boardId })
+      .groupBy('comment.position')
+      .getRawMany();
 
-    return parseInt(result['COUNT(*)']);
-  }
-
-  async countCommentByBoardIdAndPositive(
-    boardId: number,
-    queryRunner: QueryRunner,
-  ): Promise<number> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select('COUNT(*)')
-      .from(Comment, 'comment')
-      .where(
-        `comment.board_id = :boardId AND position=${CommentPosition.POSITIVE}`,
-        { boardId },
-      )
-      .getRawOne();
-
-    return parseInt(result['COUNT(*)']);
+    return result;
   }
 
   async countCommentsByUser(

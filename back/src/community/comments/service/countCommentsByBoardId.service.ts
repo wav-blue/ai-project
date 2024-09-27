@@ -20,21 +20,27 @@ export class CountCommentsByBoardIdService {
     positiveCount: number;
     negativeCount: number;
   }> {
-    const count = await this.commentRepository.countCommentByBoardId(
+    const result = await this.commentRepository.countCommentByBoardId(
       boardId,
       queryRunner,
     );
 
-    const positiveCount =
-      await this.commentRepository.countCommentByBoardIdAndPositive(
-        boardId,
-        queryRunner,
-      );
+    let positiveCount = 0;
+    let negativeCount = 0;
+    let loadingCommentCount = 0;
+
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].position === 1) positiveCount = result[i]['COUNT(1)'];
+      if (result[i].position === -1) negativeCount = result[i]['COUNT(1)'];
+      if (result[i].position === 0) loadingCommentCount = result[i]['COUNT(1)'];
+    }
+
+    const count = positiveCount + negativeCount + loadingCommentCount;
 
     return {
       count,
-      positiveCount,
-      negativeCount: count - positiveCount,
+      positiveCount: positiveCount,
+      negativeCount: negativeCount,
     };
   }
 }
