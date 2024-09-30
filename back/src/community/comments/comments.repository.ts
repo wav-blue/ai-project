@@ -18,40 +18,7 @@ export class CommentRepository {
     this.logger.setContext(CommentRepository.name);
   }
 
-  async getAnonymousNumber(
-    boardId: number,
-    userId: string,
-    queryRunner: QueryRunner,
-  ): Promise<number> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select('anonymous_number')
-      .from(AnonymousNumberComment, 'ANC')
-      .where(`user_id = :userId AND board_id = :boardId`, { userId, boardId })
-      .getRawOne();
-
-    if (!result) {
-      return null;
-    }
-    const { anonymous_number } = result;
-    return parseInt(anonymous_number);
-  }
-
-  async getNewAnonymousNumber(
-    boardId: number,
-    queryRunner: QueryRunner,
-  ): Promise<number> {
-    const result = await queryRunner.manager
-      .createQueryBuilder()
-      .select('MAX(`anonymous_number`)', 'max')
-      .from(AnonymousNumberComment, 'ANC')
-      .where('ANC.boardId = :boardId', {
-        boardId,
-      })
-      .getRawMany();
-    const { max } = result[0];
-    return parseInt(max);
-  }
+  /**commentId로 Comment 조회*/
   async checkComment(
     commentId: number,
     queryRunner: QueryRunner,
@@ -66,6 +33,7 @@ export class CommentRepository {
     return found;
   }
 
+  /**특정 게시글, 페이지의 Comment 조회*/
   async getBoardComments(
     boardId: number,
     queryPageDto: QueryPageDto,
@@ -87,6 +55,7 @@ export class CommentRepository {
     return comments;
   }
 
+  /** 특정 유저의 Comment 조회 */
   async getMyComments(
     userId: string,
     queryPageDto: QueryPageDto,
@@ -109,6 +78,46 @@ export class CommentRepository {
     return comments;
   }
 
+  /** 특정 유저, 특정 게시글의 익명 번호 조회*/
+  async getAnonymousNumber(
+    boardId: number,
+    userId: string,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('anonymous_number')
+      .from(AnonymousNumberComment, 'ANC')
+      .where(`user_id = :userId AND board_id = :boardId`, { userId, boardId })
+      .getRawOne();
+
+    if (!result) {
+      return null;
+    }
+    const { anonymous_number } = result;
+    return parseInt(anonymous_number);
+  }
+
+  /**특정 게시글에 작성된 Comment 중에서
+   * 가장 높은 익명 번호 조회
+   * - 익명 번호 데이터 생성 시 활용 */
+  async getNewAnonymousNumber(
+    boardId: number,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    const result = await queryRunner.manager
+      .createQueryBuilder()
+      .select('MAX(`anonymous_number`)', 'max')
+      .from(AnonymousNumberComment, 'ANC')
+      .where('ANC.boardId = :boardId', {
+        boardId,
+      })
+      .getRawMany();
+    const { max } = result[0];
+    return parseInt(max);
+  }
+
+  /** 특정 게시글에 작성된 Comment 카운트 */
   async countCommentByBoardId(
     boardId: number,
     queryRunner: QueryRunner,
@@ -124,13 +133,14 @@ export class CommentRepository {
     return result;
   }
 
+  /** 특정 유저가 작성한 Comment 카운트 */
   async countCommentsByUser(
     userId: string,
     queryRunner: QueryRunner,
   ): Promise<number> {
     const result = await queryRunner.manager
       .createQueryBuilder()
-      .select('COUNT(`comment_id`)', 'count')
+      .select('COUNT(1)', 'count')
       .from(Comment, 'comment')
       .where(`comment.user_id = :userId`, {
         userId,
@@ -140,6 +150,7 @@ export class CommentRepository {
     return total;
   }
 
+  /** Comment 테이블 데이터 생성 */
   async createComment(
     createCommentDto: CreateCommentDto,
     position: CommentPosition,
@@ -156,6 +167,7 @@ export class CommentRepository {
     return new ReadNewCommentDto(result);
   }
 
+  /** Anonymous Number Comment 테이블 데이터 생성 */
   async createAnonymousNumber(
     boardId: number,
     userId: string,
@@ -173,7 +185,7 @@ export class CommentRepository {
     return new ReadNewCommentDto(result);
   }
 
-  // 신고 내역이 있는 유저인지 확인
+  /** 특정 Comment의 신고 유저 목록 조회 */
   async checkReportUser(
     commentId: number,
     queryRunner: QueryRunner,
@@ -188,7 +200,7 @@ export class CommentRepository {
       .getRawMany();
   }
 
-  // 신고 내역 업로드
+  /** Comment Report 테이블 데이터 추가 */
   async createCommentReport(
     createCommentReportDto: CreateCommentReportDto,
     queryRunner: QueryRunner,
@@ -201,6 +213,7 @@ export class CommentRepository {
     return result;
   }
 
+  /** Comment 테이블 데이터 삭제 */
   async deleteComment(
     commentId: number,
     deleteType: string,
@@ -226,6 +239,7 @@ export class CommentRepository {
     }
   }
 
+  /**Comment 테이블의 Position 컬럼 수정 */
   async updateCommentPosition(
     commentId: number,
     position: CommentPosition,
