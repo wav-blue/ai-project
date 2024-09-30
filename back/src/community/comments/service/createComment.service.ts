@@ -52,20 +52,18 @@ export class CreateCommentService {
       // 해당 게시글 조회
       foundBoard = await this.boardsService.readBoard(createCommentDto.boardId);
 
-      // 익명 번호 anonymousNumber 결정
-      const anonymousNumber =
-        await this.findAnonymousNumberService.readAnonymousNumber(
-          createCommentDto.boardId,
-          createCommentDto.userId,
-          foundBoard,
-          queryRunner,
-        );
+      // 익명 번호 anonymousNumber 처리
+      await this.findAnonymousNumberService.readAnonymousNumber(
+        createCommentDto.boardId,
+        createCommentDto.userId,
+        foundBoard,
+        queryRunner,
+      );
       this.logger.verbose('익명 번호 결정');
 
       // 댓글 데이터 Create
       newComment = await this.commentRepository.createComment(
         createCommentDto,
-        anonymousNumber,
         CommentPosition.LOADING,
         queryRunner,
       );

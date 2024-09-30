@@ -22,38 +22,51 @@ export class FindAnonymousNumberService {
     queryRunner: QueryRunner,
   ): Promise<number> {
     const boardWriter = foundBoard.userId;
-    let anonymousNumber: number;
+    let anonymousNumber = -1;
 
-    // 게시글 작성자: 특수한 익명 번호 부여(0)
-    if (userId === boardWriter) {
-      anonymousNumber = AnonymousNumberType.WRITER;
-      this.logger.log(
-        `게시글 작성자가 댓글 작성함 : 익명번호 ${AnonymousNumberType.WRITER}`,
-      );
-      return anonymousNumber;
-    }
-
-    // 일반 작성자
+    // 익명 번호 테이블 조회
     const existingAnonymousNumber =
       await this.commentRepository.getAnonymousNumber(
         boardId,
         userId,
         queryRunner,
       );
-    if (existingAnonymousNumber) {
+
+    this.logger.info(existingAnonymousNumber);
+
+    if (existingAnonymousNumber !== -1) {
       anonymousNumber = existingAnonymousNumber + 1;
       this.logger.debug(
         `기존의 익명 번호가 존재함 : ${existingAnonymousNumber}`,
       );
+      return anonymousNumber;
     } else {
-      this.createAnonymousNumber(boardId, queryRunner);
-      this.logger.debug(`새로 익명 번호가 부여됨 : ${anonymousNumber}`);
+      // 게시글 작성자: 특수한 익명 번호 부여(0)
+      if (userId === boardWriter) {
+        anonymousNumber = AnonymousNumberType.WRITER;
+        this.logger.log(
+          `게시글 작성자가 댓글 작성함 : 익명번호 ${AnonymousNumberType.WRITER}`,
+        );
+      } else {
+        // 일반 사용자
+        // 익명 번호 계산
+        await this.calAnonymousNumber(boardId, queryRunner);
+        this.logger.debug(`새로 익명 번호가 부여됨 : ${anonymousNumber}`);
+      }
     }
+
+    // 익명 번호 테이블 데이터 생성
+    await this.createAnonymousNumber(
+      boardId,
+      userId,
+      anonymousNumber,
+      queryRunner,
+    );
 
     return anonymousNumber;
   }
 
-  private async createAnonymousNumber(
+  private async calAnonymousNumber(
     boardId: number,
     queryRunner: QueryRunner,
   ): Promise<number> {
@@ -68,6 +81,24 @@ export class FindAnonymousNumberService {
     if (!anonymousNumber) {
       anonymousNumber = 1;
     }
+
+    return anonymousNumber;
+  }
+
+  private async createAnonymousNumber(
+    boardId: number,
+    userId: string,
+    anonymousNumber: number,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    // 익명 번호 데이터 Create
+    await this.commentRepository.createAnonymousNumber(
+      boardId,
+      userId,
+      anonymousNumber,
+      queryRunner,
+    );
+    this.logger.verbose('Anonymous Number Create Complete');
 
     return anonymousNumber;
   }
