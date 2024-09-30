@@ -10,6 +10,7 @@ import * as dayjs from 'dayjs';
 import { QueryPageDto } from './dto/queryPage.dto';
 import { ReadNewCommentDto } from './dto/readNewComment.dto';
 import { CommentPosition } from './enum/commentPosition.enum';
+import { AnonymousNumberComment } from './entity/anonymousNumberComment.entity';
 
 @Injectable()
 export class CommentRepository {
@@ -24,15 +25,15 @@ export class CommentRepository {
   ): Promise<number> {
     const result = await queryRunner.manager
       .createQueryBuilder()
-      .select('DISTINCT `anonymous_number`', 'anonymous_number')
-      .from(Comment, 'comment')
+      .select('anonymous_number')
+      .from(AnonymousNumberComment, 'ANC')
       .where(`user_id = :userId AND board_id = :boardId`, { userId, boardId })
-      .getRawMany();
+      .getRawOne();
 
-    if (result.length === 0) {
+    if (!result) {
       return null;
     }
-    const { anonymous_number } = result[0];
+    const { anonymous_number } = result;
     return parseInt(anonymous_number);
   }
 
@@ -43,8 +44,8 @@ export class CommentRepository {
     const result = await queryRunner.manager
       .createQueryBuilder()
       .select('MAX(`anonymous_number`)', 'max')
-      .from(Comment, 'comment')
-      .where('comment.boardId = :boardId', {
+      .from(AnonymousNumberComment, 'ANC')
+      .where('ANC.boardId = :boardId', {
         boardId,
       })
       .getRawMany();
@@ -141,16 +142,30 @@ export class CommentRepository {
 
   async createComment(
     createCommentDto: CreateCommentDto,
-    anonymousNumber: number,
     position: CommentPosition,
     queryRunner: QueryRunner,
   ): Promise<ReadNewCommentDto> {
     const newComment = queryRunner.manager.create(Comment, {
       ...createCommentDto,
-
-      anonymousNumber,
       position,
       status: CommentStatus.NOT_DELETED,
+      deletedAt: null,
+    });
+
+    const result = await queryRunner.manager.save(newComment);
+    return new ReadNewCommentDto(result);
+  }
+
+  async createAnonymousNumber(
+    boardId: number,
+    userId: string,
+    anonymousNumber: number,
+    queryRunner: QueryRunner,
+  ): Promise<ReadNewCommentDto> {
+    const newComment = queryRunner.manager.create(AnonymousNumberComment, {
+      boardId,
+      userId,
+      anonymousNumber,
       deletedAt: null,
     });
 

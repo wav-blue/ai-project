@@ -20,9 +20,6 @@ export class Comment extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   userId: string;
 
-  @Column({ type: 'int' })
-  anonymousNumber: number;
-
   @Column({ type: 'text' })
   content: string;
 
