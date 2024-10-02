@@ -2,24 +2,18 @@ import {
   BaseEntity,
   Column,
   Entity,
-  PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  PrimaryColumn,
 } from 'typeorm';
 
-@Entity('REPORT_COMMENT')
+@Entity('REPORT_TYPE')
 export class CommentReport extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  reportCommentId: number;
-
-  @Column({ type: 'int' })
-  commentId: number;
-
-  @Column({ type: 'varchar', length: 50 })
-  reportUserId: string;
-
-  @Column({ type: 'tinyint' })
+  @PrimaryColumn()
   reportCode: number;
+
+  @Column({ type: 'varchar', length: 100 })
+  commentDescribe: string;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
