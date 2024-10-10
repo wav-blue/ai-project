@@ -1,16 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
-import { CreateCommentDto } from './dto/createComment.dto';
-import { CreateCommentReportDto } from './dto/createCommentReport.dto';
-import { CommentStatus } from './enum/commentStatus.enum';
-import { CommentReport } from './entity/reportComment.entity';
-import { Comment } from './entity/comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import * as dayjs from 'dayjs';
-import { QueryPageDto } from './dto/queryPage.dto';
-import { ReadNewCommentDto } from './dto/readNewComment.dto';
-import { CommentPosition } from './enum/commentPosition.enum';
-import { AnonymousNumberComment } from './entity/anonymousNumberComment.entity';
+import { QueryPageDto } from '../dto/queryPage.dto';
+import { AnonymousNumberComment } from '../entity/anonymousNumberComment.entity';
+import { CreateCommentDto } from '../dto/createComment.dto';
+import { CommentPosition } from '../enum/commentPosition.enum';
+import { ReadNewCommentDto } from '../dto/readNewComment.dto';
+import { Comment } from '../entity/comments.entity';
+import { CommentStatus } from '../enum/commentStatus.enum';
 
 @Injectable()
 export class CommentRepository {
@@ -23,6 +21,8 @@ export class CommentRepository {
     commentId: number,
     queryRunner: QueryRunner,
   ): Promise<Comment> {
+    /**SELECT C.comment_id, C.content, ANC.anonymous_number FROM comment C, anonymous_number_comment ANC
+     *  WHERE C.board_id = ANC.board_id AND C.user_id = ANC.user_id AND C.board_id = 2 AND C.deleted_at IS NULL; */
     const found = queryRunner.manager
       .createQueryBuilder()
       .select('comment')
@@ -165,52 +165,6 @@ export class CommentRepository {
 
     const result = await queryRunner.manager.save(newComment);
     return new ReadNewCommentDto(result);
-  }
-
-  /** Anonymous Number Comment 테이블 데이터 생성 */
-  async createAnonymousNumber(
-    boardId: number,
-    userId: string,
-    anonymousNumber: number,
-    queryRunner: QueryRunner,
-  ): Promise<ReadNewCommentDto> {
-    const newComment = queryRunner.manager.create(AnonymousNumberComment, {
-      boardId,
-      userId,
-      anonymousNumber,
-      deletedAt: null,
-    });
-
-    const result = await queryRunner.manager.save(newComment);
-    return new ReadNewCommentDto(result);
-  }
-
-  /** 특정 Comment의 신고 유저 목록 조회 */
-  async checkReportUser(
-    commentId: number,
-    queryRunner: QueryRunner,
-  ): Promise<{ report_user_id: string }[]> {
-    return await queryRunner.manager
-      .createQueryBuilder()
-      .select('report.report_user_id')
-      .from(CommentReport, 'report')
-      .where('report.commentId = :commentId', {
-        commentId,
-      })
-      .getRawMany();
-  }
-
-  /** Comment Report 테이블 데이터 추가 */
-  async createCommentReport(
-    createCommentReportDto: CreateCommentReportDto,
-    queryRunner: QueryRunner,
-  ): Promise<CommentReport> {
-    const newReport = queryRunner.manager.create(CommentReport, {
-      ...createCommentReportDto,
-    });
-
-    const result = await queryRunner.manager.save(newReport);
-    return result;
   }
 
   /** Comment 테이블 데이터 삭제 */
