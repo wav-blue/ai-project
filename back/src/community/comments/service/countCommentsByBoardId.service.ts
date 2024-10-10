@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { QueryRunner } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
+import { CommentRepository } from '../repository/comments.repository';
 
 @Injectable()
 export class CountCommentsByBoardIdService {

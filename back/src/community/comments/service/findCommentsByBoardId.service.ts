@@ -4,13 +4,13 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
 import { QueryPageDto } from '../dto/queryPage.dto';
 import { BoardsService } from 'src/community/boards/boards.service';
 import { CountCommentsByBoardIdService } from './countCommentsByBoardId.service';
 import { ReadCommentsByBoardIdDto } from '../dto/readCommentsByBoardId.dto';
+import { CommentRepository } from '../repository/comments.repository';
 
 @Injectable()
 export class FindCommentsByBoardIdService {

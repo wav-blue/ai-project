@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { QueryRunner } from 'typeorm';
 import { AnonymousNumberType } from '.././enum/anonymousNumberType.enum';
 import { Board } from 'src/community/boards/boards.entity';
 import { MyLogger } from 'src/logger/logger.service';
+import { CommentRepository } from '../repository/comments.repository';
+import { CommentAnonymousNumberRepository } from '../repository/commentAnonymousNumber.repository';
 
 @Injectable()
 export class FindAnonymousNumberService {
   constructor(
     private readonly commentRepository: CommentRepository,
+    private readonly commentAnonymousNumberRepository: CommentAnonymousNumberRepository,
     private logger: MyLogger,
   ) {
     this.logger.setContext(FindAnonymousNumberService.name);
@@ -92,7 +94,7 @@ export class FindAnonymousNumberService {
     queryRunner: QueryRunner,
   ): Promise<number> {
     // 익명 번호 데이터 Create
-    await this.commentRepository.createAnonymousNumber(
+    await this.commentAnonymousNumberRepository.createAnonymousNumber(
       boardId,
       userId,
       anonymousNumber,

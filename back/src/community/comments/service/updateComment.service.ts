@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
 import { CommentPosition } from '../enum/commentPosition.enum';
+import { CommentRepository } from '../repository/comments.repository';
 
 @Injectable()
 export class UpdateCommentService {

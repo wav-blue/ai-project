@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { QueryRunner } from 'typeorm';
 import { Comment } from '.././entity/comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import { CommentStatus } from '../enum/commentStatus.enum';
+import { CommentRepository } from '../repository/comments.repository';
 
 @Injectable()
 export class FindCommentService {

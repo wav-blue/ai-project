@@ -1,5 +1,4 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { DataSource } from 'typeorm';
 import { CreateCommentReportDto } from '.././dto/createCommentReport.dto';
 import { CommentStatus } from '.././enum/commentStatus.enum';
@@ -7,11 +6,12 @@ import { Comment } from '.././entity/comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
 import { FindCommentService } from './findComment.service';
 import { DeleteCommentReportedService } from './deleteCommentReported.service';
+import { CommentReportRepository } from '../repository/commentReport.repository';
 
 @Injectable()
 export class CreateReportWithCommentService {
   constructor(
-    private readonly commentRepository: CommentRepository,
+    private readonly commentReportRepository: CommentReportRepository,
     private readonly findCommentService: FindCommentService,
     private readonly deleteCommentReportedService: DeleteCommentReportedService,
     private readonly dataSource: DataSource,
@@ -46,7 +46,7 @@ export class CreateReportWithCommentService {
       }
 
       // 해당 댓글을 report한 유저 조회
-      const checkResult = await this.commentRepository.checkReportUser(
+      const checkResult = await this.commentReportRepository.checkReportUser(
         commentId,
         queryRunner,
       );
@@ -62,7 +62,7 @@ export class CreateReportWithCommentService {
 
       reportUserList.push(reportUserId);
 
-      await this.commentRepository.createCommentReport(
+      await this.commentReportRepository.createCommentReport(
         createCommentReportDto,
         queryRunner,
       );

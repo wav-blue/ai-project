@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CommentRepository } from '.././comments.repository';
 import { CreateCommentDto } from '.././dto/createComment.dto';
 import { DataSource } from 'typeorm';
 import { Board } from 'src/community/boards/boards.entity';
@@ -9,6 +8,7 @@ import { ReadNewCommentDto } from '../dto/readNewComment.dto';
 import { FindAnonymousNumberService } from './findAnonymousNumber.service';
 import { CommentPosition } from '../enum/commentPosition.enum';
 import { AnalysisService } from 'src/community/analysis.service';
+import { CommentRepository } from '../repository/comments.repository';
 
 @Injectable()
 export class CreateCommentService {
