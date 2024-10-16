@@ -5,7 +5,7 @@ import { BoardsController } from './boards/boards.controller';
 import { BoardsService } from './boards/boards.service';
 import { CommentsController } from './comments/comments.controller';
 import { BoardsRepository } from './boards/boards.repository';
-import { CommentRepository } from './comments/comments.repository';
+import { CommentRepository } from './comments/repository/comments.repository';
 import { S3Service } from '../common/s3.presigned';
 import { HttpModule } from '@nestjs/axios';
 import { LoggerModule } from 'src/logger/logger.module';
@@ -23,6 +23,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AnalysisConsumer } from './analysis.consumer';
 import { AnalysisService } from './analysis.service';
 import { UpdateCommentService } from './comments/service/updateComment.service';
+import { CommentReportRepository } from './comments/repository/commentReport.repository';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { UpdateCommentService } from './comments/service/updateComment.service';
     FindCommentService,
     FindAnonymousNumberService,
     CountCommentsByBoardIdService,
+    CommentReportRepository,
     CreateReportWithCommentService,
     DeleteCommentReportedService,
     UpdateCommentService,

@@ -6,7 +6,6 @@ import { MyLogger } from 'src/logger/logger.service';
 import { BoardsService } from 'src/community/boards/boards.service';
 import { ReadNewCommentDto } from '../dto/readNewComment.dto';
 import { FindAnonymousNumberService } from './findAnonymousNumber.service';
-import { CommentPosition } from '../enum/commentPosition.enum';
 import { AnalysisService } from 'src/community/analysis.service';
 import { CommentRepository } from '../repository/comments.repository';
 
@@ -53,18 +52,19 @@ export class CreateCommentService {
       foundBoard = await this.boardsService.readBoard(createCommentDto.boardId);
 
       // 익명 번호 anonymousNumber 처리
-      await this.findAnonymousNumberService.readAnonymousNumber(
-        createCommentDto.boardId,
-        createCommentDto.userId,
-        foundBoard,
-        queryRunner,
-      );
+      const anonymousNumber =
+        await this.findAnonymousNumberService.readAnonymousNumber(
+          createCommentDto.boardId,
+          createCommentDto.userId,
+          foundBoard,
+          queryRunner,
+        );
       this.logger.verbose('익명 번호 결정');
 
       // 댓글 데이터 Create
       newComment = await this.commentRepository.createComment(
         createCommentDto,
-        CommentPosition.LOADING,
+        anonymousNumber,
         queryRunner,
       );
       this.logger.verbose('Comment Create Complete');

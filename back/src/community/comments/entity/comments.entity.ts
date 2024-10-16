@@ -29,6 +29,9 @@ export class Comment extends BaseEntity {
   @Column({ type: 'enum', enum: CommentStatus })
   status: string;
 
+  @Column({ type: 'int' })
+  anonymousNumber: number;
+
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
