@@ -41,7 +41,7 @@ export class CreateReportWithCommentService {
         );
 
       if (foundComment.userId === reportUserId) {
-        this.logger.log(`자신의 댓글은 신고할 수 없습니다.`);
+        this.logger.debug(`자신이 작성한 댓글은 신고 불가함`);
         throw new ConflictException('잘못된 신고 요청입니다.');
       }
 

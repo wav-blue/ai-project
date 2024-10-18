@@ -40,7 +40,7 @@ export class AnalysisConsumer extends WorkerHost {
         position = CommentPosition.NEGATIVE;
       }
 
-      this.logger.verbose(
+      this.logger.debug(
         `Flask 서버로의 요청 성공! 분석을 통해 position 결정: ${position}`,
       );
 

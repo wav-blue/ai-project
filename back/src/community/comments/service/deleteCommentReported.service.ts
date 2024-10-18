@@ -23,7 +23,7 @@ export class DeleteCommentReportedService {
 
     try {
       // 일정 횟수 신고되어 댓글 삭제
-      this.logger.verbose(
+      this.logger.debug(
         `${commentId}번 댓글 ${CommentStatus.REPORTED} 상태로 변경됨`,
       );
 

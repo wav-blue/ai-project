@@ -43,7 +43,7 @@ export class UpdateCommentService {
         position,
         queryRunner,
       );
-      this.logger.verbose('Comment Position Update Complete!');
+      this.logger.debug('Comment Position Update Complete!');
 
       await queryRunner.commitTransaction();
     } catch (err) {

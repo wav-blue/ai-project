@@ -44,7 +44,8 @@ export class DeleteCommentService {
       );
 
       if (deleteCommentResult.affected === 0) {
-        this.logger.log('COMMENT 테이블을 업데이트 하지 못했습니다.');
+        this.logger.error('COMMENT 테이블을 업데이트 하지 못했습니다.');
+        this.logger.info(`- commentId: ${commentId}`);
         throw new ServiceUnavailableException(
           '알 수 없는 이유로 요청을 완료하지 못했습니다.',
         );

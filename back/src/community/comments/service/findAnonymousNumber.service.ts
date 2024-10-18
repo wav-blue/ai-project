@@ -44,7 +44,7 @@ export class FindAnonymousNumberService {
       // 게시글 작성자: 특수한 익명 번호 부여(0)
       if (userId === boardWriter) {
         anonymousNumber = AnonymousNumberType.WRITER;
-        this.logger.log(
+        this.logger.debug(
           `게시글 작성자가 댓글 작성함 : 익명번호 ${AnonymousNumberType.WRITER}`,
         );
       } else {

@@ -28,7 +28,7 @@ export class CreateCommentService {
     content: string,
   ): Promise<void> {
     try {
-      this.logger.verbose('job add');
+      this.logger.debug('job add');
       this.analysisService.addJob(commentId, content);
     } catch (err) {
       this.logger.error(`작업 요청에 실패했습니다.`);
@@ -59,7 +59,6 @@ export class CreateCommentService {
           foundBoard,
           queryRunner,
         );
-      this.logger.verbose('익명 번호 결정');
 
       // 댓글 데이터 Create
       newComment = await this.commentRepository.createComment(
@@ -67,7 +66,7 @@ export class CreateCommentService {
         anonymousNumber,
         queryRunner,
       );
-      this.logger.verbose('Comment Create Complete');
+      this.logger.debug('Comment Create Complete');
 
       // 댓글 분석 요청(job queue 등록)
       await this.analysisRequest(

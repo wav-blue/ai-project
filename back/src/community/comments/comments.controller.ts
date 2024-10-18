@@ -91,7 +91,7 @@ export class CommentsController {
     @GetUser() userId: string,
     @Param('commentId', ParseIntPipe) commentId: number,
   ) {
-    this.logger.log(`${commentId}번 댓글 삭제`);
+    this.logger.debug(`${commentId}번 댓글 삭제`);
     const result = this.deleteCommentService.deleteComment(userId, commentId);
     return result;
   }
@@ -103,7 +103,7 @@ export class CommentsController {
     @GetUser() reportUserId: string,
     @Body() createCommentReportDto: CreateCommentReportDto,
   ): Promise<{ status: string }> {
-    this.logger.log(
+    this.logger.debug(
       `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수`,
     );
 
