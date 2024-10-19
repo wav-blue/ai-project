@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
 import { CommentRepository } from '../repository/comments.repository';
+import { CommentPosition } from '../enum/commentPosition.enum';
 
 @Injectable()
 export class CountCommentsByBoardIdService {
@@ -30,9 +31,12 @@ export class CountCommentsByBoardIdService {
     let loadingCommentCount = 0;
 
     for (let i = 0; i < result.length; i++) {
-      if (result[i].position === 1) positiveCount = result[i]['COUNT(1)'];
-      if (result[i].position === -1) negativeCount = result[i]['COUNT(1)'];
-      if (result[i].position === 0) loadingCommentCount = result[i]['COUNT(1)'];
+      if (result[i].position === CommentPosition.POSITIVE)
+        positiveCount = result[i]['COUNT(1)'];
+      if (result[i].position === CommentPosition.NEGATIVE)
+        negativeCount = result[i]['COUNT(1)'];
+      if (result[i].position === CommentPosition.LOADING)
+        loadingCommentCount = result[i]['COUNT(1)'];
     }
 
     const count = positiveCount + negativeCount + loadingCommentCount;
