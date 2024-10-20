@@ -1,27 +1,26 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { CreateCommentReportDto } from '.././dto/createCommentReport.dto';
-import { CommentStatus } from '.././enum/commentStatus.enum';
-import { Comment } from '.././entity/comments.entity';
 import { MyLogger } from 'src/logger/logger.service';
-import { FindCommentService } from './findComment.service';
-import { DeleteCommentReportedService } from './deleteCommentReported.service';
 import { CommentReportRepository } from '../repository/commentReport.repository';
+import { DeleteCommentByReportService } from 'src/community/comments/service/deleteCommentByReport.service';
+import { Comment } from 'src/community/comments/entity/comments.entity';
+import { FindCommentService } from 'src/community/comments/service/findComment.service';
+import { CreateReportCommentDto } from '../dto/createReportComment.dto';
 
 @Injectable()
-export class CreateReportWithCommentService {
+export class CreateReportCommentService {
   constructor(
     private readonly commentReportRepository: CommentReportRepository,
     private readonly findCommentService: FindCommentService,
-    private readonly deleteCommentReportedService: DeleteCommentReportedService,
+    private readonly deleteCommentReportedService: DeleteCommentByReportService,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(CreateReportWithCommentService.name);
+    this.logger.setContext(CreateReportCommentService.name);
   }
 
   // 신고 내역 작성
-  async createCommentReport(createCommentReportDto: CreateCommentReportDto) {
+  async createCommentReport(createReportCommentDto: CreateReportCommentDto) {
     // 변수 선언
     let foundComment: Comment;
     const reportUserList = [];
@@ -31,7 +30,7 @@ export class CreateReportWithCommentService {
 
     await queryRunner.startTransaction();
     try {
-      const { commentId, reportUserId } = createCommentReportDto;
+      const { commentId, reportUserId } = createReportCommentDto;
 
       // 신고된 Comment의 정보 조회
       foundComment =
@@ -63,7 +62,7 @@ export class CreateReportWithCommentService {
       reportUserList.push(reportUserId);
 
       await this.commentReportRepository.createCommentReport(
-        createCommentReportDto,
+        createReportCommentDto,
         queryRunner,
       );
 
@@ -76,14 +75,14 @@ export class CreateReportWithCommentService {
     }
 
     if (reportUserList.length < 5) {
-      return { status: CommentStatus.NOT_DELETED };
+      return { status: 'reported' };
     } else {
       // 신고 횟수 누적으로 댓글 삭제
       this.deleteCommentReportedService.deleteCommentReported(
-        createCommentReportDto.commentId,
+        createReportCommentDto.commentId,
       );
     }
 
-    return { status: CommentStatus.REPORTED };
+    return { status: 'deleted' };
   }
 }

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
-import { CommentReport } from '../entity/reportComment.entity';
-import { CreateCommentReportDto } from '../dto/createCommentReport.dto';
+import { CommentReport } from '../entity/commentReport.entity';
+import { CreateCommentReportDto } from 'src/community/comments/dto/createCommentReport.dto';
 
 @Injectable()
 export class CommentReportRepository {

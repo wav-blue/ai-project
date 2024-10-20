@@ -5,13 +5,13 @@ import { MyLogger } from 'src/logger/logger.service';
 import { CommentRepository } from '../repository/comments.repository';
 
 @Injectable()
-export class DeleteCommentReportedService {
+export class DeleteCommentByReportService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly dataSource: DataSource,
     private logger: MyLogger,
   ) {
-    this.logger.setContext(DeleteCommentReportedService.name);
+    this.logger.setContext(DeleteCommentByReportService.name);
   }
 
   // 신고 누적으로 삭제
