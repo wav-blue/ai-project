@@ -14,16 +14,17 @@ import { CreateCommentService } from './comments/service/createComment.service';
 import { FindAnonymousNumberService } from './comments/service/findAnonymousNumber.service';
 import { DeleteCommentService } from './comments/service/deleteComment.service';
 import { FindCommentsByBoardIdService } from './comments/service/findCommentsByBoardId.service';
-import { CreateReportWithCommentService } from './comments/service/createReportWithComment.service';
 import { FindCommentService } from './comments/service/findComment.service';
 import { FindCommentsByUserIdService } from './comments/service/findCommentsByUserId.service';
 import { CountCommentsByBoardIdService } from './comments/service/countCommentsByBoardId.service';
-import { DeleteCommentReportedService } from './comments/service/deleteCommentReported.service';
 import { BullModule } from '@nestjs/bullmq';
 import { AnalysisConsumer } from './analysis.consumer';
 import { AnalysisService } from './analysis.service';
 import { UpdateCommentService } from './comments/service/updateComment.service';
-import { CommentReportRepository } from './comments/repository/commentReport.repository';
+import { DeleteCommentByReportService } from './comments/service/deleteCommentByReport.service';
+import { CreateReportCommentService } from './reports/service/createReportComment.service';
+import { ReportsController } from './reports/reports.controller';
+import { CommentReportRepository } from './reports/repository/commentReport.repository';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { CommentReportRepository } from './comments/repository/commentReport.rep
     LoggerModule,
     AxiosModule,
   ],
-  controllers: [BoardsController, CommentsController],
+  controllers: [BoardsController, CommentsController, ReportsController],
   providers: [
     BoardsService,
     CreateCommentService,
@@ -46,15 +47,16 @@ import { CommentReportRepository } from './comments/repository/commentReport.rep
     FindCommentService,
     FindAnonymousNumberService,
     CountCommentsByBoardIdService,
-    CommentReportRepository,
-    CreateReportWithCommentService,
-    DeleteCommentReportedService,
     UpdateCommentService,
     BoardsRepository,
     CommentRepository,
     S3Service,
     AnalysisConsumer,
     AnalysisService,
+    DeleteCommentByReportService,
+    CreateReportCommentService,
+    CommentReportRepository,
   ],
+  exports: [DeleteCommentByReportService],
 })
 export class CommunityModule {}
