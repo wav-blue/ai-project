@@ -13,7 +13,6 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CreateCommentDto } from './dto/createComment.dto';
-import { CreateCommentReportDto } from './dto/createCommentReport.dto';
 import { LocalAuthGuard } from 'src/user/guards/local-service.guard';
 
 import { GetUser } from 'src/common/decorator/get-user.decorator';
@@ -23,7 +22,6 @@ import { CreateCommentService } from './service/createComment.service';
 import { FindCommentsByBoardIdService } from './service/findCommentsByBoardId.service';
 import { DeleteCommentService } from './service/deleteComment.service';
 import { FindCommentsByUserIdService } from './service/findCommentsByUserId.service';
-import { CreateReportWithCommentService } from './service/createReportWithComment.service';
 import { ReadCommentsByBoardIdDto } from './dto/readCommentsByBoardId.dto';
 import { ReadCommentsByUserIdDto } from './dto/readCommentsByUserId.dto';
 
@@ -34,7 +32,6 @@ export class CommentsController {
     private deleteCommentService: DeleteCommentService,
     private findCommentsByUserIdService: FindCommentsByUserIdService,
     private findCommentsByBoardIdService: FindCommentsByBoardIdService,
-    private createReportWithCommentService: CreateReportWithCommentService,
     private logger: MyLogger,
   ) {
     this.logger.setContext(CommentsController.name);
@@ -93,25 +90,6 @@ export class CommentsController {
   ) {
     this.logger.debug(`${commentId}번 댓글 삭제`);
     const result = this.deleteCommentService.deleteComment(userId, commentId);
-    return result;
-  }
-
-  // 신고 내역 추가 (신고 누적 상황에 따라 해당 댓글 삭제)
-  @Post('/report')
-  @UseGuards(LocalAuthGuard)
-  createCommentReport(
-    @GetUser() reportUserId: string,
-    @Body() createCommentReportDto: CreateCommentReportDto,
-  ): Promise<{ status: string }> {
-    this.logger.debug(
-      `${createCommentReportDto.commentId}번 댓글에 대한 신고 접수`,
-    );
-
-    createCommentReportDto.reportUserId = reportUserId;
-
-    const result = this.createReportWithCommentService.createCommentReport(
-      createCommentReportDto,
-    );
     return result;
   }
 }
