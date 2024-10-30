@@ -15,7 +15,6 @@ const Comment = (commentData: CommentProps) => {
     anonymousNumber,
     position,
     userId,
-    status,
     createdAt,
     deletedAt,
     commentId,
@@ -25,12 +24,8 @@ const Comment = (commentData: CommentProps) => {
   const [isDeleteRefresh, setIsDeleteRefresh] = useState(false);
 
   const sendDataToParent = () => {
-    console.log('Comment.tsx 666666666666');
-    console.log('sendDataToParent(댓글삭제)');
     setIsDeleteRefresh(true);
-    console.log('Comment.tsx 777777777777777777777777777');
     onDeleteChanged(isDeleteRefresh); // 콜백 함수 호출하여 데이터 전달
-    console.log('Comment.tsx 88888888888888888888888888');
   };
 
   //한국시간으로 변경하는 로직
@@ -42,39 +37,39 @@ const Comment = (commentData: CommentProps) => {
     return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
   }
 
-  //현재 로그인중인 사용자 아이디 받아오는 부분(댓글삭제가능여부판단용)
+  function analysisText(position: number) {
+    if (position == 1) {
+      return 'positive';
+    } else if (position == -1) {
+      return 'negatvie';
+    }
+    return 'loading...';
+  }
+
+  //현재 로그인중인 사용자 아이디 받아오는 부분(댓글 삭제 가능 여부 판단용)
   const userState = useSelector((state: RootState) => state.user.user);
   console.log(
     'userState.userId(현재 로그인중인 유저아이디 : ',
     userState.userId,
   );
 
-  //댓글삭제관련
+  //댓글 삭제 관련
   const deleteComment = useDeleteComment(commentId);
 
   const handleDelete = async () => {
-    console.log('Comment.tsx 1111111111111111111');
     deleteComment.mutateAsync(commentId);
-    console.log('Comment.tsx 2222222222222222222222');
-    // setIsDeleteRefresh(true);
-    // sendDataToParent();
   };
   useEffect(() => {
     if (deleteComment.data) {
-      console.log('Comment.tsx 33333333333333333');
-      console.log('================== 댓글 삭제 성공 ===============');
       setIsDeleteRefresh(true);
-      console.log('Comment.tsx 444444444444444444444');
-      console.log('handleDelete(댓글삭제)');
       sendDataToParent();
-      console.log('Comment.tsx 555555555555555555');
     }
   }, [deleteComment.data]);
 
   const router = useRouter();
 
   const handleReport = async () => {
-    console.log(`신고 화면으로 이동!`);
+    // 신고 화면으로 이동
     router.push({
       pathname: `/board/report`,
       query: {
@@ -101,7 +96,7 @@ const Comment = (commentData: CommentProps) => {
               className="rounded-full h-[26px] w-[26px]"
             ></img>
           )}
-          {position == 0 && (
+          {position == -1 && (
             <img
               src="/images/angry.png"
               className="rounded-full h-[26px] w-[26px]"
@@ -109,7 +104,7 @@ const Comment = (commentData: CommentProps) => {
           )}
           <p className="inline-block text-gray-800 font-semibold">{`익명${anonymousNumber}`}</p>
 
-          <p className="text-gray-700">{position ? 'positive' : 'negative'}</p>
+          <p className="text-gray-700">{analysisText(position)}</p>
           {userState && userState.userId === userId ? (
             <button onClick={handleDelete}>삭제</button>
           ) : (

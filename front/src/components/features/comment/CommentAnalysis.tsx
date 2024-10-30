@@ -2,14 +2,6 @@ import React from 'react';
 import { CommentsProps } from '../../types/CommentTypes';
 import Image from 'next/image';
 
-// interface IProps {
-//   currentPage: number;
-//   totalContents: number;
-//   paginate: (pageNumber: number) => void;
-//   contentsPerPage: number;
-// }
-
-// const CommentAnalysis: React.FC<CommentAnalysisProps> = ({ commentsProps }) => {
 const CommentAnalysis = ({ positiveCount, negativeCount }: CommentsProps) => {
   const analyzeComments = () => {
     // positive와 negative의 비율 계산
