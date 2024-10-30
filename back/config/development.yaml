@@ -13,5 +13,5 @@ flask:
 domain:
   address: 'localhost'
 
-queue:
+redis:
   url: '127.0.0.1'

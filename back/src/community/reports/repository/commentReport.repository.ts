@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { MyLogger } from 'src/logger/logger.service';
 import { CommentReport } from '../entity/commentReport.entity';
-import { CreateCommentReportDto } from 'src/community/comments/dto/createCommentReport.dto';
+import { CreateReportCommentDto } from '../dto/createReportComment.dto';
 
 @Injectable()
 export class CommentReportRepository {
@@ -27,7 +27,7 @@ export class CommentReportRepository {
 
   /** Comment Report 테이블 데이터 추가 */
   async createCommentReport(
-    createCommentReportDto: CreateCommentReportDto,
+    createCommentReportDto: CreateReportCommentDto,
     queryRunner: QueryRunner,
   ): Promise<CommentReport> {
     const newReport = queryRunner.manager.create(CommentReport, {
